@@ -20,5 +20,18 @@ export class User extends Model {
 
   @Default(false)
   @Column
+  active: boolean;
+
+  @Default(false)
+  @Column
   is_superuser: boolean;
+
+  @Column
+  start_active_time: Date;
+
+  @Column
+  end_active_time: Date;
+
+  @Column
+  last_active_period: Date;
 }

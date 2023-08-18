@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SequelizeModule } from '@nestjs/sequelize';
+import { Queue } from 'src/queue/model/queue.model';
+import { QueueModule } from 'src/queue/queue.module';
 import { AuthModule } from '../auth/auth.module';
 import { TokenModule } from '../token/token.module';
 import { User } from '../user/model/user.model';
@@ -28,12 +30,13 @@ import { AppService } from './app.service';
         database: configService.get('POSTGRES_DATABASE'),
         synchronize: true,
         autoLoadModels: true,
-        models: [User],
+        models: [User, Queue],
       }),
     }),
     UserModule,
     AuthModule,
     TokenModule,
+    QueueModule,
   ],
 })
 export class AppModule {}

@@ -24,8 +24,8 @@ export class UserController {
 
   @ApiResponse({ status: 201, type: CreateUserDto })
   @Post('')
-  @UseGuards(RolesGuard)
-  @Roles('is_staff')
+  // @UseGuards(RolesGuard)
+  // @Roles('is_staff')
   createUser(@Body() dto: CreateUserDto): Promise<CreateUserDto> {
     return this.userService.createUser(dto);
   }
