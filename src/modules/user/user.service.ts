@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/sequelize';
 import * as bcrypt from 'bcrypt';
 import * as uuid from 'uuid';
 import { CreateUserDto } from './dto';
+import { changePasswordDto } from './dto/changePassword.dto';
 import { UpdateAllUserDataDto } from './dto/update.all_user_data';
 import { User } from './model/user.model';
 
@@ -44,15 +45,20 @@ export class UserService {
   }
 
   async getAllUsers(): Promise<User[]> {
-    return await this.userRepository.findAll();
+    return await this.userRepository.findAll({
+      attributes: { exclude: ['password', 'createdAt', 'updatedAt'] },
+    });
   }
 
-  async getUserById(id: string): Promise<User> {
-    return await this.userRepository.findOne({ where: { id } });
+  async getUserById(id: number): Promise<User> {
+    return await this.userRepository.findOne({
+      where: { id },
+      attributes: { exclude: ['password', 'createdAt', 'updatedAt'] },
+    });
   }
 
   async updateUser(
-    id: string,
+    id: number,
     dto: UpdateAllUserDataDto,
   ): Promise<UpdateAllUserDataDto> {
     const user = await this.userRepository.update(dto, { where: { id } });
@@ -61,5 +67,33 @@ export class UserService {
 
   async deleteUserById(id): Promise<number> {
     return await this.userRepository.destroy({ where: { id } });
+  }
+
+  async comparePassword(
+    password1: string,
+    password2: string,
+  ): Promise<boolean> {
+    return bcrypt.compare(password1, password2);
+  }
+
+  async changePassword(
+    dto: changePasswordDto,
+    userId: number,
+  ): Promise<boolean> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+    const comparePasswords = this.comparePassword(
+      dto.oldPassword,
+      user.password,
+    );
+    if (comparePasswords || dto.oldPassword == user.password) {
+      const hashPassword = await this.hashPassword(dto.newPassword);
+      user.password = hashPassword;
+      await user.save();
+      return true;
+    } else {
+      throw new BadRequestException('Wrong Data');
+    }
   }
 }

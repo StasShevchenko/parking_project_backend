@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { TokenService } from '../token/token.service';
-import { CreateUserDto } from '../user/dto';
+import { CreateAdminDto, CreateUserDto } from '../user/dto';
 import { UserService } from '../user/user.service';
 import { AuthUserResponseDTO, LoginUserDTO } from './dto';
 
@@ -24,13 +24,30 @@ export class AuthService {
     }
   }
 
+  async createAdmin(dto: CreateAdminDto): Promise<CreateAdminDto> {
+    try {
+      const existUser = await this.userService.findUserByEmail(dto.email);
+      if (existUser) {
+        throw new BadRequestException('USER EXIST');
+      }
+      const user = await this.userService.createUser(dto);
+      return dto;
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
   async loginUser(dto: LoginUserDTO): Promise<AuthUserResponseDTO> {
     const existUser = await this.userService.findUserByEmail(dto.email);
     // console.log(existUser);
     if (!existUser) {
       throw new BadRequestException('USER EXIST');
     }
-    const validatePassword = dto.password === existUser.password ? true : false;
+    const validatePassword = await this.userService.comparePassword(
+      dto.password,
+      existUser.password,
+    );
+
     if (!validatePassword) {
       throw new BadRequestException('Wrong Data');
     }
@@ -38,6 +55,10 @@ export class AuthService {
       email: existUser.email,
       id: existUser.id,
       is_staff: existUser.is_staff,
+      is_superuser: existUser.is_superuser,
+      in_queue: existUser.in_queue,
+      first_name: existUser.firstName,
+      second_name: existUser.secondName,
     };
     const jwtAccess = await this.tokenService.generateAccessToken(userData);
     const jwtRefresh = await this.tokenService.generateRefreshToken(userData);

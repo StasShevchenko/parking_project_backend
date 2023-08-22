@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { CompliteRefreshTokenDto } from './dto';
+import { CompleteRefreshTokenDto } from './dto';
 
 @Injectable()
 export class TokenService {
@@ -56,7 +56,7 @@ export class TokenService {
     }
   }
 
-  async refreshToken(refresh: string): Promise<CompliteRefreshTokenDto> {
+  async refreshToken(refresh: string): Promise<CompleteRefreshTokenDto> {
     try {
       const decode = await this.verifyRefreshToken(refresh);
       const user = decode.user;

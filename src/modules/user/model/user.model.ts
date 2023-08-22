@@ -26,6 +26,9 @@ export class User extends Model {
   @Column
   is_superuser: boolean;
 
+  @Default(false)
+  @Column
+  in_queue: boolean;
   @Column
   start_active_time: Date;
 

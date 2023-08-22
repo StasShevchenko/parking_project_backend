@@ -6,56 +6,107 @@ import {
   Param,
   Patch,
   Post,
+  Req,
   UseGuards,
 } from '@nestjs/common';
-import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiForbiddenResponse,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+  ApiUnprocessableEntityResponse,
+} from '@nestjs/swagger';
 import { Roles } from '../auth/has-roles.decorator';
+import { JWTAuthGuard } from '../auth/jwt-guard';
 import { RolesGuard } from '../auth/roles.guard';
-import { CreateUserDto } from './dto';
+import { changePasswordDto } from './dto/changePassword.dto';
+import { ResponseUserDto } from './dto/response_user.dto';
 import { UpdateAllUserDataDto } from './dto/update.all_user_data';
 import { User } from './model/user.model';
 import { UserService } from './user.service';
 
 @ApiTags('Users')
 @Controller('user')
-// @UseGuards(AuthGuard('jwt'), RolesGuard)
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @ApiResponse({ status: 201, type: CreateUserDto })
-  @Post('')
-  // @UseGuards(RolesGuard)
-  // @Roles('is_staff')
-  createUser(@Body() dto: CreateUserDto): Promise<CreateUserDto> {
-    return this.userService.createUser(dto);
-  }
-
-  @ApiResponse({ status: 200, type: CreateUserDto })
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Получение всех пользователей - только админам' })
+  @ApiResponse({
+    status: 200,
+    type: ResponseUserDto,
+  })
+  @ApiForbiddenResponse({ description: 'Unauthorized Request' })
   @Get('')
+  @UseGuards(RolesGuard)
+  @Roles('is_staff')
   getAllUsers(): Promise<User[]> {
     return this.userService.getAllUsers();
   }
 
-  @ApiResponse({ status: 200, type: CreateUserDto })
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Получение конкретного пользователя - только авторизованным',
+  })
+  @ApiResponse({
+    status: 200,
+    type: ResponseUserDto,
+  })
+  @ApiForbiddenResponse({ description: 'Unauthorized Request' })
+  @UseGuards(JWTAuthGuard)
   @Get(':id')
-  getUser(@Param('id') id): Promise<User> {
+  getUser(@Param('id') id: number): Promise<User> {
     return this.userService.getUserById(id);
   }
 
-  @ApiResponse({ status: 200, type: CreateUserDto })
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Удаление пользователя - только админам' })
+  @ApiResponse({
+    status: 200,
+    description: 'Response: 1',
+  })
+  @ApiForbiddenResponse({ description: 'Unauthorized Request' })
   @Delete(':id')
   @UseGuards(RolesGuard)
   @Roles('is_staff')
-  deleteUser(@Param('id') id): Promise<number> {
+  deleteUser(@Param('id') id: number): Promise<number> {
     return this.userService.deleteUserById(id);
   }
 
-  @ApiResponse({ status: 201, type: UpdateAllUserDataDto })
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Обновление данных пользователя - только авторизованным',
+  })
+  @ApiResponse({
+    status: 201,
+    type: UpdateAllUserDataDto,
+  })
+  @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
+  @ApiForbiddenResponse({ description: 'Unauthorized Request' })
+  @UseGuards(JWTAuthGuard)
   @Patch('update/:id')
   updateUser(
-    @Param('id') id,
+    @Param('id') id: number,
     dto: UpdateAllUserDataDto,
   ): Promise<UpdateAllUserDataDto> {
     return this.userService.updateUser(id, dto);
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Изменение пароля пользователя - только авторизованным',
+  })
+  @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
+  @ApiForbiddenResponse({ description: 'Unauthorized Request' })
+  @ApiResponse({ status: 201, type: changePasswordDto })
+  @UseGuards(JWTAuthGuard)
+  @Post('changePassword')
+  changePassword(
+    @Body() dto: changePasswordDto,
+    @Req() req: Request,
+  ): Promise<Boolean> {
+    const userId = req['user'].id;
+    return this.userService.changePassword(dto, userId);
   }
 }

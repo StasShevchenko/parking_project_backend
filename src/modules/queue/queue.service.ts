@@ -16,6 +16,13 @@ export class QueueService {
 
   async create(dto: CreateQueueDTO): Promise<Queue> {
     const maxNumber = await this.getMaxNumber();
+    const user = await this.userRepository.findOne({
+      where: { id: dto.userId },
+    });
+    if (!user.in_queue) {
+      user.in_queue = true;
+      user.save();
+    }
     if (maxNumber) {
       return this.queueRepository.create({
         userId: dto.userId,
@@ -58,16 +65,16 @@ export class QueueService {
   }
 
   async deleteFromQueue(userId: number) {
-    console.log(`Delete user from Queue : ${userId}`);
     return await this.queueRepository.destroy({ where: { userId: userId } });
   }
 
   async changeActiveUser(user: User) {
     const period = 30;
     const nowDate = new Date();
-    const millisecondsIn30Days = 30 * 24 * 60 * 60 * 1000;
+    const millisecondsIn60Days = 60 * 24 * 60 * 60 * 1000;
     let end_active_time = new Date();
     end_active_time.setDate(nowDate.getDate() + period);
+    const maxNumber = await this.getMaxNumber();
 
     const minUserId = (await this.getMinNumber()).userId;
     const minUser = await this.userRepository.findOne({
@@ -79,31 +86,39 @@ export class QueueService {
       nowDate.getTime() - last_active_period_minUser.getTime(),
     );
     const activateMoreMonthAgo =
-      timeDifference >= millisecondsIn30Days ? true : false;
+      timeDifference >= millisecondsIn60Days ? true : false;
 
     user.active = false;
     user.end_active_time = null;
     user.start_active_time = null;
     await user.save();
-    await this.create({ userId: user.id });
 
-    if (minUser.last_active_period == null || activateMoreMonthAgo) {
-      await this.deleteFromQueue(minUser.id);
-      minUser.active = true;
-      minUser.start_active_time = nowDate;
-      minUser.end_active_time = end_active_time;
-      minUser.last_active_period = nowDate;
-      await minUser.save();
-    }
+    // if (minUser.last_active_period == null || activateMoreMonthAgo) {
+    await this.deleteFromQueue(minUser.id);
+    await this.create({ userId: minUser.id });
+    minUser.active = true;
+    minUser.start_active_time = nowDate;
+    minUser.end_active_time = end_active_time;
+    minUser.last_active_period = nowDate;
+    await minUser.save();
+    // }
   }
 
   async CalculationNextAllUsersPeriods() {
-    const users = await this.userRepository.findAll();
+    const users = await this.userRepository.findAll({
+      where: { in_queue: true },
+    });
     let result = {};
     for (const user of users) {
       const nextPeriod = await this.CalculationNextPeriod(user);
       result[user.id] = {
-        user: user,
+        id: user.id,
+        firstName: user.firstName,
+        secondName: user.secondName,
+        email: user.email,
+        is_staff: user.is_staff,
+        is_superuser: user.is_superuser,
+        active: user.active,
         nextPeriod: nextPeriod,
       };
     }
@@ -131,16 +146,33 @@ export class QueueService {
     let period = 30;
     const seats = 3;
     const nowDate = new Date();
-    const nextPeriod = new Date();
+    const firstPeriod = new Date();
+    const secondPeriod = new Date();
+    const thirdPeriod = new Date();
+    const fourthPeriod = new Date();
     const millisecondsPerDay = 24 * 60 * 60 * 1000;
     const countQueue = await this.queueRepository.count();
+    let periods = [];
+
+    const positionUserFromQueue = (
+      await this.queueRepository.findOne({ where: { userId: user.id } })
+    ).number;
+    const minNumberFromQueue = await this.queueRepository.findOne({
+      where: {},
+      order: [['number', 'ASC']],
+      limit: 1,
+    });
 
     const user_end_date = new Date(user.end_active_time);
     const day_left =
       (user_end_date.getTime() - nowDate.getTime()) / millisecondsPerDay;
-    const periodCount = Math.floor(countQueue / seats);
-    nextPeriod.setDate(nowDate.getDate() + day_left + periodCount * period);
-    return nextPeriod.toISOString();
+    const periodCount = Math.floor(
+      (positionUserFromQueue - minNumberFromQueue.number) / seats,
+    );
+    firstPeriod.setDate(
+      nowDate.getDate() + day_left + periodCount * period + 1,
+    );
+    return firstPeriod.toISOString();
   }
 
   async nextPeriodNoActiveUser(user: User) {
@@ -165,18 +197,12 @@ export class QueueService {
       },
     });
     const user_active_end_data = new Date(activeUser.end_active_time);
-    console.log(`user_active_end_data = ${user_active_end_data.toISOString()}`);
     const day_left =
       (user_active_end_data.getTime() - nowDate.getTime()) / millisecondsPerDay;
-    console.log(`day_left = ${day_left}`);
     const periodCount = Math.floor(
       (positionUserFromQueue - minNumberFromQueue.number) / seats,
     );
-    console.log(`positionUserFromQueue = ${positionUserFromQueue}`);
-    console.log(`minNumberFromQueue.number = ${minNumberFromQueue.number}`);
-    console.log(`periodCount = ${periodCount}`);
-    nextPeriod.setDate(nowDate.getDate() + day_left + periodCount * period);
-    console.log(`nextPeriod = ${nextPeriod.toISOString()}`);
+    nextPeriod.setDate(nowDate.getDate() + day_left + periodCount * period + 1);
     return nextPeriod.toISOString();
   }
 }

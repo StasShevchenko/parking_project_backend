@@ -1,20 +1,59 @@
-import { Body, Controller, Post } from '@nestjs/common';
-import { ApiResponse, ApiTags } from '@nestjs/swagger';
-import { CreateUserDto } from '../user/dto';
+import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiForbiddenResponse,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+  ApiUnprocessableEntityResponse,
+} from '@nestjs/swagger';
+import { CreateAdminDto, CreateUserDto } from '../user/dto';
 import { AuthService } from './auth.service';
 import { AuthUserResponseDTO, LoginUserDTO } from './dto';
+import { Roles } from './has-roles.decorator';
+import { RolesGuard } from './roles.guard';
 
+@ApiBearerAuth()
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @ApiResponse({ status: 201, type: CreateUserDto })
+  @ApiOperation({ summary: 'Регистрация пользователя - только админам' })
+  @ApiResponse({
+    status: 201,
+    type: CreateUserDto,
+  })
+  @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
+  @ApiForbiddenResponse({ description: 'Unauthorized Request' })
+  @UseGuards(RolesGuard)
+  @Roles('is_staff')
   @Post('register')
   register(@Body() dto: CreateUserDto): Promise<CreateUserDto> {
     return this.authService.registerUsers(dto);
   }
-  @ApiResponse({ status: 200, type: AuthUserResponseDTO })
+
+  @ApiOperation({ summary: 'Регистрация Админов - только суперадминам' })
+  @ApiResponse({
+    status: 201,
+    type: CreateAdminDto,
+  })
+  @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
+  @ApiForbiddenResponse({ description: 'Unauthorized Request' })
+  @UseGuards(RolesGuard)
+  @Roles('is_superuser')
+  @Post('create_admin')
+  createAdmin(@Body() dto: CreateAdminDto): Promise<CreateAdminDto> {
+    return this.authService.createAdmin(dto);
+  }
+
+  @ApiOperation({ summary: 'Авторизация пользователя - всем' })
+  @ApiResponse({
+    status: 201,
+    type: AuthUserResponseDTO,
+  })
+  @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
+  @ApiForbiddenResponse({ description: 'Unauthorized Request' })
   @Post('login')
   login(@Body() dto: LoginUserDTO): Promise<AuthUserResponseDTO> {
     return this.authService.loginUser(dto);

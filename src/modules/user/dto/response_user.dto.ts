@@ -1,29 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsBoolean, IsString } from 'class-validator';
 
-export class CreateUserDto {
-  @ApiProperty()
-  @IsString()
-  firstName: string;
-
-  @ApiProperty()
-  @IsString()
-  secondName: string;
-
-  @ApiProperty()
-  @IsString()
-  email: string;
-
-  @IsBoolean()
-  @ApiProperty()
-  is_staff?: boolean;
-
-  @ApiProperty()
-  @IsBoolean()
-  is_superuser?: boolean | null;
-}
-
-export class CreateAdminDto {
+export class ResponseUserDto {
   @ApiProperty()
   @IsString()
   firstName: string;
@@ -43,4 +21,21 @@ export class CreateAdminDto {
   @ApiProperty()
   @IsBoolean()
   is_superuser: boolean;
+
+  @IsBoolean()
+  @ApiProperty()
+  active: boolean;
+
+  @IsBoolean()
+  @ApiProperty()
+  in_queue: boolean;
+
+  @ApiProperty()
+  start_active_time: Date;
+
+  @ApiProperty()
+  end_active_time: Date;
+
+  @ApiProperty()
+  last_active_period: Date;
 }

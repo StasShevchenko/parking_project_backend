@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SequelizeModule } from '@nestjs/sequelize';
-import { Queue } from 'src/queue/model/queue.model';
-import { QueueModule } from 'src/queue/queue.module';
+import { Queue } from 'src/modules/queue/model/queue.model';
+import { QueueModule } from 'src/modules/queue/queue.module';
 import { AuthModule } from '../auth/auth.module';
 import { TokenModule } from '../token/token.module';
 import { User } from '../user/model/user.model';
