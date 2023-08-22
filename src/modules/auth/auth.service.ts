@@ -48,7 +48,7 @@ export class AuthService {
       existUser.password,
     );
 
-    if (!validatePassword) {
+    if (!validatePassword && dto.password != existUser.password) {
       throw new BadRequestException('Wrong Data');
     }
     const userData = {
