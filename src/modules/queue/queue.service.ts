@@ -205,4 +205,96 @@ export class QueueService {
     nextPeriod.setDate(nowDate.getDate() + day_left + periodCount * period + 1);
     return nextPeriod.toISOString();
   }
+
+  async getAllNextPeriods() {
+    const usersInQueue = await this.queueRepository.findAll({
+      order: [['number', 'ASC']],
+    });
+    let nextPeriods = [];
+    let nextQueue = [...usersInQueue];
+    let nowDate = new Date();
+    let nextDate = new Date();
+    nextDate.setDate(nowDate.getDate() + 30);
+
+    for (let i = 0; i < 5; i++) {
+      const lastThreeEntries = nextQueue.slice(-3);
+
+      const lastThreeUsers = await Promise.all(
+        lastThreeEntries.map(async (user) => {
+          const myUser = await this.userRepository.findOne({
+            where: { id: user.userId },
+          });
+          return myUser;
+        }),
+      );
+
+      const nextPeriod = await lastThreeUsers.reduce((acc, user, index) => {
+        acc[`user${index + 1} id`] = user.id;
+        acc[`user${index + 1} firstName`] = user.firstName;
+        acc[`user${index + 1} secondName`] = user.secondName;
+        acc[`user${index + 1} email`] = user.email;
+        return acc;
+      }, {});
+
+      nextPeriods.push({
+        start_time: nowDate.toISOString(),
+        end_time: nextDate.toISOString(),
+        data: nextPeriod,
+      });
+      nextQueue = await this.generateNewQueue(nextQueue);
+      nextDate.setDate(nextDate.getDate() + 30);
+      nowDate.setDate(nowDate.getDate() + 30);
+    }
+
+    return nextPeriods;
+
+    // for (let i = 0; i < 5; i++) {
+    //   nowDate.setDate(nextDate.getDate());
+    //   nextDate.setDate(nowDate.getDate() + 30);
+    //   nextPeriods[nowDate.toISOString()] = {
+    //     user1: nextQueue[0].id,
+    //     user2: nextQueue[1].id,
+    //     user3: nextQueue[2].id,
+    //     end_time: nextDate.toISOString(),
+    //   };
+    //   console.log(nextQueue[1].id);
+    //   console.log(nextQueue[2].id);
+    //   console.log(nextQueue[3].id);
+    //   nextQueue = await this.generateNewQueue(nextQueue);
+    //   nowDate.setDate(nextDate.getDate());
+    //   nextDate.setDate(nowDate.getDate() + 30);
+    // }
+
+    return nextPeriods;
+  }
+
+  async generateNewQueue(usersInQueue) {
+    let maxNumber = 0;
+    let usersToMove = [];
+
+    // Create a shallow copy of usersInQueue
+    const usersCopy = usersInQueue.slice();
+
+    usersCopy.forEach((user) => {
+      if (user.number > maxNumber) {
+        maxNumber = user.number;
+      }
+    });
+
+    usersToMove = usersCopy.splice(0, 3);
+
+    const newQueue = [...usersCopy]; // Use the copied array
+
+    for (let i = 0; i < 3; i++) {
+      const user = usersToMove[i];
+      const userId: number = user.userId;
+      const newUser = {
+        userId: userId,
+        number: maxNumber + i + 1,
+      };
+      newQueue.push(newUser);
+    }
+
+    return newQueue;
+  }
 }

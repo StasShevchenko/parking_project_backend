@@ -15,9 +15,9 @@ import {
   ApiTags,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
-import { Roles } from 'src/modules/auth/has-roles.decorator';
-import { RolesGuard } from 'src/modules/auth/roles.guard';
+import { Roles } from '../auth/has-roles.decorator';
 import { JWTAuthGuard } from '../auth/jwt-guard';
+import { RolesGuard } from '../auth/roles.guard';
 import { CreateQueueDTO } from './dto/create-queue.dto';
 import {
   NextActivePeriodDto,
@@ -117,5 +117,10 @@ export class QueueController {
   @Delete('')
   deleteFromQueue(@Param('id') id: number) {
     return this.queueService.deleteFromQueue(id);
+  }
+
+  @Get('test')
+  testNextTime() {
+    return this.queueService.getAllNextPeriods();
   }
 }

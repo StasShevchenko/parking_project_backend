@@ -26,8 +26,8 @@ export class AuthController {
   })
   @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  @UseGuards(RolesGuard)
-  @Roles('is_staff')
+  // @UseGuards(RolesGuard)
+  // @Roles('is_staff')
   @Post('register')
   register(@Body() dto: CreateUserDto): Promise<CreateUserDto> {
     return this.authService.registerUsers(dto);
@@ -40,8 +40,8 @@ export class AuthController {
   })
   @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  // @UseGuards(RolesGuard)
-  // @Roles('is_superuser')
+  @UseGuards(RolesGuard)
+  @Roles('is_superuser')
   @Post('create_admin')
   createAdmin(@Body() dto: CreateAdminDto): Promise<CreateAdminDto> {
     return this.authService.createAdmin(dto);
