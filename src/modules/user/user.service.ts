@@ -50,6 +50,22 @@ export class UserService {
     });
   }
 
+  async getAdminsList(): Promise<User[]> {
+    return await this.userRepository.findAll({
+      where: { is_staff: true },
+      attributes: {
+        exclude: [
+          'password',
+          'createdAt',
+          'updatedAt',
+          'start_active_time',
+          'end_active_time',
+          'last_active_period',
+        ],
+      },
+    });
+  }
+
   async getUserById(id: number): Promise<User> {
     return await this.userRepository.findOne({
       where: { id },
@@ -66,6 +82,15 @@ export class UserService {
   }
 
   async deleteUserById(id): Promise<number> {
+    const user = await this.userRepository.findOne({ where: { id } });
+    if (user.is_staff) {
+      throw new BadRequestException('Поьзователь является администратором');
+    }
+    return await this.userRepository.destroy({ where: { id } });
+  }
+
+  async deleteAdminById(id): Promise<number> {
+    console.log(id);
     return await this.userRepository.destroy({ where: { id } });
   }
 

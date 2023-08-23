@@ -32,6 +32,18 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @ApiBearerAuth()
+  @ApiOperation({ summary: 'Получение всех админов - только авторизованным' })
+  @ApiResponse({
+    status: 200,
+    type: ResponseUserDto,
+  })
+  @ApiForbiddenResponse({ description: 'Unauthorized Request' })
+  @Get('adminList')
+  adminList(): Promise<User[]> {
+    return this.userService.getAdminsList();
+  }
+
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Получение всех пользователей - только админам' })
   @ApiResponse({
     status: 200,
@@ -72,6 +84,20 @@ export class UserController {
   @Roles('is_staff')
   deleteUser(@Param('id') id: number): Promise<number> {
     return this.userService.deleteUserById(id);
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Удаление администратора - только супер админам' })
+  @ApiResponse({
+    status: 200,
+    description: 'Response: 1',
+  })
+  @ApiForbiddenResponse({ description: 'Unauthorized Request' })
+  @Delete('admin/:id')
+  @UseGuards(RolesGuard)
+  @Roles('is_superuser')
+  deleteAdmin(@Param('id') id: number): Promise<number> {
+    return this.userService.deleteAdminById(id);
   }
 
   @ApiBearerAuth()
