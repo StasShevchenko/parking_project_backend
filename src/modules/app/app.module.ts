@@ -4,6 +4,8 @@ import { SequelizeModule } from '@nestjs/sequelize';
 import { Queue } from 'src/modules/queue/model/queue.model';
 import { QueueModule } from 'src/modules/queue/queue.module';
 import { AuthModule } from '../auth/auth.module';
+import { InputDataModule } from '../input-data/input-data.module';
+import { InputData } from '../input-data/model/input-data.model';
 import { TokenModule } from '../token/token.module';
 import { User } from '../user/model/user.model';
 import { UserModule } from '../user/user.module';
@@ -30,13 +32,14 @@ import { AppService } from './app.service';
         database: configService.get('POSTGRES_DATABASE'),
         synchronize: true,
         autoLoadModels: true,
-        models: [User, Queue],
+        models: [User, Queue, InputData],
       }),
     }),
     UserModule,
     AuthModule,
     TokenModule,
     QueueModule,
+    InputDataModule,
   ],
 })
 export class AppModule {}

@@ -19,11 +19,7 @@ import { Roles } from '../auth/has-roles.decorator';
 import { JWTAuthGuard } from '../auth/jwt-guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { CreateQueueDTO } from './dto/create-queue.dto';
-import {
-  NextActivePeriodDto,
-  allNextActivePeriod,
-} from './dto/next_active_period.dto';
-import { ResponseQueueDto } from './dto/response_queue.dto';
+import { allNextActivePeriod } from './dto/next_active_period.dto';
 import { Queue } from './model/queue.model';
 import { QueueService } from './queue.service';
 
@@ -48,19 +44,6 @@ export class QueueController {
     return this.queueService.create(dto);
   }
 
-  @ApiOperation({ summary: 'Get queue - только авторизованным' })
-  @ApiResponse({
-    status: 200,
-    type: ResponseQueueDto,
-  })
-  @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
-  @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  @UseGuards(JWTAuthGuard)
-  @Get('')
-  get(): Promise<Queue[]> {
-    return this.queueService.get();
-  }
-
   @ApiOperation({ summary: 'Двигаем очередь вперед - только админам' })
   @ApiResponse({
     status: 200,
@@ -75,22 +58,6 @@ export class QueueController {
 
   @ApiOperation({
     summary:
-      'Получение следующего периода активности пользователя - только авторизованным',
-  })
-  @ApiResponse({
-    status: 200,
-    type: NextActivePeriodDto,
-  })
-  @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
-  @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  @UseGuards(JWTAuthGuard)
-  @Get('nextPeriodActive/:id')
-  getNextPeriodActive(@Param('id') id: number) {
-    return this.queueService.calculationNextPeriodOneUser(id);
-  }
-
-  @ApiOperation({
-    summary:
       'Получение всех следующих периодов пользователей - только авторизованным',
   })
   @ApiResponse({
@@ -98,10 +65,10 @@ export class QueueController {
     type: allNextActivePeriod,
   })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  @UseGuards(JWTAuthGuard)
+  // @UseGuards(JWTAuthGuard)
   @Get('allNextPeriod')
   getAllNextPeriod() {
-    return this.queueService.CalculationNextAllUsersPeriods();
+    return this.queueService.getAllNextPeriods();
   }
 
   @ApiOperation({
