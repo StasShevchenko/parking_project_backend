@@ -1,7 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsString } from 'class-validator';
+import { IsBoolean, IsNumber, IsString } from 'class-validator';
 
 export class ResponseUserDto {
+  @ApiProperty()
+  @IsNumber()
+  id: number;
+
   @ApiProperty()
   @IsString()
   firstName: string;
@@ -29,13 +33,4 @@ export class ResponseUserDto {
   @IsBoolean()
   @ApiProperty()
   in_queue: boolean;
-
-  @ApiProperty()
-  start_active_time: Date;
-
-  @ApiProperty()
-  end_active_time: Date;
-
-  @ApiProperty()
-  last_active_period: Date;
 }
