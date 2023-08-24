@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
+import { Period } from 'src/interfaces/period.interface';
 import { User } from 'src/modules/user/model/user.model';
 import { InputData } from '../input-data/model/input-data.model';
 import { CreateQueueDTO } from './dto/create-queue.dto';
@@ -7,9 +8,6 @@ import { Queue } from './model/queue.model';
 
 @Injectable()
 export class QueueService {
-  async get(): Promise<Queue[]> {
-    return this.queueRepository.findAll();
-  }
   constructor(
     @InjectModel(Queue) private readonly queueRepository: typeof Queue,
     @InjectModel(InputData)
@@ -107,78 +105,80 @@ export class QueueService {
     // }
   }
 
-  // async nextPeriodActiveUser(user: User) {
-  //   let period = 30;
-  //   const seats = 3;
-  //   const nowDate = new Date();
-  //   const firstPeriod = new Date();
-  //   const secondPeriod = new Date();
-  //   const thirdPeriod = new Date();
-  //   const fourthPeriod = new Date();
-  //   const millisecondsPerDay = 24 * 60 * 60 * 1000;
-  //   const countQueue = await this.queueRepository.count();
-  //   let periods = [];
+  async nextPeriodActiveUser(user: User) {
+    let period = 30;
+    const seats = 3;
+    const nowDate = new Date();
+    const nextPeriod = new Date();
+    const millisecondsPerDay = 24 * 60 * 60 * 1000;
+    const countQueue = await this.queueRepository.count();
+    let periods = [];
 
-  //   const positionUserFromQueue = (
-  //     await this.queueRepository.findOne({ where: { userId: user.id } })
-  //   ).number;
-  //   const minNumberFromQueue = await this.queueRepository.findOne({
-  //     where: {},
-  //     order: [['number', 'ASC']],
-  //     limit: 1,
-  //   });
+    const positionUserFromQueue = (
+      await this.queueRepository.findOne({ where: { userId: user.id } })
+    ).number;
+    const minNumberFromQueue = await this.queueRepository.findOne({
+      where: {},
+      order: [['number', 'ASC']],
+      limit: 1,
+    });
 
-  //   const user_end_date = new Date(user.end_active_time);
-  //   const day_left =
-  //     (user_end_date.getTime() - nowDate.getTime()) / millisecondsPerDay;
-  //   const periodCount = Math.floor(
-  //     (positionUserFromQueue - minNumberFromQueue.number) / seats,
-  //   );
-  //   firstPeriod.setDate(
-  //     nowDate.getDate() + day_left + periodCount * period + 1,
-  //   );
-  //   return firstPeriod.toISOString();
-  // }
+    const user_end_date = new Date(user.end_active_time);
+    const day_left =
+      (user_end_date.getTime() - nowDate.getTime()) / millisecondsPerDay;
+    const periodCount = Math.floor(
+      (positionUserFromQueue - minNumberFromQueue.number) / seats,
+    );
+    nextPeriod.setDate(nowDate.getDate() + day_left + periodCount * period + 1);
+    return nextPeriod.toISOString();
+  }
 
-  // async nextPeriodNoActiveUser(user: User) {
-  //   let period = 30;
-  //   const seats = 3;
-  //   const nowDate = new Date();
-  //   const nextPeriod = new Date();
-  //   const millisecondsPerDay = 24 * 60 * 60 * 1000;
-  //   const countQueue = await this.queueRepository.count();
+  async nextPeriodNoActiveUser(user: User) {
+    const period = (await this.inputDataRepository.findOne()).period;
+    const seats = 3;
+    const nowDate = new Date();
+    const start_time = new Date();
+    const end_time = new Date();
+    const millisecondsPerDay = 24 * 60 * 60 * 1000;
+    const countQueue = await this.queueRepository.count();
 
-  //   const positionUserFromQueue = (
-  //     await this.queueRepository.findOne({ where: { userId: user.id } })
-  //   ).number;
-  //   const minNumberFromQueue = await this.queueRepository.findOne({
-  //     where: {},
-  //     order: [['number', 'ASC']],
-  //     limit: 1,
-  //   });
-  //   const activeUser = await this.userRepository.findOne({
-  //     where: {
-  //       active: true,
-  //     },
-  //   });
-  //   const user_active_end_data = new Date(activeUser.end_active_time);
-  //   const day_left =
-  //     (user_active_end_data.getTime() - nowDate.getTime()) / millisecondsPerDay;
-  //   const periodCount = Math.floor(
-  //     (positionUserFromQueue - minNumberFromQueue.number) / seats,
-  //   );
-  //   nextPeriod.setDate(nowDate.getDate() + day_left + periodCount * period + 1);
-  //   return nextPeriod.toISOString();
-  // }
+    const positionUserFromQueue = (
+      await this.queueRepository.findOne({ where: { userId: user.id } })
+    ).number;
+    const minNumberFromQueue = await this.queueRepository.findOne({
+      where: {},
+      order: [['number', 'ASC']],
+      limit: 1,
+    });
+    const activeUser = await this.userRepository.findOne({
+      where: {
+        active: true,
+      },
+    });
+    const user_active_end_data = new Date(activeUser.end_active_time);
+    const day_left =
+      (user_active_end_data.getTime() - nowDate.getTime()) / millisecondsPerDay;
+    const periodCount = Math.floor(
+      (positionUserFromQueue - minNumberFromQueue.number) / seats,
+    );
+    start_time.setDate(nowDate.getDate() + day_left + periodCount * period + 1);
+    end_time.setDate(
+      nowDate.getDate() + day_left + periodCount * period + 1 + period,
+    );
+    return { start_active_time: start_time, end_active_time: end_time };
+  }
 
-  async getAllNextPeriods() {
+  async getAllNextPeriods(): Promise<Period[]> {
+    const nowDate = (
+      await this.userRepository.findOne({ where: { active: true } })
+    ).start_active_time;
     const inputData = await this.inputDataRepository.findOne();
     const usersInQueue = await this.queueRepository.findAll({
       order: [['number', 'ASC']],
     });
     let nextPeriods = [];
     let nextQueue = [...usersInQueue];
-    let nowDate = new Date();
+
     let nextDate = new Date();
     nextDate.setDate(nowDate.getDate() + inputData.period);
 
@@ -219,6 +219,16 @@ export class QueueService {
     return nextPeriods;
   }
 
+  async filterNextPeriods(firstName, secondName): Promise<Period[]> {
+    const nextPeriods = await this.getAllNextPeriods();
+    const filteredData = await this.getPeriodsByUser(
+      firstName,
+      secondName,
+      nextPeriods,
+    );
+    return filteredData;
+  }
+
   async generateNewQueue(usersInQueue) {
     const seats = (await this.inputDataRepository.findOne()).seats;
     let maxNumber = 0;
@@ -247,5 +257,30 @@ export class QueueService {
     }
 
     return newQueue;
+  }
+
+  getPeriodsByUser(firstName, secondName, periods: Period[]): Period[] {
+    console.log(firstName);
+    console.log(secondName);
+    return periods
+      .filter((period) =>
+        period.nextUsers.some(
+          (user) =>
+            user.firstName.includes(firstName) ||
+            user.secondName.includes(secondName) ||
+            user.secondName.includes(firstName),
+        ),
+      )
+      .map((period) => {
+        return {
+          ...period,
+          nextUsers: period.nextUsers.filter(
+            (user) =>
+              user.firstName.includes(firstName) ||
+              user.secondName.includes(secondName) ||
+              user.secondName.includes(firstName),
+          ),
+        };
+      });
   }
 }

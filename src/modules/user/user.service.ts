@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import * as bcrypt from 'bcrypt';
 import * as uuid from 'uuid';
+import { QueueService } from '../queue/queue.service';
 import { CreateUserDto } from './dto';
 import { changePasswordDto } from './dto/changePassword.dto';
 import { UpdateAllUserDataDto } from './dto/update.all_user_data';
@@ -10,6 +11,7 @@ import { User } from './model/user.model';
 @Injectable()
 export class UserService {
   @InjectModel(User) private readonly userRepository: typeof User;
+  constructor(private readonly queueService: QueueService) {}
 
   async findUserByEmail(email: string) {
     return await this.userRepository.findOne({ where: { email } });
@@ -67,10 +69,22 @@ export class UserService {
   }
 
   async getUserById(id: number): Promise<User> {
-    return await this.userRepository.findOne({
-      where: { id },
-      attributes: { exclude: ['password', 'createdAt', 'updatedAt'] },
-    });
+    try {
+      const user = await this.userRepository.findOne({
+        where: { id },
+        attributes: { exclude: ['password', 'createdAt', 'updatedAt'] },
+      });
+      if (user.active) {
+        return user;
+      } else {
+        const start_time = await this.queueService.nextPeriodNoActiveUser(user);
+        user.start_active_time = start_time.start_active_time;
+        user.end_active_time = start_time.end_active_time;
+        return user;
+      }
+    } catch (e) {
+      throw new BadRequestException('User Exist');
+    }
   }
 
   async updateUser(
@@ -86,7 +100,9 @@ export class UserService {
     if (user.is_staff) {
       throw new BadRequestException('Поьзователь является администратором');
     }
-    return await this.userRepository.destroy({ where: { id } });
+    const deleteUser = await this.userRepository.destroy({ where: { id } });
+    await this.queueService.deleteFromQueue(id);
+    return deleteUser;
   }
 
   async deleteAdminById(id): Promise<number> {
