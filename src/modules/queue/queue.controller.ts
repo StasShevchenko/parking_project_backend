@@ -5,12 +5,14 @@ import {
   Get,
   Param,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiForbiddenResponse,
   ApiOperation,
+  ApiParam,
   ApiResponse,
   ApiTags,
   ApiUnprocessableEntityResponse,
@@ -60,14 +62,19 @@ export class QueueController {
     summary:
       'Получение всех следующих периодов пользователей - только авторизованным',
   })
+  @ApiParam({ name: 'fullName', type: String })
   @ApiResponse({
     status: 200,
     type: allNextActivePeriod,
   })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  @UseGuards(JWTAuthGuard)
+  // @UseGuards(JWTAuthGuard)
   @Get('allNextPeriod')
-  getAllNextPeriod() {
+  getAllNextPeriod(@Query() query: { fullName: string }) {
+    if (query.fullName && query.fullName) {
+      const [firstName, secondName] = query.fullName.split(' ');
+      return this.queueService.filterNextPeriods(firstName, secondName);
+    }
     return this.queueService.getAllNextPeriods();
   }
 
@@ -87,7 +94,11 @@ export class QueueController {
   }
 
   @Get('test')
-  testNextTime() {
-    return this.queueService.getAllNextPeriods();
+  testQuety(@Query() query: { fullName: string }) {
+    if (query.fullName) {
+      const [firstName, secondName] = query.fullName.split(' ');
+      return `Hello, ${firstName} ${secondName}`;
+    }
+    return `Нет данных`;
   }
 }

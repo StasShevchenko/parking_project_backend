@@ -66,7 +66,7 @@ export class UserController {
     type: ResponseUserDto,
   })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  @UseGuards(JWTAuthGuard)
+  // @UseGuards(JWTAuthGuard)
   @Get(':id')
   getUser(@Param('id') id: number): Promise<User> {
     return this.userService.getUserById(id);
