@@ -80,9 +80,11 @@ export class UserService {
         const start_time = await this.queueService.nextPeriodNoActiveUser(user);
         user.start_active_time = start_time.start_active_time;
         user.end_active_time = start_time.end_active_time;
+
         return user;
       }
     } catch (e) {
+      console.log(e);
       throw new BadRequestException('User Exist');
     }
   }
