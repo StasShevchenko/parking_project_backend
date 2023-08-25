@@ -17,11 +17,13 @@ export class QueueService {
 
   async create(dto: CreateQueueDTO): Promise<Queue> {
     const maxNumber = await this.getMaxNumber();
+    const nowDate = new Date();
     const user = await this.userRepository.findOne({
       where: { id: dto.userId },
     });
     if (!user.in_queue) {
       user.in_queue = true;
+      user.last_active_period = nowDate;
       user.save();
     }
     if (maxNumber) {
@@ -200,6 +202,7 @@ export class QueueService {
           firstName: user.firstName,
           secondName: user.secondName,
           email: user.email,
+          active: user.active,
           id: user.id,
         };
         nextUsers.push(nextUser);
