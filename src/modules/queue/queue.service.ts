@@ -17,10 +17,18 @@ export class QueueService {
 
   async create(dto: CreateQueueDTO): Promise<Queue> {
     const maxNumber = await this.getMaxNumber();
+    const inputData = await this.inputDataRepository.findOne();
     const nowDate = new Date();
     const user = await this.userRepository.findOne({
       where: { id: dto.userId },
     });
+    const numberActiveUsers = (
+      await this.userRepository.findAll({ where: { active: true } })
+    ).length;
+    if (numberActiveUsers < inputData.seats) {
+      await this.ActivationUser(user, inputData.period);
+    }
+
     if (!user.in_queue) {
       user.in_queue = true;
       user.last_active_period = nowDate;
@@ -75,8 +83,7 @@ export class QueueService {
     const period = (await this.inputDataRepository.findOne()).period;
     const nowDate = new Date();
     const millisecondsInNDays = period * 2 * 24 * 60 * 60 * 1000;
-    let end_active_time = new Date();
-    end_active_time.setDate(nowDate.getDate() + period);
+
     const maxNumber = await this.getMaxNumber();
 
     const minUserId = (await this.getMinNumber()).userId;
@@ -99,12 +106,19 @@ export class QueueService {
     // if (minUser.last_active_period == null || activateMoreMonthAgo) {
     await this.deleteFromQueue(minUser.id);
     await this.create({ userId: minUser.id });
-    minUser.active = true;
-    minUser.start_active_time = nowDate;
-    minUser.end_active_time = end_active_time;
-    minUser.last_active_period = nowDate;
-    await minUser.save();
+    await this.ActivationUser(minUser, period);
     // }
+  }
+
+  async ActivationUser(user: User, period: number) {
+    const nowDate = new Date();
+    let end_active_time = new Date();
+    end_active_time.setDate(nowDate.getDate() + period);
+    user.active = true;
+    user.start_active_time = nowDate;
+    user.end_active_time = end_active_time;
+    user.last_active_period = nowDate;
+    await user.save();
   }
 
   async nextPeriodActiveUser(user: User) {
