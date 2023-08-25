@@ -68,7 +68,7 @@ export class QueueController {
     type: allNextActivePeriod,
   })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  // @UseGuards(JWTAuthGuard)
+  @UseGuards(JWTAuthGuard)
   @Get('allNextPeriod')
   getAllNextPeriod(@Query() query: { fullName: string }) {
     if (query.fullName && query.fullName) {

@@ -74,7 +74,7 @@ export class UserService {
         where: { id },
         attributes: { exclude: ['password', 'createdAt', 'updatedAt'] },
       });
-      if (user.active) {
+      if (user.active || !user.in_queue) {
         return user;
       } else {
         const start_time = await this.queueService.nextPeriodNoActiveUser(user);
