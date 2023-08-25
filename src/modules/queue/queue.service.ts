@@ -197,21 +197,31 @@ export class QueueService {
 
     let nextDate = new Date();
     nextDate.setDate(nowDate.getDate() + inputData.period);
+    let flag = 0;
 
     for (let i = 0; i < inputData.numberOfOutputPeriods; i++) {
       let nextUsers = [];
-      const lastThreeEntries = nextQueue.slice(-inputData.seats);
+      let activeUsers;
+      if (flag < 1) {
+        activeUsers = await this.userRepository.findAll({
+          where: { active: true },
+        });
+        console.log('Dadadadadada');
+        flag++;
+      } else {
+        const lastEntries = nextQueue.slice(-inputData.seats);
 
-      const lastThreeUsers = await Promise.all(
-        lastThreeEntries.map(async (user) => {
-          const myUser = await this.userRepository.findOne({
-            where: { id: user.userId },
-          });
-          return myUser;
-        }),
-      );
+        activeUsers = await Promise.all(
+          lastEntries.map(async (user) => {
+            const myUser = await this.userRepository.findOne({
+              where: { id: user.userId },
+            });
+            return myUser;
+          }),
+        );
+      }
 
-      for (const user of lastThreeUsers) {
+      for (const user of activeUsers) {
         const nextUser = {
           firstName: user.firstName,
           secondName: user.secondName,
