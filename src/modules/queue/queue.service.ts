@@ -274,29 +274,34 @@ export class QueueService {
     const newQueue = [...usersCopy];
 
     for (let i = 0; i < seats; i++) {
-      const user = usersToMove[i];
-      const userId: number = user.userId;
-      const newUser = {
-        userId: userId,
-        number: maxNumber + i + 1,
-      };
-      newQueue.push(newUser);
-    }
+      if (usersToMove[i]) {
+        const user = usersToMove[i];
+        console.log(user.userId);
+        const userId: number = user.userId;
+        const newUser = {
+          userId: userId,
+          number: maxNumber + i + 1,
+        };
+        newQueue.push(newUser);
+      }
 
-    return newQueue;
+      return newQueue;
+    }
   }
 
-  getPeriodsByUser(firstName, secondName, periods) {
-    const lowerFirstName = firstName.toLowerCase();
-    const lowerSecondName = secondName.toLowerCase();
+  getPeriodsByUser(firstName: string, secondName: string, periods) {
+    firstName = firstName.toLowerCase();
+    if (secondName) {
+      secondName = secondName.toLowerCase();
+    }
 
     return periods
       .filter((period) =>
         period.nextUsers.some(
           (user) =>
-            user.firstName.toLowerCase().includes(lowerFirstName) ||
-            user.secondName.toLowerCase().includes(lowerSecondName) ||
-            user.secondName.toLowerCase().includes(lowerFirstName),
+            user.firstName.toLowerCase().includes(firstName) ||
+            user.secondName.toLowerCase().includes(secondName) ||
+            user.secondName.toLowerCase().includes(firstName),
         ),
       )
       .map((period) => {
@@ -304,9 +309,9 @@ export class QueueService {
           ...period,
           nextUsers: period.nextUsers.filter(
             (user) =>
-              user.firstName.toLowerCase().includes(lowerFirstName) ||
-              user.secondName.toLowerCase().includes(lowerSecondName) ||
-              user.secondName.toLowerCase().includes(lowerFirstName),
+              user.firstName.toLowerCase().includes(firstName) ||
+              user.secondName.toLowerCase().includes(secondName) ||
+              user.secondName.toLowerCase().includes(firstName),
           ),
         };
       });
