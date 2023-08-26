@@ -286,16 +286,17 @@ export class QueueService {
     return newQueue;
   }
 
-  getPeriodsByUser(firstName, secondName, periods: Period[]): Period[] {
-    console.log(firstName);
-    console.log(secondName);
+  getPeriodsByUser(firstName, secondName, periods) {
+    const lowerFirstName = firstName.toLowerCase();
+    const lowerSecondName = secondName.toLowerCase();
+
     return periods
       .filter((period) =>
         period.nextUsers.some(
           (user) =>
-            user.firstName.includes(firstName) ||
-            user.secondName.includes(secondName) ||
-            user.secondName.includes(firstName),
+            user.firstName.toLowerCase().includes(lowerFirstName) ||
+            user.secondName.toLowerCase().includes(lowerSecondName) ||
+            user.secondName.toLowerCase().includes(lowerFirstName),
         ),
       )
       .map((period) => {
@@ -303,9 +304,9 @@ export class QueueService {
           ...period,
           nextUsers: period.nextUsers.filter(
             (user) =>
-              user.firstName.includes(firstName) ||
-              user.secondName.includes(secondName) ||
-              user.secondName.includes(firstName),
+              user.firstName.toLowerCase().includes(lowerFirstName) ||
+              user.secondName.toLowerCase().includes(lowerSecondName) ||
+              user.secondName.toLowerCase().includes(lowerFirstName),
           ),
         };
       });

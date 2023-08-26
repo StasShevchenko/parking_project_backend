@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { CompleteRefreshTokenDto } from './dto';
@@ -52,7 +56,10 @@ export class TokenService {
       return decoded;
     } catch (error) {
       console.log(error);
-      throw new BadRequestException('Invalid token');
+      throw new UnauthorizedException({
+        message: 'Invalid token',
+        status: 401,
+      });
     }
   }
 
