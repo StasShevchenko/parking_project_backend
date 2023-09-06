@@ -139,4 +139,69 @@ export class UserService {
       throw new BadRequestException('Wrong Data');
     }
   }
+
+  async getUsersByRoles (roles: string[] ) {
+    try {
+      if (roles.length < 1) {
+        throw new BadRequestException("Массив ролей не задан")
+      }
+      console.log(roles)
+      let users : User[] = []
+      if (roles.includes('user')) {
+        const user = await this.userRepository.findAll({where: {in_queue: true}, attributes: {
+          exclude: [
+            'password',
+            'createdAt',
+            'updatedAt',
+            'start_active_time',
+            'end_active_time',
+            'last_active_period',
+          ],
+        },})
+        for (const NewUser of user) {
+          users.push(NewUser)
+        }
+        return users
+      }
+
+      if (roles.includes('admin')) {
+        const admin = await this.userRepository.findAll({where: {is_staff: true}, attributes: {
+          exclude: [
+            'password',
+            'createdAt',
+            'updatedAt',
+            'start_active_time',
+            'end_active_time',
+            'last_active_period',
+          ],
+        },})
+        for (const user of admin) {
+          users.push(user)
+        }
+      }
+      if (roles.includes("super_admin")) {
+        const super_admin = await this.userRepository.findAll({where: {is_superuser: true}, attributes: {
+          exclude: [
+            'password',
+            'createdAt',
+            'updatedAt',
+            'start_active_time',
+            'end_active_time',
+            'last_active_period',
+          ],
+        },})
+        for (const user of super_admin) {
+          users.push(user)
+        }
+      }
+      if (users.length < 1) {
+        throw new BadRequestException()
+      }
+      return users
+
+    } catch (e) {
+      console.log(e)
+      throw new BadRequestException('ошибка',{cause: e})
+    }
+  }
 }

@@ -1,11 +1,15 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
+  HttpException,
+  HttpStatus,
   Param,
   Patch,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -13,6 +17,7 @@ import {
   ApiBearerAuth,
   ApiForbiddenResponse,
   ApiOperation,
+  ApiParam,
   ApiResponse,
   ApiTags,
   ApiUnprocessableEntityResponse,
@@ -43,18 +48,38 @@ export class UserController {
     return this.userService.getAdminsList();
   }
 
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Получение всех пользователей - только админам' })
+  // @ApiBearerAuth()
+  // @ApiOperation({ summary: 'Получение всех пользователей - только админам' })
+  // @ApiResponse({
+  //   status: 200,
+  //   type: ResponseUserDto,
+  // })
+  // @ApiForbiddenResponse({ description: 'Unauthorized Request' })
+  // @Get('')
+  // // @UseGuards(RolesGuard)
+  // // @Roles('is_staff')
+  // getAllUsers(): Promise<User[]> {
+  //   return this.userService.getAllUsers();
+  // }
+
+
+  @ApiOperation({
+    summary:
+      'Получение всех пользователей по роли - только авторизованным',
+  })
+  @ApiParam({ name: 'fullName', type: String })
   @ApiResponse({
     status: 200,
-    type: ResponseUserDto,
   })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
+  // @UseGuards(JWTAuthGuard)
   @Get('')
-  @UseGuards(RolesGuard)
-  @Roles('is_staff')
-  getAllUsers(): Promise<User[]> {
-    return this.userService.getAllUsers();
+  getUsersByRoles(@Query('roles') roles: string) {
+    if (!roles) {
+      return this.userService.getAllUsers();
+    }
+    const rolesArray = JSON.parse(roles);
+    return this.userService.getUsersByRoles(rolesArray);
   }
 
   @ApiBearerAuth()
