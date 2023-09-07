@@ -1,11 +1,8 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
-  HttpException,
-  HttpStatus,
   Param,
   Patch,
   Post,
@@ -62,12 +59,10 @@ export class UserController {
   //   return this.userService.getAllUsers();
   // }
 
-
   @ApiOperation({
-    summary:
-      'Получение всех пользователей по роли - только авторизованным',
+    summary: 'Получение всех пользователей по роли - только авторизованным',
   })
-  @ApiParam({ name: 'fullName', type: String })
+  @ApiParam({ name: 'roles', type: String })
   @ApiResponse({
     status: 200,
   })

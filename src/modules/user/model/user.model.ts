@@ -1,4 +1,5 @@
-import { Column, Default, Model, Table } from 'sequelize-typescript';
+import { Column, Default, HasMany, Model, Table } from 'sequelize-typescript';
+import { Notification } from 'src/modules/notifications/model/notifications.model';
 
 @Table
 export class User extends Model {
@@ -37,4 +38,7 @@ export class User extends Model {
 
   @Column
   last_active_period: Date;
+
+  @HasMany(() => Notification)
+  notifications: Notification[];
 }

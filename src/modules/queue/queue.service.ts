@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/sequelize';
 import { Period } from 'src/interfaces/period.interface';
 import { User } from 'src/modules/user/model/user.model';
 import { InputData } from '../input-data/model/input-data.model';
+import { QueueAheadService } from '../queue-ahead/queue-ahead.service';
 import { CreateQueueDTO } from './dto/create-queue.dto';
 import { Queue } from './model/queue.model';
 
@@ -13,12 +14,15 @@ export class QueueService {
     @InjectModel(InputData)
     private readonly inputDataRepository: typeof InputData,
     @InjectModel(User) private readonly userRepository: typeof User,
+    private readonly queueAheadService: QueueAheadService,
   ) {}
 
   async create(dto: CreateQueueDTO): Promise<Queue> {
     const maxNumber = await this.getMaxNumber();
     const inputData = await this.inputDataRepository.findOne();
     const nowDate = new Date();
+    const end_time = new Date();
+    end_time.setDate(end_time.getDate() + inputData.period);
     const user = await this.userRepository.findOne({
       where: { id: dto.userId },
     });
@@ -33,16 +37,23 @@ export class QueueService {
       user.in_queue = true;
       user.last_active_period = nowDate;
       user.save();
+      const queue = await this.getQueue();
+      await this.queueAheadService.generateNewQueue(user.id, queue);
     }
+    await this.queueAheadService.addUser(user.id);
     if (maxNumber) {
       return this.queueRepository.create({
         userId: dto.userId,
         number: maxNumber.number + 1,
+        start_period_time: nowDate,
+        end_period_time: end_time,
       });
     }
     return this.queueRepository.create({
       userId: dto.userId,
       number: 1,
+      start_period_time: nowDate,
+      end_period_time: end_time,
     });
   }
 
@@ -103,11 +114,9 @@ export class QueueService {
     user.start_active_time = null;
     await user.save();
 
-    // if (minUser.last_active_period == null || activateMoreMonthAgo) {
     await this.deleteFromQueue(minUser.id);
     await this.create({ userId: minUser.id });
     await this.ActivationUser(minUser, period);
-    // }
   }
 
   async ActivationUser(user: User, period: number) {
@@ -315,5 +324,12 @@ export class QueueService {
           ),
         };
       });
+  }
+
+  async getQueue(): Promise<Queue[]> {
+    const queue = await this.queueRepository.findAll({
+      order: [['number', 'ASC']],
+    });
+    return queue;
   }
 }

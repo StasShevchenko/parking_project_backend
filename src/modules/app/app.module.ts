@@ -6,6 +6,10 @@ import { QueueModule } from 'src/modules/queue/queue.module';
 import { AuthModule } from '../auth/auth.module';
 import { InputDataModule } from '../input-data/input-data.module';
 import { InputData } from '../input-data/model/input-data.model';
+import { Notification } from '../notifications/model/notifications.model';
+import { NotificationsModule } from '../notifications/notifications.module';
+import { QueueAhead } from '../queue-ahead/model/queue_ahead.model';
+import { QueueAheadModule } from '../queue-ahead/queue-ahead.module';
 import { TokenModule } from '../token/token.module';
 import { User } from '../user/model/user.model';
 import { UserModule } from '../user/user.module';
@@ -32,7 +36,7 @@ import { AppService } from './app.service';
         database: configService.get('POSTGRES_DATABASE'),
         synchronize: true,
         autoLoadModels: true,
-        models: [User, Queue, InputData],
+        models: [User, Queue, InputData, QueueAhead, Notification],
       }),
     }),
     UserModule,
@@ -40,6 +44,8 @@ import { AppService } from './app.service';
     TokenModule,
     QueueModule,
     InputDataModule,
+    QueueAheadModule,
+    NotificationsModule,
   ],
 })
 export class AppModule {}

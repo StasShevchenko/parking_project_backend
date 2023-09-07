@@ -93,12 +93,8 @@ export class QueueController {
     return this.queueService.deleteFromQueue(id);
   }
 
-  @Get('test')
-  testQuety(@Query() query: { fullName: string }) {
-    if (query.fullName) {
-      const [firstName, secondName] = query.fullName.split(' ');
-      return `Hello, ${firstName} ${secondName}`;
-    }
-    return `Нет данных`;
+  @Get('')
+  getQueue() {
+    return this.queueService.getQueue();
   }
 }
