@@ -145,7 +145,11 @@ export class UserService {
     }
   }
 
-  async getUsersByRoles(roles: string[]) {
+  async getUsersByRoles(
+    roles: string[],
+    firstName: string,
+    secondName: string,
+  ) {
     try {
       if (roles.length < 1) {
         throw new BadRequestException('Массив ролей не задан');
@@ -211,10 +215,41 @@ export class UserService {
       if (users.length < 1) {
         throw new BadRequestException();
       }
+      if (firstName) {
+        users = await this.getUsersByName(firstName, secondName, users);
+      }
       return users;
     } catch (e) {
       console.log(e);
       throw new BadRequestException('ошибка', { cause: e });
     }
+  }
+
+  getUsersByName(firstName: string, secondName: string, users) {
+    firstName = firstName.toLowerCase();
+    if (secondName) {
+      secondName = secondName.toLowerCase();
+    }
+
+    return users
+      .filter((user) =>
+        user.nextUsers.some(
+          (user) =>
+            user.firstName.toLowerCase().includes(firstName) ||
+            user.secondName.toLowerCase().includes(secondName) ||
+            user.secondName.toLowerCase().includes(firstName),
+        ),
+      )
+      .map((users) => {
+        return {
+          ...users,
+          nextUsers: users.nextUsers.filter(
+            (user) =>
+              user.firstName.toLowerCase().includes(firstName) ||
+              user.secondName.toLowerCase().includes(secondName) ||
+              user.secondName.toLowerCase().includes(firstName),
+          ),
+        };
+      });
   }
 }

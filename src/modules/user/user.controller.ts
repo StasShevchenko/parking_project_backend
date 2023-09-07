@@ -69,14 +69,24 @@ export class UserController {
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
   // @UseGuards(JWTAuthGuard)
   @Get('')
-  getUsersByRoles(@Query('roles') roles: string) {
-    if (!roles) {
+  getUsersByRoles(
+    @Query('roles') roles: string,
+    @Query('fullName') fullName: string,
+  ) {
+    if (!roles && !fullName) {
       return this.userService.getAllUsers();
     }
     const rolesString = roles.slice(1, -1);
     const rolesArray = rolesString.split(',').map((role) => role.trim());
-    console.log(rolesArray);
-    return this.userService.getUsersByRoles(rolesArray);
+    if (fullName) {
+      const [firstName, secondName] = fullName.split(' ');
+      return this.userService.getUsersByRoles(
+        rolesArray,
+        firstName,
+        secondName,
+      );
+    }
+    return this.userService.getUsersByRoles(rolesArray, null, null);
   }
 
   @ApiBearerAuth()

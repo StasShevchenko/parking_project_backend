@@ -38,9 +38,9 @@ export class QueueService {
       user.last_active_period = nowDate;
       user.save();
       const queue = await this.getQueue();
-      await this.queueAheadService.generateNewQueue(user.id, queue);
+      // await this.queueAheadService.generateNewQueue(user.id, queue);
     }
-    await this.queueAheadService.addUser(user.id);
+    // await this.queueAheadService.addUser(user.id);
     if (maxNumber) {
       return this.queueRepository.create({
         userId: dto.userId,
