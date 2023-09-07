@@ -73,7 +73,9 @@ export class UserController {
     if (!roles) {
       return this.userService.getAllUsers();
     }
-    const rolesArray = JSON.parse(roles);
+    const rolesString = roles.slice(1, -1);
+    const rolesArray = rolesString.split(',').map((role) => role.trim());
+    console.log(rolesArray);
     return this.userService.getUsersByRoles(rolesArray);
   }
 

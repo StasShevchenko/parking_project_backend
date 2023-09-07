@@ -9,6 +9,8 @@ import { AuthModule } from '../auth/auth.module';
 import { InputDataModule } from '../input-data/input-data.module';
 import { InputData } from '../input-data/model/input-data.model';
 import { MailModule } from '../mail/mail.module';
+import { MailKeyModule } from '../mail_key/mail_key.module';
+import { MailKey } from '../mail_key/model/mail_key.model';
 import { Notification } from '../notifications/model/notifications.model';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { QueueAhead } from '../queue-ahead/model/queue_ahead.model';
@@ -44,7 +46,7 @@ import { AppService } from './app.service';
         database: configService.get('POSTGRES_DATABASE'),
         synchronize: true,
         autoLoadModels: true,
-        models: [User, Queue, InputData, QueueAhead, Notification],
+        models: [User, Queue, InputData, QueueAhead, Notification, MailKey],
       }),
     }),
     UserModule,
@@ -55,6 +57,7 @@ import { AppService } from './app.service';
     QueueAheadModule,
     NotificationsModule,
     MailModule,
+    MailKeyModule,
   ],
 })
 export class AppModule {}
