@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import * as bcrypt from 'bcrypt';
 import * as uuid from 'uuid';
+import { MailService } from '../mail/mail.service';
 import { QueueService } from '../queue/queue.service';
 import { CreateUserDto } from './dto';
 import { changePasswordDto } from './dto/changePassword.dto';
@@ -11,7 +12,10 @@ import { User } from './model/user.model';
 @Injectable()
 export class UserService {
   @InjectModel(User) private readonly userRepository: typeof User;
-  constructor(private readonly queueService: QueueService) {}
+  constructor(
+    private readonly queueService: QueueService,
+    private readonly mailService: MailService,
+  ) {}
 
   async findUserByEmail(email: string) {
     return await this.userRepository.findOne({ where: { email } });
@@ -38,6 +42,7 @@ export class UserService {
         ...dto,
         password: password,
       });
+      await this.mailService.sendRegistrationsEmail(newUser);
     } catch (e) {
       console.log(e);
       throw new BadRequestException('Bad request');
@@ -140,68 +145,76 @@ export class UserService {
     }
   }
 
-  async getUsersByRoles (roles: string[] ) {
+  async getUsersByRoles(roles: string[]) {
     try {
       if (roles.length < 1) {
-        throw new BadRequestException("Массив ролей не задан")
+        throw new BadRequestException('Массив ролей не задан');
       }
-      console.log(roles)
-      let users : User[] = []
+      console.log(roles);
+      let users: User[] = [];
       if (roles.includes('user')) {
-        const user = await this.userRepository.findAll({where: {in_queue: true}, attributes: {
-          exclude: [
-            'password',
-            'createdAt',
-            'updatedAt',
-            'start_active_time',
-            'end_active_time',
-            'last_active_period',
-          ],
-        },})
+        const user = await this.userRepository.findAll({
+          where: { in_queue: true },
+          attributes: {
+            exclude: [
+              'password',
+              'createdAt',
+              'updatedAt',
+              'start_active_time',
+              'end_active_time',
+              'last_active_period',
+            ],
+          },
+        });
         for (const NewUser of user) {
-          users.push(NewUser)
+          users.push(NewUser);
         }
-        return users
+        return users;
       }
 
       if (roles.includes('admin')) {
-        const admin = await this.userRepository.findAll({where: {is_staff: true}, attributes: {
-          exclude: [
-            'password',
-            'createdAt',
-            'updatedAt',
-            'start_active_time',
-            'end_active_time',
-            'last_active_period',
-          ],
-        },})
+        const admin = await this.userRepository.findAll({
+          where: { is_staff: true },
+          attributes: {
+            exclude: [
+              'password',
+              'createdAt',
+              'updatedAt',
+              'start_active_time',
+              'end_active_time',
+              'last_active_period',
+            ],
+          },
+        });
         for (const user of admin) {
-          users.push(user)
+          users.push(user);
         }
       }
-      if (roles.includes("super_admin")) {
-        const super_admin = await this.userRepository.findAll({where: {is_superuser: true}, attributes: {
-          exclude: [
-            'password',
-            'createdAt',
-            'updatedAt',
-            'start_active_time',
-            'end_active_time',
-            'last_active_period',
-          ],
-        },})
+      if (roles.includes('super_admin')) {
+        const super_admin = await this.userRepository.findAll({
+          where: { is_superuser: true },
+          attributes: {
+            exclude: [
+              'password',
+              'createdAt',
+              'updatedAt',
+              'start_active_time',
+              'end_active_time',
+              'last_active_period',
+            ],
+          },
+        });
         for (const user of super_admin) {
-          users.push(user)
+          users.push(user);
         }
       }
       if (users.length < 1) {
-        throw new BadRequestException()
+        throw new BadRequestException();
       }
-      return users
-
+      return users;
     } catch (e) {
-      console.log(e)
-      throw new BadRequestException('ошибка',{cause: e})
+      console.log(e);
+      throw new BadRequestException('ошибка', { cause: e });
     }
   }
 }

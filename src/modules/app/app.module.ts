@@ -1,11 +1,14 @@
+import { MailerModule } from '@nestjs-modules/mailer';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SequelizeModule } from '@nestjs/sequelize';
+import { getMailConfig } from 'src/configs/mail.config';
 import { Queue } from 'src/modules/queue/model/queue.model';
 import { QueueModule } from 'src/modules/queue/queue.module';
 import { AuthModule } from '../auth/auth.module';
 import { InputDataModule } from '../input-data/input-data.module';
 import { InputData } from '../input-data/model/input-data.model';
+import { MailModule } from '../mail/mail.module';
 import { Notification } from '../notifications/model/notifications.model';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { QueueAhead } from '../queue-ahead/model/queue_ahead.model';
@@ -23,6 +26,11 @@ import { AppService } from './app.service';
     ConfigModule.forRoot({
       isGlobal: true,
       load: [],
+    }),
+    MailerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: getMailConfig,
     }),
     SequelizeModule.forRootAsync({
       imports: [ConfigModule],
@@ -46,6 +54,7 @@ import { AppService } from './app.service';
     InputDataModule,
     QueueAheadModule,
     NotificationsModule,
+    MailModule,
   ],
 })
 export class AppModule {}

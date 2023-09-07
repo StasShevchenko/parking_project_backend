@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { TokenService } from '../token/token.service';
 import { CreateAdminDto, CreateUserDto } from '../user/dto';
+import { User } from '../user/model/user.model';
 import { UserService } from '../user/user.service';
 import { AuthUserResponseDTO, LoginUserDTO } from './dto';
 
@@ -64,4 +65,6 @@ export class AuthService {
     const jwtRefresh = await this.tokenService.generateRefreshToken(userData);
     return { jwtAccess, jwtRefresh };
   }
+
+  async SendEmailRegistrations(user: User) {}
 }
