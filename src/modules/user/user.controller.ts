@@ -80,6 +80,8 @@ export class UserController {
     const rolesArray = rolesString.split(',').map((role) => role.trim());
     if (fullName) {
       const [firstName, secondName] = fullName.split(' ');
+      console.log(firstName);
+      console.log(`fullName = ${firstName} ${secondName}`);
       return this.userService.getUsersByRoles(
         rolesArray,
         firstName,

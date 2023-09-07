@@ -151,10 +151,10 @@ export class UserService {
     secondName: string,
   ) {
     try {
+      console.log(`firstName = ${firstName}, secondName = ${secondName}`);
       if (roles.length < 1) {
         throw new BadRequestException('Массив ролей не задан');
       }
-      console.log(roles);
       let users: User[] = [];
       if (roles.includes('user')) {
         const user = await this.userRepository.findAll({
@@ -172,6 +172,9 @@ export class UserService {
         });
         for (const NewUser of user) {
           users.push(NewUser);
+        }
+        if (firstName) {
+          users = await this.getUsersByName(firstName, secondName, users);
         }
         return users;
       }
@@ -218,6 +221,7 @@ export class UserService {
       if (firstName) {
         users = await this.getUsersByName(firstName, secondName, users);
       }
+      console.log(`first name: ${firstName}`);
       return users;
     } catch (e) {
       console.log(e);
@@ -231,25 +235,13 @@ export class UserService {
       secondName = secondName.toLowerCase();
     }
 
-    return users
-      .filter((user) =>
-        user.nextUsers.some(
-          (user) =>
-            user.firstName.toLowerCase().includes(firstName) ||
-            user.secondName.toLowerCase().includes(secondName) ||
-            user.secondName.toLowerCase().includes(firstName),
-        ),
-      )
-      .map((users) => {
-        return {
-          ...users,
-          nextUsers: users.nextUsers.filter(
-            (user) =>
-              user.firstName.toLowerCase().includes(firstName) ||
-              user.secondName.toLowerCase().includes(secondName) ||
-              user.secondName.toLowerCase().includes(firstName),
-          ),
-        };
-      });
+    const filteredUsers = users.filter(
+      (user) =>
+        user.firstName.toLowerCase().includes(firstName) ||
+        user.secondName.toLowerCase().includes(secondName) ||
+        user.secondName.toLowerCase().includes(firstName),
+    );
+
+    return filteredUsers;
   }
 }
