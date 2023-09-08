@@ -1,8 +1,7 @@
-import { MailerModule } from '@nestjs-modules/mailer';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SequelizeModule } from '@nestjs/sequelize';
-import { getMailConfig } from 'src/configs/mail.config';
+// import { getMailConfig } from 'src/configs/mail.config';
 import { Queue } from 'src/modules/queue/model/queue.model';
 import { QueueModule } from 'src/modules/queue/queue.module';
 import { AuthModule } from '../auth/auth.module';
@@ -29,11 +28,11 @@ import { AppService } from './app.service';
       isGlobal: true,
       load: [],
     }),
-    MailerModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: getMailConfig,
-    }),
+    // MailerModule.forRootAsync({
+    //   imports: [ConfigModule],
+    //   inject: [ConfigService],
+    //   useFactory: getMailConfig,
+    // }),
     SequelizeModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

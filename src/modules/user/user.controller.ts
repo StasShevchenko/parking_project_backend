@@ -73,6 +73,9 @@ export class UserController {
     @Query('roles') roles: string,
     @Query('fullName') fullName: string,
   ) {
+    if (!roles && !fullName) {
+      return this.userService.getAllUsers();
+    }
     if (fullName) {
       const [firstName, secondName] = fullName.split(' ');
       if (!roles && fullName) {
@@ -80,6 +83,23 @@ export class UserController {
       }
       const rolesString = roles.slice(1, -1);
       const rolesArray = rolesString.split(',').map((role) => role.trim());
+
+      if (!roles[0]) {
+        return [];
+      }
+      return this.userService.getUsersByRoles(
+        rolesArray,
+        firstName,
+        secondName,
+      );
+    }
+    if (roles) {
+      const rolesString = roles.slice(1, -1);
+      const rolesArray = rolesString.split(',').map((role) => role.trim());
+      if (roles && !fullName) {
+        return this.userService.getUsersByRoles(rolesArray, null, null);
+      }
+      const [firstName, secondName] = fullName.split(' ');
       return this.userService.getUsersByRoles(
         rolesArray,
         firstName,

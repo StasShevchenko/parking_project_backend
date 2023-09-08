@@ -159,14 +159,7 @@ export class UserService {
         const user = await this.userRepository.findAll({
           where: { in_queue: true },
           attributes: {
-            exclude: [
-              'password',
-              'createdAt',
-              'updatedAt',
-              'start_active_time',
-              'end_active_time',
-              'last_active_period',
-            ],
+            exclude: ['password', 'createdAt', 'updatedAt'],
           },
         });
         for (const NewUser of user) {
@@ -186,14 +179,7 @@ export class UserService {
         const admin = await this.userRepository.findAll({
           where: { is_staff: true },
           attributes: {
-            exclude: [
-              'password',
-              'createdAt',
-              'updatedAt',
-              'start_active_time',
-              'end_active_time',
-              'last_active_period',
-            ],
+            exclude: ['password', 'createdAt', 'updatedAt'],
           },
         });
         for (const user of admin) {
@@ -204,14 +190,7 @@ export class UserService {
         const super_admin = await this.userRepository.findAll({
           where: { is_superuser: true },
           attributes: {
-            exclude: [
-              'password',
-              'createdAt',
-              'updatedAt',
-              'start_active_time',
-              'end_active_time',
-              'last_active_period',
-            ],
+            exclude: ['password', 'createdAt', 'updatedAt'],
           },
         });
         for (const user of super_admin) {
@@ -251,14 +230,7 @@ export class UserService {
   async getUsersByName(firstName: string, secondName: string) {
     const users = await this.userRepository.findAll({
       attributes: {
-        exclude: [
-          'password',
-          'createdAt',
-          'updatedAt',
-          'start_active_time',
-          'end_active_time',
-          'last_active_period',
-        ],
+        exclude: ['password', 'createdAt', 'updatedAt'],
       },
     });
     firstName = firstName.toLowerCase();
