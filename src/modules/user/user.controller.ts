@@ -73,22 +73,19 @@ export class UserController {
     @Query('roles') roles: string,
     @Query('fullName') fullName: string,
   ) {
-    if (!roles && !fullName) {
-      return this.userService.getAllUsers();
-    }
-    const rolesString = roles.slice(1, -1);
-    const rolesArray = rolesString.split(',').map((role) => role.trim());
     if (fullName) {
       const [firstName, secondName] = fullName.split(' ');
-      console.log(firstName);
-      console.log(`fullName = ${firstName} ${secondName}`);
+      if (!roles && fullName) {
+        return this.userService.getUsersByName(firstName, secondName);
+      }
+      const rolesString = roles.slice(1, -1);
+      const rolesArray = rolesString.split(',').map((role) => role.trim());
       return this.userService.getUsersByRoles(
         rolesArray,
         firstName,
         secondName,
       );
     }
-    return this.userService.getUsersByRoles(rolesArray, null, null);
   }
 
   @ApiBearerAuth()

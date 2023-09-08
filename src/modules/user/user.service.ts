@@ -151,11 +151,10 @@ export class UserService {
     secondName: string,
   ) {
     try {
-      console.log(`firstName = ${firstName}, secondName = ${secondName}`);
-      if (roles.length < 1) {
-        throw new BadRequestException('Массив ролей не задан');
-      }
       let users: User[] = [];
+      if (!roles[0]) {
+        return users;
+      }
       if (roles.includes('user')) {
         const user = await this.userRepository.findAll({
           where: { in_queue: true },
@@ -174,7 +173,11 @@ export class UserService {
           users.push(NewUser);
         }
         if (firstName) {
-          users = await this.getUsersByName(firstName, secondName, users);
+          users = await this.getUsersByNameAndRole(
+            firstName,
+            secondName,
+            users,
+          );
         }
         return users;
       }
@@ -219,7 +222,7 @@ export class UserService {
         throw new BadRequestException();
       }
       if (firstName) {
-        users = await this.getUsersByName(firstName, secondName, users);
+        users = await this.getUsersByNameAndRole(firstName, secondName, users);
       }
       console.log(`first name: ${firstName}`);
       return users;
@@ -229,7 +232,35 @@ export class UserService {
     }
   }
 
-  getUsersByName(firstName: string, secondName: string, users) {
+  getUsersByNameAndRole(firstName: string, secondName: string, users) {
+    firstName = firstName.toLowerCase();
+    if (secondName) {
+      secondName = secondName.toLowerCase();
+    }
+
+    const filteredUsers = users.filter(
+      (user) =>
+        user.firstName.toLowerCase().includes(firstName) ||
+        user.secondName.toLowerCase().includes(secondName) ||
+        user.secondName.toLowerCase().includes(firstName),
+    );
+
+    return filteredUsers;
+  }
+
+  async getUsersByName(firstName: string, secondName: string) {
+    const users = await this.userRepository.findAll({
+      attributes: {
+        exclude: [
+          'password',
+          'createdAt',
+          'updatedAt',
+          'start_active_time',
+          'end_active_time',
+          'last_active_period',
+        ],
+      },
+    });
     firstName = firstName.toLowerCase();
     if (secondName) {
       secondName = secondName.toLowerCase();
