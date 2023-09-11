@@ -33,20 +33,6 @@ export class AuthController {
     return this.authService.registerUsers(dto);
   }
 
-  @ApiOperation({ summary: 'Регистрация Админов - только суперадминам' })
-  @ApiResponse({
-    status: 201,
-    type: CreateAdminDto,
-  })
-  @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
-  @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  @UseGuards(RolesGuard)
-  @Roles('is_superuser')
-  @Post('create_admin')
-  createAdmin(@Body() dto: CreateAdminDto): Promise<CreateAdminDto> {
-    return this.authService.createAdmin(dto);
-  }
-
   @ApiOperation({ summary: 'Авторизация пользователя - всем' })
   @ApiResponse({
     status: 201,

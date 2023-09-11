@@ -36,13 +36,16 @@ export class UserService {
       throw new BadRequestException('User with this email exist');
     }
     try {
-      const key = this.uniqueKey();
-      const password = await this.hashPassword(key.substring(0, 5));
+      const key = this.uniqueKey().substring(0, 8);
+      const password = await this.hashPassword(key);
       const newUser = await this.userRepository.create({
         ...dto,
         password: password,
       });
-      await this.mailService.sendRegistrationsEmail(newUser);
+      if(dto.is_queue_user) {
+        await this.queueService.create(newUser.id)
+      }
+      await this.mailService.sendRegistrationsEmail(newUser, key);
     } catch (e) {
       console.log(e);
       throw new BadRequestException('Bad request');
@@ -246,5 +249,28 @@ export class UserService {
     );
 
     return filteredUsers;
+  }
+
+  async getAdminRole(id: number): Promise<User> {
+    try {
+      let user = await this.userRepository.findByPk(id)
+    user.is_staff = true;
+    await user.save()
+    return user
+  } catch(e) {
+    throw new BadRequestException('USER EXIST')
+  }
+  
+  }
+
+  async deleteAdminRole(id: number): Promise<User> {
+    try {
+      let user = await this.userRepository.findByPk(id)
+    user.is_staff = false;
+    await user.save()
+    return user
+  } catch(e) {
+    throw new BadRequestException('USER EXIST')
+  }
   }
 }

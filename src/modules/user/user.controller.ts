@@ -186,4 +186,36 @@ export class UserController {
     const userId = req['user'].id;
     return this.userService.changePassword(dto, userId);
   }
+
+  
+  @ApiOperation({
+    summary: 'Выдача прав администратора - только супер администраторам',
+  })
+  @ApiResponse({
+    status: 200,
+    type: User,
+  })
+  @ApiForbiddenResponse({ description: 'Unauthorized Request' })
+  @UseGuards(RolesGuard)
+  @Roles('is_superuser')
+  @Get('getAdminRole/:id')
+  getAdminRole(@Param('id') id : number): Promise<User> {
+    return this.userService.getAdminRole(id)
+  }
+
+  
+  @ApiOperation({
+    summary: 'Удаление прав администратора - только супер администраторам',
+  })
+  @ApiResponse({
+    status: 200,
+    type: ResponseUserDto,
+  })
+  @ApiForbiddenResponse({ description: 'Unauthorized Request' })
+  @UseGuards(RolesGuard)
+  @Roles('is_superuser')
+  @Get('getAdminRole/:id')
+  deleteAdminRole(@Param('id') id : number): Promise<User> {
+    return this.userService.deleteAdminRole(id)
+  }
 }

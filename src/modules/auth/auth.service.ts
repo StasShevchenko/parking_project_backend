@@ -25,19 +25,6 @@ export class AuthService {
     }
   }
 
-  async createAdmin(dto: CreateAdminDto): Promise<CreateAdminDto> {
-    try {
-      const existUser = await this.userService.findUserByEmail(dto.email);
-      if (existUser) {
-        throw new BadRequestException('USER EXIST');
-      }
-      const user = await this.userService.createUser(dto);
-      return dto;
-    } catch (e) {
-      console.log(e);
-    }
-  }
-
   async loginUser(dto: LoginUserDTO): Promise<AuthUserResponseDTO> {
     const existUser = await this.userService.findUserByEmail(dto.email);
     // console.log(existUser);
