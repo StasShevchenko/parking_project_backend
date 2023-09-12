@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { TokenService } from '../token/token.service';
-import { CreateAdminDto, CreateUserDto } from '../user/dto';
+import { CreateUserDto } from '../user/dto';
 import { User } from '../user/model/user.model';
 import { UserService } from '../user/user.service';
 import { AuthUserResponseDTO, LoginUserDTO } from './dto';
@@ -47,6 +47,7 @@ export class AuthService {
       in_queue: existUser.in_queue,
       first_name: existUser.firstName,
       second_name: existUser.secondName,
+      changePassword: existUser.changePassword,
     };
     const jwtAccess = await this.tokenService.generateAccessToken(userData);
     const jwtRefresh = await this.tokenService.generateRefreshToken(userData);

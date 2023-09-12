@@ -42,8 +42,8 @@ export class UserService {
         ...dto,
         password: password,
       });
-      if(dto.is_queue_user) {
-        await this.queueService.create(newUser.id)
+      if (dto.is_queue_user) {
+        await this.queueService.create(newUser.id);
       }
       await this.mailService.sendRegistrationsEmail(newUser, key);
     } catch (e) {
@@ -141,6 +141,7 @@ export class UserService {
     if (comparePasswords || dto.oldPassword == user.password) {
       const hashPassword = await this.hashPassword(dto.newPassword);
       user.password = hashPassword;
+      user.changePassword = true;
       await user.save();
       return true;
     } else {
@@ -253,24 +254,23 @@ export class UserService {
 
   async getAdminRole(id: number): Promise<User> {
     try {
-      let user = await this.userRepository.findByPk(id)
-    user.is_staff = true;
-    await user.save()
-    return user
-  } catch(e) {
-    throw new BadRequestException('USER EXIST')
-  }
-  
+      let user = await this.userRepository.findByPk(id);
+      user.is_staff = true;
+      await user.save();
+      return user;
+    } catch (e) {
+      throw new BadRequestException('USER EXIST');
+    }
   }
 
   async deleteAdminRole(id: number): Promise<User> {
     try {
-      let user = await this.userRepository.findByPk(id)
-    user.is_staff = false;
-    await user.save()
-    return user
-  } catch(e) {
-    throw new BadRequestException('USER EXIST')
-  }
+      let user = await this.userRepository.findByPk(id);
+      user.is_staff = false;
+      await user.save();
+      return user;
+    } catch (e) {
+      throw new BadRequestException('USER EXIST');
+    }
   }
 }

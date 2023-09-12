@@ -39,6 +39,10 @@ export class User extends Model {
   @Column
   last_active_period: Date;
 
+  @Default(false)
+  @Column
+  changePassword: boolean;
+
   @HasMany(() => Notification)
   notifications: Notification[];
 }
