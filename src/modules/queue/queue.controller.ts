@@ -71,7 +71,7 @@ export class QueueController {
   // @UseGuards(JWTAuthGuard)
   @Get('allNextPeriod')
   getAllNextPeriod(@Query() query: { fullName: string }) {
-    if (query.fullName && query.fullName) {
+    if (query.fullName) {
       const [firstName, secondName] = query.fullName.split(' ');
       return this.queueService.filterNextPeriods(firstName, secondName);
     }

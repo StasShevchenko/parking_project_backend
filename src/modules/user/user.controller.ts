@@ -187,7 +187,6 @@ export class UserController {
     return this.userService.changePassword(dto, userId);
   }
 
-  
   @ApiOperation({
     summary: 'Выдача прав администратора - только супер администраторам',
   })
@@ -199,11 +198,10 @@ export class UserController {
   @UseGuards(RolesGuard)
   @Roles('is_superuser')
   @Get('getAdminRole/:id')
-  getAdminRole(@Param('id') id : number): Promise<User> {
-    return this.userService.getAdminRole(id)
+  getAdminRole(@Param('id') id: number): Promise<User> {
+    return this.userService.getAdminRole(id);
   }
 
-  
   @ApiOperation({
     summary: 'Удаление прав администратора - только супер администраторам',
   })
@@ -214,8 +212,8 @@ export class UserController {
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
   @UseGuards(RolesGuard)
   @Roles('is_superuser')
-  @Get('getAdminRole/:id')
-  deleteAdminRole(@Param('id') id : number): Promise<User> {
-    return this.userService.deleteAdminRole(id)
+  @Get('deleteAdminRole/:id')
+  deleteAdminRole(@Param('id') id: number): Promise<User> {
+    return this.userService.deleteAdminRole(id);
   }
 }
