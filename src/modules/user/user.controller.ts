@@ -45,69 +45,6 @@ export class UserController {
     return this.userService.getAdminsList();
   }
 
-  // @ApiBearerAuth()
-  // @ApiOperation({ summary: 'Получение всех пользователей - только админам' })
-  // @ApiResponse({
-  //   status: 200,
-  //   type: ResponseUserDto,
-  // })
-  // @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  // @Get('')
-  // // @UseGuards(RolesGuard)
-  // // @Roles('is_staff')
-  // getAllUsers(): Promise<User[]> {
-  //   return this.userService.getAllUsers();
-  // }
-
-  @ApiOperation({
-    summary: 'Получение всех пользователей по роли - только авторизованным',
-  })
-  @ApiParam({ name: 'roles', type: String })
-  @ApiResponse({
-    status: 200,
-  })
-  @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  // @UseGuards(JWTAuthGuard)
-  @Get('')
-  getUsersByRoles(
-    @Query('roles') roles: string,
-    @Query('fullName') fullName: string,
-  ) {
-    if (!roles && !fullName) {
-      return this.userService.getAllUsers();
-    }
-    if (fullName) {
-      const [firstName, secondName] = fullName.split(' ');
-      if (!roles && fullName) {
-        return this.userService.getUsersByName(firstName, secondName);
-      }
-      const rolesString = roles.slice(1, -1);
-      const rolesArray = rolesString.split(',').map((role) => role.trim());
-
-      if (!roles[0]) {
-        return [];
-      }
-      return this.userService.getUsersByRoles(
-        rolesArray,
-        firstName,
-        secondName,
-      );
-    }
-    if (roles) {
-      const rolesString = roles.slice(1, -1);
-      const rolesArray = rolesString.split(',').map((role) => role.trim());
-      if (roles && !fullName) {
-        return this.userService.getUsersByRoles(rolesArray, null, null);
-      }
-      const [firstName, secondName] = fullName.split(' ');
-      return this.userService.getUsersByRoles(
-        rolesArray,
-        firstName,
-        secondName,
-      );
-    }
-  }
-
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Получение конкретного пользователя - только авторизованным',
@@ -215,5 +152,47 @@ export class UserController {
   @Get('deleteAdminRole/:id')
   deleteAdminRole(@Param('id') id: number): Promise<User> {
     return this.userService.deleteAdminRole(id);
+  }
+
+  @ApiOperation({
+    summary: 'Получение всех пользователей по роли - только авторизованным',
+  })
+  @ApiParam({ name: 'roles', type: String })
+  @ApiResponse({
+    status: 200,
+  })
+  @ApiForbiddenResponse({ description: 'Unauthorized Request' })
+  // @UseGuards(JWTAuthGuard)
+  @Get('')
+  getUsersByRolesTest(
+    @Query('roles') roles: string,
+    @Query('fullName') fullName: string,
+  ) {
+    let rolesFilter = [];
+    let firstName;
+    let secondName;
+    if (roles) {
+      const rolesString = roles.slice(1, -1);
+      rolesFilter = rolesString.split(',').map((role) => role.trim());
+      if (!roles[0]) {
+        return [];
+      }
+    }
+    if (fullName) {
+      [firstName, secondName] = fullName.split(' ');
+    }
+    if (!roles && !fullName) {
+      // Если нет параметров в запросе
+      return this.userService.getAllUsers();
+    }
+
+    if (!roles && fullName) {
+      return this.userService.getUsersByName(firstName, secondName);
+    }
+    return this.userService.getUsersByRolesTest(
+      rolesFilter,
+      firstName,
+      secondName,
+    );
   }
 }

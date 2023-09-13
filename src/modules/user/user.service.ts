@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import * as bcrypt from 'bcrypt';
+import { Op } from 'sequelize';
 import * as uuid from 'uuid';
 import { MailService } from '../mail/mail.service';
 import { QueueService } from '../queue/queue.service';
@@ -149,70 +150,36 @@ export class UserService {
     }
   }
 
-  async getUsersByRoles(
+  async getUsersByRolesTest(
     roles: string[],
     firstName: string,
     secondName: string,
   ) {
     try {
-      let users: User[] = [];
-      if (!roles[0]) {
-        return users;
-      }
+      let rolesFilter = [];
+      console.log(roles);
       if (roles.includes('user')) {
-        const user = await this.userRepository.findAll({
-          where: { in_queue: true },
-          attributes: {
-            exclude: ['password', 'createdAt', 'updatedAt'],
-          },
-        });
-        for (const NewUser of user) {
-          users.push(NewUser);
-        }
-        if (firstName) {
-          users = await this.getUsersByNameAndRole(
-            firstName,
-            secondName,
-            users,
-          );
-        }
-        return users;
+        rolesFilter.push({ in_queue: true });
       }
-
       if (roles.includes('admin')) {
-        const admin = await this.userRepository.findAll({
-          where: { is_staff: true },
-          attributes: {
-            exclude: ['password', 'createdAt', 'updatedAt'],
-          },
-        });
-        for (const user of admin) {
-          users.push(user);
-        }
+        rolesFilter.push({ is_staff: true });
       }
       if (roles.includes('super_admin')) {
-        const super_admin = await this.userRepository.findAll({
-          where: { is_superuser: true },
-          attributes: {
-            exclude: ['password', 'createdAt', 'updatedAt'],
-          },
-        });
-        for (const user of super_admin) {
-          users.push(user);
-        }
+        rolesFilter.push({ is_superuser: true });
       }
+      let users = await this.userRepository.findAll({
+        where: {
+          [Op.or]: rolesFilter,
+        },
+      });
       if (users.length < 1) {
         throw new BadRequestException();
       }
       if (firstName) {
         users = await this.getUsersByNameAndRole(firstName, secondName, users);
       }
-      console.log(`first name: ${firstName}`);
       return users;
-    } catch (e) {
-      console.log(e);
-      throw new BadRequestException('ошибка', { cause: e });
-    }
+    } catch (e) {}
   }
 
   getUsersByNameAndRole(firstName: string, secondName: string, users) {
