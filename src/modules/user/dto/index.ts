@@ -20,7 +20,7 @@ export class CreateUserDto {
 
   @ApiProperty()
   @IsBoolean()
-  is_queue_user?: boolean | null;
+  in_queue?: boolean | null;
 }
 
 export class CreateAdminDto {

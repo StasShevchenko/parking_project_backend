@@ -23,7 +23,7 @@ export class UserService {
   }
 
   uniqueKey() {
-    let pass = uuid.v4().substring(0, 5);
+    let pass = uuid.v4().substring(0, 8);
     return pass;
   }
 
@@ -32,19 +32,24 @@ export class UserService {
   }
 
   async createUser(dto: CreateUserDto): Promise<CreateUserDto> {
-    const validate = await this.findUserByEmail(dto.email);
-    if (validate) {
-      throw new BadRequestException('User with this email exist');
-    }
     try {
+      const validate = await this.findUserByEmail(dto.email);
+      if (validate) {
+        throw new BadRequestException('User with this email exist');
+      }
+
       const key = this.uniqueKey().substring(0, 8);
       const password = await this.hashPassword(key);
       const newUser = await this.userRepository.create({
         ...dto,
         password: password,
       });
-      if (dto.is_queue_user) {
-        await this.queueService.create(newUser.id);
+      if (dto.in_queue) {
+        const user = await this.findUserByEmail(dto.email);
+        const userId = {
+          userId: user.id,
+        };
+        await this.queueService.create(userId);
       }
       await this.mailService.sendRegistrationsEmail(newUser, key);
     } catch (e) {

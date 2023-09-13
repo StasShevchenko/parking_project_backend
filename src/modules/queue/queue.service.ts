@@ -19,6 +19,7 @@ export class QueueService {
 
   async create(dto: CreateQueueDTO): Promise<Queue> {
     const maxNumber = await this.getMaxNumber();
+    console.log(dto);
     const inputData = await this.inputDataRepository.findOne();
     const nowDate = new Date();
     const end_time = new Date();
