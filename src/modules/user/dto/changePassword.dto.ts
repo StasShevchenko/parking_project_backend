@@ -4,9 +4,13 @@ import { IsString } from 'class-validator';
 export class changePasswordDto {
   @ApiProperty()
   @IsString()
-  oldPassword: string;
+  newPassword: string;
 
   @ApiProperty()
   @IsString()
-  newPassword: string;
+  repeat_newPassword: string;
+
+  @ApiProperty()
+  @IsString()
+  email: string;
 }

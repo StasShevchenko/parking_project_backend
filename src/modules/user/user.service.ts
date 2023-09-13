@@ -137,23 +137,37 @@ export class UserService {
     return bcrypt.compare(password1, password2);
   }
 
-  async changePassword(
-    dto: changePasswordDto,
-    userId: number,
-  ): Promise<boolean> {
-    const user = await this.userRepository.findOne({
-      where: { id: userId },
-    });
-    const comparePasswords = this.comparePassword(
-      dto.oldPassword,
-      user.password,
-    );
-    if (comparePasswords || dto.oldPassword == user.password) {
-      const hashPassword = await this.hashPassword(dto.newPassword);
-      user.password = hashPassword;
-      user.changePassword = true;
-      await user.save();
+  PasswordValidation(password: string) {
+    const Validationpassword = password.trim();
+    const containsLetters = /^.*[a-zA-Z]+.*$/;
+    const minimum8Chars = /^.{8,}$/;
+    const withoutSpaces = /^\S+$/;
+
+    if (
+      minimum8Chars.test(Validationpassword) &&
+      withoutSpaces.test(Validationpassword) &&
+      containsLetters.test(Validationpassword)
+    ) {
       return true;
+    } else {
+      return false;
+    }
+  }
+
+  async changePassword(dto: changePasswordDto): Promise<boolean> {
+    const user = await this.userRepository.findOne({
+      where: { email: dto.email },
+    });
+    if (dto.newPassword == dto.repeat_newPassword) {
+      if (this.PasswordValidation(dto.newPassword)) {
+        const hashPassword = await this.hashPassword(dto.newPassword);
+        user.password = hashPassword;
+        user.changePassword = true;
+        await user.save();
+        return true;
+      } else {
+        throw new BadRequestException({ messange: 'Простой пароль' });
+      }
     } else {
       throw new BadRequestException('Wrong Data');
     }

@@ -7,7 +7,6 @@ import {
   Patch,
   Post,
   Query,
-  Req,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -110,21 +109,14 @@ export class UserController {
     return this.userService.updateUser(id, dto);
   }
 
-  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Изменение пароля пользователя - только авторизованным',
   })
   @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
-  @ApiForbiddenResponse({ description: 'Unauthorized Request' })
   @ApiResponse({ status: 201, type: changePasswordDto })
-  @UseGuards(JWTAuthGuard)
   @Post('changePassword')
-  changePassword(
-    @Body() dto: changePasswordDto,
-    @Req() req: Request,
-  ): Promise<Boolean> {
-    const userId = req['user'].id;
-    return this.userService.changePassword(dto, userId);
+  changePassword(@Body() dto: changePasswordDto): Promise<Boolean> {
+    return this.userService.changePassword(dto);
   }
 
   @ApiOperation({
