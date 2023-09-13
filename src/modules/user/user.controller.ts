@@ -22,7 +22,10 @@ import {
 import { Roles } from '../auth/has-roles.decorator';
 import { JWTAuthGuard } from '../auth/jwt-guard';
 import { RolesGuard } from '../auth/roles.guard';
+import { MailKey } from '../mail_key/model/mail_key.model';
 import { changePasswordDto } from './dto/changePassword.dto';
+import { ForgotPasswordDto } from './dto/forgot_password.dto';
+import { MailKeyReviewDto } from './dto/mail_key_review.dto';
 import { ResponseUserDto } from './dto/response_user.dto';
 import { UpdateAllUserDataDto } from './dto/update.all_user_data';
 import { User } from './model/user.model';
@@ -194,5 +197,25 @@ export class UserController {
       firstName,
       secondName,
     );
+  }
+
+  @ApiOperation({
+    summary: 'Запрос на изменение пароля - всем',
+  })
+  @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
+  @ApiResponse({ status: 201, type: Boolean })
+  @Post('forgotPassword')
+  forgotPasswordMailKey(@Body() dto: ForgotPasswordDto): Promise<Boolean> {
+    return this.userService.forgotPasswordMailKey(dto);
+  }
+
+  @ApiOperation({
+    summary: 'Проверка кода для сброса пароля - всем',
+  })
+  @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
+  @ApiResponse({ status: 201, type: MailKey })
+  @Post('reviewKey')
+  MailKeyReview(@Body() dto: MailKeyReviewDto): Promise<String> {
+    return this.userService.KeyReview(dto);
   }
 }

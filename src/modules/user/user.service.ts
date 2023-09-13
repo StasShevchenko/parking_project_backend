@@ -4,9 +4,12 @@ import * as bcrypt from 'bcrypt';
 import { Op } from 'sequelize';
 import * as uuid from 'uuid';
 import { MailService } from '../mail/mail.service';
+import { MailKeyService } from '../mail_key/mail_key.service';
 import { QueueService } from '../queue/queue.service';
 import { CreateUserDto } from './dto';
 import { changePasswordDto } from './dto/changePassword.dto';
+import { ForgotPasswordDto } from './dto/forgot_password.dto';
+import { MailKeyReviewDto } from './dto/mail_key_review.dto';
 import { UpdateAllUserDataDto } from './dto/update.all_user_data';
 import { User } from './model/user.model';
 
@@ -16,6 +19,7 @@ export class UserService {
   constructor(
     private readonly queueService: QueueService,
     private readonly mailService: MailService,
+    private readonly mailKeyService: MailKeyService,
   ) {}
 
   async findUserByEmail(email: string) {
@@ -243,6 +247,28 @@ export class UserService {
       return user;
     } catch (e) {
       throw new BadRequestException('USER EXIST');
+    }
+  }
+
+  async forgotPasswordMailKey(dto: ForgotPasswordDto): Promise<Boolean> {
+    try {
+      const user = await this.findUserByEmail(dto.email);
+      if (user) {
+        await this.mailKeyService.generateMailKey(user);
+        return true;
+      }
+      throw new BadRequestException('USER EXIST');
+    } catch (e) {}
+  }
+
+  async KeyReview(dto: MailKeyReviewDto): Promise<String> {
+    try {
+      const DBkey = await this.mailKeyService.KeyReview(dto.key);
+      if (DBkey) {
+        return DBkey.email;
+      }
+    } catch (e) {
+      throw new BadRequestException();
     }
   }
 }
