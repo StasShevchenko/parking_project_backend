@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Period } from 'src/interfaces/period.interface';
 import { User } from 'src/modules/user/model/user.model';
@@ -91,7 +91,11 @@ export class QueueService {
   }
 
   async deleteFromQueue(userId: number) {
-    return await this.queueRepository.destroy({ where: { userId: userId } });
+    try {
+      return await this.queueRepository.destroy({ where: { userId: userId } });
+    } catch (e) {
+      throw new BadRequestException();
+    }
   }
 
   async changeActiveUser(user: User) {
