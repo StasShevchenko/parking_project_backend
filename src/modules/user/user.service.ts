@@ -194,6 +194,7 @@ export class UserService {
         where: {
           [Op.or]: rolesFilter,
         },
+        attributes: { exclude: ['password', 'createdAt', 'updatedAt'] },
       });
       if (users.length < 1) {
         throw new BadRequestException();
