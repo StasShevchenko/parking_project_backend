@@ -4,7 +4,6 @@ import { SequelizeModule } from '@nestjs/sequelize';
 // import { getMailConfig } from 'src/configs/mail.config';
 import { Queue } from 'src/modules/queue/model/queue.model';
 import { QueueModule } from 'src/modules/queue/queue.module';
-import { LoggerMiddleware } from 'src/utils/logger.middleware';
 import { AuthModule } from '../auth/auth.module';
 import { InputDataModule } from '../input-data/input-data.module';
 import { InputData } from '../input-data/model/input-data.model';
@@ -62,6 +61,6 @@ import { AppService } from './app.service';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(LoggerMiddleware).forRoutes('*');
+    // consumer.apply(LoggerMiddleware).forRoutes('*');
   }
 }

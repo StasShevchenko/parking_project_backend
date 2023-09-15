@@ -15,11 +15,15 @@ const errorLogger = winston.createLogger({
   format: winston.format.combine(
     winston.format.timestamp(),
     winston.format.printf(({ timestamp, level, message }) => {
-      // Заменяем символы новой строки в requestBody на пробелы
       if (message.requestBody) {
         message.requestBody = message.requestBody.replace(/\n/g, ' ');
       }
-      return JSON.stringify({ timestamp, level, ...message }, null, 2);
+      const errorMessage = ` ${message.errorMessage}`;
+      return JSON.stringify(
+        { timestamp, level, ...message, errorMessage }, // Используем errorMessage, включающий errorType
+        null,
+        2,
+      );
     }),
   ),
   transports: [errorTransport],

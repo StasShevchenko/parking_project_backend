@@ -1,9 +1,13 @@
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './modules/app/app.module';
+import { AllExceptionsFilter } from './utils/AllExceptionsFilter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.useGlobalFilters(new AllExceptionsFilter()); // Регистрируйте глобально AllExceptionsFilter
+  // app.use(LoggerMiddleware);
 
   const config = new DocumentBuilder()
     .setTitle('API')
