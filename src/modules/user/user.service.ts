@@ -126,8 +126,12 @@ export class UserService {
   }
 
   async deleteAdminById(id): Promise<number> {
-    console.log(id);
-    return await this.userRepository.destroy({ where: { id } });
+    try {
+      await this.queueService.deleteFromQueue(id);
+      return await this.userRepository.destroy({ where: { id } });
+    } catch (e) {
+      throw new BadRequestException();
+    }
   }
 
   async comparePassword(
