@@ -103,7 +103,7 @@ export class UserService {
       }
     } catch (e) {
       console.log(e);
-      throw new BadRequestException('User Exist');
+      throw new BadRequestException({ status: 401 });
     }
   }
 
@@ -250,7 +250,7 @@ export class UserService {
       await user.save();
       return user;
     } catch (e) {
-      throw new BadRequestException('USER EXIST');
+      throw new BadRequestException({ status: 401 });
     }
   }
 
@@ -261,7 +261,7 @@ export class UserService {
       await user.save();
       return user;
     } catch (e) {
-      throw new BadRequestException('USER EXIST');
+      throw new BadRequestException({ status: 401 });
     }
   }
 
@@ -272,8 +272,10 @@ export class UserService {
         await this.mailKeyService.generateMailKey(user);
         return true;
       }
-      throw new BadRequestException('USER EXIST');
-    } catch (e) {}
+      throw new BadRequestException({ status: 401 });
+    } catch (e) {
+      throw new BadRequestException({ status: 401 });
+    }
   }
 
   async KeyReview(dto: MailKeyReviewDto): Promise<String> {

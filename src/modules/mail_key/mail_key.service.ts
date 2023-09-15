@@ -19,7 +19,7 @@ export class MailKeyService {
       await this.mailService.changePassword(key, user);
     } catch (e) {
       console.log(e);
-      throw new BadRequestException();
+      throw new BadRequestException({ status: 401 });
     }
   }
 

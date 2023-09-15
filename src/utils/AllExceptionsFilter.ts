@@ -1,4 +1,9 @@
-import { ArgumentsHost, Catch, ExceptionFilter } from '@nestjs/common';
+import {
+  ArgumentsHost,
+  Catch,
+  ExceptionFilter,
+  HttpException,
+} from '@nestjs/common';
 import { errorLogger } from './logger.config';
 
 @Catch()
@@ -11,9 +16,11 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const errorType = exception instanceof Error ? exception.name : 'Error';
     const errorMessage = exception.message || 'Unknown error';
 
-    // Если уже была обработка ошибки, не логируем ее снова
-    if (response.headersSent) {
-      return;
+    let statusCode = 500; // Устанавливаем статус код по умолчанию
+
+    // Проверяем тип ошибки и устанавливаем соответствующий статус код
+    if (exception instanceof HttpException) {
+      statusCode = exception.getStatus();
     }
 
     const logData = {
@@ -21,7 +28,6 @@ export class AllExceptionsFilter implements ExceptionFilter {
       originalUrl: request.url,
       userAgent: request.get('user-agent') || '',
       ip: request.ip,
-      errorType,
       errorMessage,
       requestBody:
         request.method !== 'GET'
@@ -32,9 +38,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
     errorLogger.error(logData);
 
     if (!response.headersSent) {
-      response.status(500).json({
-        statusCode: 500,
-        message: 'Internal server error',
+      response.status(statusCode).json({
+        statusCode,
+        message: errorMessage,
       });
     }
   }

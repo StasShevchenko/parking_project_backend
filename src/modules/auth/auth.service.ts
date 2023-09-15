@@ -21,7 +21,7 @@ export class AuthService {
       const user = await this.userService.createUser(dto);
       return user;
     } catch (e) {
-      throw new BadRequestException({ message: 'USER EXIST' });
+      throw new BadRequestException({ statusCode: 401 });
     }
   }
 
