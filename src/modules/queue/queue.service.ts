@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectModel } from '@nestjs/sequelize';
 import { Period } from 'src/interfaces/period.interface';
 import { User } from 'src/modules/user/model/user.model';
@@ -81,7 +82,7 @@ export class QueueService {
     return result;
   }
 
-  // @Interval(1000)
+  @Cron(CronExpression.EVERY_DAY_AT_4AM)
   async CheckUserActivation() {
     const nowDate = new Date();
     const activeUsers = await this.userRepository.findAll({
