@@ -1,13 +1,12 @@
 import * as winston from 'winston';
 
-// Создайте два разных транспорта для файлов
 const errorTransport = new winston.transports.File({
   filename: 'logs/error.log',
-  level: 'error', // Уровень для записи только ошибок
+  level: 'error',
 });
 const combinedTransport = new winston.transports.File({
   filename: 'logs/combined.log',
-  level: 'info', // Уровень для записи всех сообщений кроме ошибок
+  level: 'info',
 });
 
 const errorLogger = winston.createLogger({
@@ -20,7 +19,7 @@ const errorLogger = winston.createLogger({
       }
       const errorMessage = ` ${message.errorMessage}`;
       return JSON.stringify(
-        { timestamp, level, ...message, errorMessage }, // Используем errorMessage, включающий errorType
+        { timestamp, level, ...message, errorMessage },
         null,
         2,
       );
@@ -43,7 +42,5 @@ const combinedLogger = winston.createLogger({
   ),
   transports: [combinedTransport],
 });
-
-// ...
 
 export { combinedLogger, errorLogger };

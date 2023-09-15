@@ -1,6 +1,6 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { NextFunction, Request, Response } from 'express';
-import { combinedLogger, errorLogger } from './logger.config'; // Импортируйте настроенный логгер
+import { combinedLogger } from './logger.config'; // Импортируйте настроенный логгер
 
 function stringifyRequestBody(body: any): string {
   try {
@@ -37,10 +37,9 @@ export class LoggerMiddleware implements NestMiddleware {
       }
 
       if (statusCode >= 400) {
-        // Если статус код ошибки, то логируем сообщение об ошибке
-        errorLogger.error({
-          ...logData,
-        });
+        // errorLogger.error({
+        //   ...logData,
+        // });
       } else {
         // В остальных случаях логируем информацию о запросе
         combinedLogger.info(logData);

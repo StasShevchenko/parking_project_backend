@@ -27,6 +27,7 @@
     "@nestjs/jwt": "^10.1.0",
     "@nestjs/passport": "^10.0.0",
     "@nestjs/platform-express": "^9.0.0",
+    "@nestjs/schedule": "^3.0.3",
     "@nestjs/sequelize": "^10.0.0",
     "@nestjs/swagger": "^7.1.6",
     "bcrypt": "^5.1.0",

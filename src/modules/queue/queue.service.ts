@@ -1,7 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Period } from 'src/interfaces/period.interface';
 import { User } from 'src/modules/user/model/user.model';
+import { combinedLogger } from 'src/utils/logger.config';
 import { InputData } from '../input-data/model/input-data.model';
 import { QueueAheadService } from '../queue-ahead/queue-ahead.service';
 import { CreateQueueDTO } from './dto/create-queue.dto';
@@ -16,6 +17,7 @@ export class QueueService {
     @InjectModel(User) private readonly userRepository: typeof User,
     private readonly queueAheadService: QueueAheadService,
   ) {}
+  private readonly logger = new Logger(QueueService.name);
 
   async create(dto: CreateQueueDTO): Promise<Queue> {
     const maxNumber = await this.getMaxNumber();
@@ -79,14 +81,17 @@ export class QueueService {
     return result;
   }
 
+  // @Interval(1000)
   async CheckUserActivation() {
     const nowDate = new Date();
     const activeUsers = await this.userRepository.findAll({
       where: { active: true },
-      // order: [['position', 'ASC']],
     });
+    combinedLogger.info({ Message: 'Сдвиг очереди' });
     for (const user of activeUsers) {
-      await this.changeActiveUser(user);
+      if (nowDate > user.end_active_time) {
+        await this.changeActiveUser(user);
+      }
     }
   }
 

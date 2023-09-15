@@ -18,6 +18,7 @@ import {
   ApiTags,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
+import { combinedLogger } from 'src/utils/logger.config';
 import { Roles } from '../auth/has-roles.decorator';
 import { JWTAuthGuard } from '../auth/jwt-guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -35,7 +36,7 @@ import { UserService } from './user.service';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @ApiBearerAuth()
+  // @ApiBearerAuth()
   @ApiOperation({ summary: 'Получение всех админов - только авторизованным' })
   @ApiResponse({
     status: 200,
@@ -44,6 +45,7 @@ export class UserController {
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
   @Get('adminList')
   adminList(): Promise<User[]> {
+    combinedLogger.info({ Message: 'Admin List' });
     return this.userService.getAdminsList();
   }
 

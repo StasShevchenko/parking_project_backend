@@ -2,8 +2,10 @@ import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SequelizeModule } from '@nestjs/sequelize';
 // import { getMailConfig } from 'src/configs/mail.config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { Queue } from 'src/modules/queue/model/queue.model';
 import { QueueModule } from 'src/modules/queue/queue.module';
+import { LoggerMiddleware } from 'src/utils/logger.middleware';
 import { AuthModule } from '../auth/auth.module';
 import { InputDataModule } from '../input-data/input-data.module';
 import { InputData } from '../input-data/model/input-data.model';
@@ -28,6 +30,7 @@ import { AppService } from './app.service';
       isGlobal: true,
       load: [],
     }),
+    ScheduleModule.forRoot(),
     // MailerModule.forRootAsync({
     //   imports: [ConfigModule],
     //   inject: [ConfigService],
@@ -61,6 +64,6 @@ import { AppService } from './app.service';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    // consumer.apply(LoggerMiddleware).forRoutes('*');
+    consumer.apply(LoggerMiddleware).forRoutes('*');
   }
 }

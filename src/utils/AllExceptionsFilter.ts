@@ -29,6 +29,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       userAgent: request.get('user-agent') || '',
       ip: request.ip,
       errorMessage,
+      statusCode,
       requestBody:
         request.method !== 'GET'
           ? stringifyRequestBody(request.body)
