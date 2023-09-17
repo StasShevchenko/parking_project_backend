@@ -14,7 +14,7 @@ import { UpdateInputDataDto } from './dto/update-input-data.dto';
 import { InputDataService } from './input-data.service';
 import { InputData } from './model/input-data.model';
 
-@ApiBearerAuth()
+// @ApiBearerAuth()
 @ApiTags('Input Data')
 @Controller('inputData')
 export class InputDataController {
@@ -30,8 +30,8 @@ export class InputDataController {
   })
   @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  @UseGuards(RolesGuard)
-  @Roles('is_staff')
+  // @UseGuards(RolesGuard)
+  // @Roles('is_staff')
   @Post('')
   inputSeatsAndPeriod(
     @Body() dto: CreateInputDataDto,

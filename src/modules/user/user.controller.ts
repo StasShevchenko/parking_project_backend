@@ -171,7 +171,11 @@ export class UserController {
     if (roles) {
       const rolesString = roles.slice(1, -1);
       rolesFilter = rolesString.split(',').map((role) => role.trim());
-      if (!roles[0]) {
+      console.log(roles.length)
+      console.log(`roles ${roles}`)
+      if (roles.length <=3) {
+        console.log(`'''''''''''''`)
+        console.log(roles[0])
         return [];
       }
     }
