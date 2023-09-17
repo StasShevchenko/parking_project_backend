@@ -126,7 +126,7 @@ export class UserController {
   })
   @ApiResponse({
     status: 200,
-    type: User,
+    type: ResponseUserDto,
   })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
   @UseGuards(RolesGuard)
@@ -157,6 +157,7 @@ export class UserController {
   @ApiParam({ name: 'roles', type: String })
   @ApiResponse({
     status: 200,
+    type: ResponseUserDto,
   })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
   // @UseGuards(JWTAuthGuard)
@@ -171,10 +172,7 @@ export class UserController {
     if (roles) {
       const rolesString = roles.slice(1, -1);
       rolesFilter = rolesString.split(',').map((role) => role.trim());
-      console.log(roles.length)
-      console.log(`roles ${roles}`)
       if (roles.length <=3) {
-        console.log(`'''''''''''''`)
         console.log(roles[0])
         return [];
       }
