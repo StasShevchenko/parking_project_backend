@@ -4,10 +4,16 @@ import { AppModule } from './modules/app/app.module';
 import { AllExceptionsFilter } from './utils/AllExceptionsFilter';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+
+    cors:true
+    
+    });
 
   app.useGlobalFilters(new AllExceptionsFilter()); // Регистрируйте глобально AllExceptionsFilter
   // app.use(LoggerMiddleware);
+
+  app.enableCors();
 
   const config = new DocumentBuilder()
     .setTitle('API')
