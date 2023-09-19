@@ -7,7 +7,7 @@ import { MailService } from '../mail/mail.service';
 import { MailKeyService } from '../mail_key/mail_key.service';
 import { QueueService } from '../queue/queue.service';
 import { CreateUserDto } from './dto';
-import { changePasswordDto } from './dto/changePassword.dto';
+import { PasswordForgotChangeDto, changePasswordFromProfileDto } from './dto/changePassword.dto';
 import { ForgotPasswordDto } from './dto/forgot_password.dto';
 import { MailKeyReviewDto } from './dto/mail_key_review.dto';
 import { UpdateAllUserDataDto } from './dto/update.all_user_data';
@@ -161,22 +161,55 @@ export class UserService {
     }
   }
 
-  async changePassword(dto: changePasswordDto): Promise<boolean> {
-    const user = await this.userRepository.findOne({
-      where: { email: dto.email },
-    });
-    if (dto.newPassword == dto.repeat_newPassword) {
-      if (this.PasswordValidation(dto.newPassword)) {
-        const hashPassword = await this.hashPassword(dto.newPassword);
-        user.password = hashPassword;
-        user.changePassword = true;
-        await user.save();
-        return true;
+  async changePasswordFromProfile(dto: changePasswordFromProfileDto, email: string): Promise<boolean> {
+    try {
+      const user = await this.userRepository.findOne({
+        where: { email: email },
+      });
+      // if (dto.newPassword == dto.repeat_newPassword && this.comparePassword(user.password, dto.oldPassword)) {
+        if (dto.newPassword == dto.repeat_newPassword) {
+        if (this.PasswordValidation(dto.newPassword)) {
+          const hashPassword = await this.hashPassword(dto.newPassword);
+          user.password = hashPassword;
+          user.changePassword = true;
+          await user.save();
+          return true;
+        } else {
+          throw new BadRequestException({ messange: 'Простой пароль' });
+        }
       } else {
-        throw new BadRequestException({ messange: 'Простой пароль' });
+        throw new BadRequestException('Wrong Data');
       }
-    } else {
-      throw new BadRequestException('Wrong Data');
+    } catch(e) {
+      throw new BadRequestException()
+    }
+    
+  }
+
+  async ForgotPasswordChange(dto: PasswordForgotChangeDto): Promise<boolean> {
+    try {
+      const mailKey = await this.KeyReview( {key : dto.key})
+      const user = await this.userRepository.findOne({where: {email: mailKey}})
+      if (!user) {
+        throw new BadRequestException({message: "USER EXIST"})
+      }
+      await this.mailKeyService.deleteByKey(dto.key)
+      if (dto.newPassword == dto.repeat_newPassword) {
+        if (this.PasswordValidation(dto.newPassword)) {
+          const hashPassword = await this.hashPassword(dto.newPassword);
+          user.password = hashPassword;
+          user.changePassword = true;
+          await user.save();
+          return true;
+        } else {
+          throw new BadRequestException({ messange: 'Простой пароль' });
+        }
+      } else {
+        throw new BadRequestException('Wrong Data');
+      }
+    } catch(e) {
+      console.log(e)
+      throw new BadRequestException()
     }
   }
 
@@ -292,6 +325,7 @@ export class UserService {
         return DBkey.email;
       }
     } catch (e) {
+      console.log(e)
       throw new BadRequestException();
     }
   }

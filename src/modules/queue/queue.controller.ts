@@ -40,7 +40,7 @@ export class QueueController {
   })
   @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  // @UseGuards(JWTAuthGuard)
+  @UseGuards(JWTAuthGuard)
   @Post('')
   create(@Body() dto: CreateQueueDTO): Promise<Queue> {
     return this.queueService.create(dto);
@@ -68,7 +68,7 @@ export class QueueController {
     type: allNextActivePeriod,
   })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  // @UseGuards(JWTAuthGuard)
+  @UseGuards(JWTAuthGuard)
   @Get('allNextPeriod')
   getAllNextPeriod(@Query() query: { fullName: string }) {
     if (query.fullName) {

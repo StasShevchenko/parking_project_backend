@@ -37,4 +37,8 @@ export class MailKeyService {
       throw new BadRequestException('KEY EXIST');
     }
   }
+
+  async deleteByKey(key: number) : Promise<number> {
+    return await this.mailKeyRepository.destroy({where: {key: key}})
+  }
 }

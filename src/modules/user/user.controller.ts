@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
   Query,
+  Request,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -23,7 +24,7 @@ import { Roles } from '../auth/has-roles.decorator';
 import { JWTAuthGuard } from '../auth/jwt-guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { MailKey } from '../mail_key/model/mail_key.model';
-import { changePasswordDto } from './dto/changePassword.dto';
+import { PasswordForgotChangeDto, changePasswordFromProfileDto } from './dto/changePassword.dto';
 import { ForgotPasswordDto } from './dto/forgot_password.dto';
 import { MailKeyReviewDto } from './dto/mail_key_review.dto';
 import { ResponseUserDto } from './dto/response_user.dto';
@@ -36,7 +37,7 @@ import { UserService } from './user.service';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  // @ApiBearerAuth()
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Получение всех админов - только авторизованным' })
   @ApiResponse({
     status: 200,
@@ -58,7 +59,7 @@ export class UserController {
     type: ResponseUserDto,
   })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  // @UseGuards(JWTAuthGuard)
+  @UseGuards(JWTAuthGuard)
   @Get(':id')
   getUser(@Param('id') id: number): Promise<User> {
     return this.userService.getUserById(id);
@@ -111,14 +112,27 @@ export class UserController {
     return this.userService.updateUser(id, dto);
   }
 
+  @ApiBearerAuth()
   @ApiOperation({
-    summary: 'Изменение пароля пользователя - только авторизованным',
+    summary: 'Изменение пароля пользователя из профиля- только авторизованным',
   })
   @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
-  @ApiResponse({ status: 201, type: changePasswordDto })
+  @ApiResponse({ status: 201, type: changePasswordFromProfileDto })
+  @UseGuards(JWTAuthGuard)
   @Post('changePassword')
-  changePassword(@Body() dto: changePasswordDto): Promise<Boolean> {
-    return this.userService.changePassword(dto);
+  changePassword(@Body() dto: changePasswordFromProfileDto, @Request() req): Promise<Boolean> {
+    return this.userService.changePasswordFromProfile(dto, req.user.email);
+  }
+
+
+  @ApiOperation({
+    summary: 'Изменение пароля пользователя, если забыл - всем',
+  })
+  @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
+  @ApiResponse({ status: 201, type: PasswordForgotChangeDto })
+  @Post('forgotPasswordChange')
+  ForgotPasswordChange(@Body() dto: PasswordForgotChangeDto): Promise<Boolean> {
+    return this.userService.ForgotPasswordChange(dto);
   }
 
   @ApiOperation({
@@ -160,7 +174,7 @@ export class UserController {
     type: ResponseUserDto,
   })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  // @UseGuards(JWTAuthGuard)
+  @UseGuards(JWTAuthGuard)
   @Get('')
   getUsersByRolesTest(
     @Query('roles') roles: string,
