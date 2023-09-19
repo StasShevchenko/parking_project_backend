@@ -50,9 +50,12 @@ export class UserService {
       });
       if (dto.in_queue) {
         const user = await this.findUserByEmail(dto.email);
+        const nowDate = new Date()
         const userId = {
           userId: user.id,
         };
+        user.last_active_period = nowDate
+        await user.save()
         await this.queueService.create(userId);
       }
       await this.mailService.sendRegistrationsEmail(newUser, key);
