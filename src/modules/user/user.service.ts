@@ -170,7 +170,9 @@ export class UserService {
         dto.oldPassword,
         user.password,
       );
-      if (dto.newPassword == dto.repeat_newPassword && compareOldPassword) {
+      if (!compareOldPassword || dto.newPassword != dto.repeat_newPassword) {
+        throw new BadRequestException('Wrong Data');
+      }
         if (this.PasswordValidation(dto.newPassword)) {
           const hashPassword = await this.hashPassword(dto.newPassword);
           user.password = hashPassword;
@@ -180,9 +182,7 @@ export class UserService {
         } else {
           throw new BadRequestException({ messange: 'Простой пароль' });
         }
-      } else {
-        throw new BadRequestException({message: 'USER EXIST'});
-      }
+      
     } catch(e) {
       throw new BadRequestException()
     }
