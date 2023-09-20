@@ -166,8 +166,7 @@ export class UserService {
       const user = await this.userRepository.findOne({
         where: { email: email },
       });
-      // if (dto.newPassword == dto.repeat_newPassword && this.comparePassword(user.password, dto.oldPassword)) {
-        if (dto.newPassword == dto.repeat_newPassword) {
+      if (dto.newPassword == dto.repeat_newPassword && this.comparePassword(user.password, dto.oldPassword)) {
         if (this.PasswordValidation(dto.newPassword)) {
           const hashPassword = await this.hashPassword(dto.newPassword);
           user.password = hashPassword;
@@ -178,12 +177,11 @@ export class UserService {
           throw new BadRequestException({ messange: 'Простой пароль' });
         }
       } else {
-        throw new BadRequestException('Wrong Data');
+        throw new BadRequestException({message: 'USER EXIST'});
       }
     } catch(e) {
       throw new BadRequestException()
     }
-    
   }
 
   async ForgotPasswordChange(dto: PasswordForgotChangeDto): Promise<boolean> {
@@ -205,7 +203,7 @@ export class UserService {
           throw new BadRequestException({ messange: 'Простой пароль' });
         }
       } else {
-        throw new BadRequestException('Wrong Data');
+        throw new BadRequestException({message: 'USER EXIST'});
       }
     } catch(e) {
       console.log(e)

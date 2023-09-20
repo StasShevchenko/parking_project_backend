@@ -29,7 +29,6 @@ export class MailKeyService {
         where: { key: key },
       });
       if (DBkey) {
-        await this.mailKeyRepository.destroy({ where: { key: key } });
         return DBkey;
       }
       throw new BadRequestException('KEY EXIST');
