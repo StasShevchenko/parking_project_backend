@@ -166,7 +166,7 @@ export class UserService {
       const user = await this.userRepository.findOne({
         where: { email: email },
       });
-      if (dto.newPassword == dto.repeat_newPassword && this.comparePassword(user.password, dto.oldPassword)) {
+      if (dto.newPassword == dto.repeat_newPassword && this.comparePassword(dto.oldPassword, user.password,)) {
         if (this.PasswordValidation(dto.newPassword)) {
           const hashPassword = await this.hashPassword(dto.newPassword);
           user.password = hashPassword;
