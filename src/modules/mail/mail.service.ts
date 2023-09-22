@@ -12,7 +12,7 @@ export class MailService {
       to: user.email,
       subject: 'Успешная регистрация',
       html: `
-                    <p><a href="https://parking-project.ru/home"><img src="../../static/logo.jpg" width="50" 
+                    <p><a href="https://parking-project.ru/home"><img src="static/logo.jpg" width="50" 
                     height="50" alt="Ссылка"></a></p>
                     <h3> Добрый день, ${user.firstName} ${user.secondName}! </h3>
                     <p>  Вы зарегистрированы в Parking Project!<br />
