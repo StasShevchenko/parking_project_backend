@@ -12,7 +12,7 @@ export class MailService {
       to: user.email,
       subject: 'Успешная регистрация',
       html: `
-                    <p><a href="https://parking-project.ru/home"><img src="/home/develop/src/modules/mail/static/logo.jpg" width="50" 
+                    <p><a href="https://parking-project.ru/home"><img src="cid:logo" width="50" 
                     height="50" alt="Ссылка"></a></p>
                     <h3> Добрый день, ${user.firstName} ${user.secondName}! </h3>
                     <p>  Вы зарегистрированы в Parking Project!<br />
@@ -23,6 +23,11 @@ export class MailService {
                     Удачного дня.
                     </p>
             `,
+      attachments: [{
+        filename: 'logo.jpg',
+        patch: '/home/develop/src/modules/mail/static/logo.jpg',
+        cid: 'logo'
+      }]
     };
 
     mailer(message);
