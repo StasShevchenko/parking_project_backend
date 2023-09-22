@@ -21,6 +21,7 @@ import { User } from '../user/model/user.model';
 import { UserModule } from '../user/user.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { join } from 'path';
 
 @Module({
   controllers: [AppController],

@@ -12,22 +12,17 @@ export class MailService {
       to: user.email,
       subject: 'Успешная регистрация',
       html: `
-                    <p><a href="https://parking-project.ru/home"><img src="cid:logo" width="50" 
-                    height="50" alt="Ссылка"></a></p>
-                    <h3> Добрый день, ${user.firstName} ${user.secondName}! </h3>
+                   
+                    <h2> Добрый день, ${user.firstName} ${user.secondName}!</h2>
+                    <h3> Вас приветствует команда <a href="https://parking-project.ru/home">Parking Project!</a></h3>
                     <p>  Вы зарегистрированы в Parking Project!<br />
                     Пароль, сгенерированный по умолчанию: <br />
                     ${password} <br />
-                    Ваш логин: ${user.email}
+                    Ваш логин: ${user.email} <br />
                     После авторизации на сайте вам будет предложено сменить пароль!<br />
                     Удачного дня.
                     </p>
             `,
-      attachments: [{
-        filename: 'logo.jpg',
-        patch: '/home/develop/src/modules/mail/static/logo.jpg',
-        cid: 'logo'
-      }]
     };
 
     mailer(message);
