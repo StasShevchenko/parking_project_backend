@@ -8,7 +8,7 @@ export class MailService {
 
   async sendRegistrationsEmail(user: User, password: string) {
     const message = {
-      from: 'Команда Parking Project <denistestfortp@mail.ru>',
+      from: 'Команда <a href="https://parking-project.ru/home">Parking Project</a> <denistestfortp@mail.ru>',
       to: user.email,
       subject: 'Успешная регистрация',
       html: `
@@ -16,6 +16,7 @@ export class MailService {
                     <p>  Вы зарегистрированы в Parking Project!<br />
                     Пароль, сгенерированный по умолчанию: <br />
                     ${password} <br />
+                    Ваш логин: ${user.email}
                     После авторизации на сайте вам будет предложено сменить пароль!<br />
                     Удачного дня.
                     </p>
