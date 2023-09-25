@@ -26,6 +26,10 @@ export class UserService {
     return await this.userRepository.findOne({ where: { email } });
   }
 
+  async findUserById(id: number) {
+    return await this.userRepository.findByPk(id);
+  }
+
   uniqueKey() {
     let pass = uuid.v4().substring(0, 8);
     return pass;

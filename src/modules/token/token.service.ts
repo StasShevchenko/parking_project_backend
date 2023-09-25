@@ -1,14 +1,22 @@
 import {
   BadRequestException,
+  HttpException,
+  HttpStatus,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { CompleteRefreshTokenDto } from './dto';
+import { UserService } from '../user/user.service';
+import { NotFoundError } from 'rxjs';
+import { InjectModel } from '@nestjs/sequelize';
+import { User } from '../user/model/user.model';
 
 @Injectable()
 export class TokenService {
+  @InjectModel(User) private readonly userRepository: typeof User;
   constructor(
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
@@ -66,13 +74,28 @@ export class TokenService {
   async refreshToken(refresh: string): Promise<CompleteRefreshTokenDto> {
     try {
       const decode = await this.verifyRefreshToken(refresh);
-      const user = decode.user;
-      const accessToken = await this.generateAccessToken(user);
+      const userData = decode.user;
+      const user: boolean = await this.checkUser(userData.id);
+      const accessToken = await this.generateAccessToken(userData);
 
       return { access: accessToken };
     } catch (e) {
-      console.log(e);
+      if (e.status == 404) {
+        throw new NotFoundException(HttpStatus.NOT_FOUND);
+      }
       throw new BadRequestException('Invalid token');
+    }
+  }
+
+  async checkUser(id: number): Promise<boolean> {
+    try{
+      const user = await this.userRepository.findByPk(id);
+      if (user) {
+        return true
+      } 
+      throw new NotFoundException(HttpStatus.NOT_FOUND);
+    }catch(e) {
+      throw new NotFoundException(HttpStatus.NOT_FOUND);
     }
   }
 }
