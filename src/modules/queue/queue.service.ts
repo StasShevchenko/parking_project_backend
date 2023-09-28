@@ -251,6 +251,7 @@ export class QueueService {
           email: user.email,
           active: user.active,
           id: user.id,
+          avatar: user.avatar
         };
         nextUsers.push(nextUser);
       }
