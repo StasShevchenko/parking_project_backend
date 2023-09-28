@@ -9,7 +9,7 @@ export class Queue extends Model {
   number: number;
 
   @Column
-  start_period_time: Date;
+  start_period_time: Date
 
   @Column
   end_period_time: Date;

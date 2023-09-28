@@ -22,6 +22,7 @@ import { UserModule } from '../user/user.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { join } from 'path';
+import { ServeStaticModule } from '@nestjs/serve-static';
 
 @Module({
   controllers: [AppController],
@@ -31,12 +32,12 @@ import { join } from 'path';
       isGlobal: true,
       load: [],
     }),
+    ServeStaticModule.forRoot({
+      rootPath: '/home/develop/src/static',
+      serveRoot: '/static',
+      exclude: ['/api/(.*)'],
+    }),
     ScheduleModule.forRoot(),
-    // MailerModule.forRootAsync({
-    //   imports: [ConfigModule],
-    //   inject: [ConfigService],
-    //   useFactory: getMailConfig,
-    // }),
     SequelizeModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

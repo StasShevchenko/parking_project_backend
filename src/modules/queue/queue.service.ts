@@ -138,9 +138,9 @@ export class QueueService {
     let end_active_time = new Date();
     end_active_time.setDate(nowDate.getDate() + period);
     user.active = true;
-    user.start_active_time = nowDate;
-    user.end_active_time = end_active_time;
-    user.last_active_period = nowDate;
+    user.start_active_time = nowDate
+    user.end_active_time = end_active_time
+    user.last_active_period = nowDate
     await user.save();
   }
 
@@ -176,7 +176,7 @@ export class QueueService {
     const period = (await this.inputDataRepository.findOne()).period;
     const seats = 3;
     const nowDate = new Date();
-    const start_time = new Date();
+    const start_time = new Date()
     const end_time = new Date();
     const millisecondsPerDay = 24 * 60 * 60 * 1000;
     const countQueue = await this.queueRepository.count();

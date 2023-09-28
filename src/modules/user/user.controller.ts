@@ -31,6 +31,7 @@ import { ResponseUserDto } from './dto/response_user.dto';
 import { UpdateAllUserDataDto } from './dto/update.all_user_data';
 import { User } from './model/user.model';
 import { UserService } from './user.service';
+import { join } from 'path';
 
 @ApiTags('Users')
 @Controller('user')
@@ -228,4 +229,12 @@ export class UserController {
   MailKeyReview(@Body() dto: MailKeyReviewDto): Promise<String> {
     return this.userService.KeyReview(dto);
   }
+
+  @Get("/test/test")
+  test() {
+    const a = join(__dirname, '..')
+    return a
+}
+
+
 }
