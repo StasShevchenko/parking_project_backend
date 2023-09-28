@@ -49,6 +49,7 @@ export class AuthService {
       first_name: existUser.firstName,
       second_name: existUser.secondName,
       changePassword: existUser.changePassword,
+      avatar: existUser.avatar,
     };
     const jwtAccess = await this.tokenService.generateAccessToken(userData);
     const jwtRefresh = await this.tokenService.generateRefreshToken(userData);
