@@ -12,6 +12,7 @@ import { ForgotPasswordDto } from './dto/forgot_password.dto';
 import { MailKeyReviewDto } from './dto/mail_key_review.dto';
 import { UpdateAllUserDataDto } from './dto/update.all_user_data';
 import { User } from './model/user.model';
+import { ChangeAvatarDto } from './dto/changeAvatar.dto';
 
 @Injectable()
 export class UserService {
@@ -333,6 +334,20 @@ export class UserService {
     } catch (e) {
       console.log(e)
       throw new BadRequestException();
+    }
+  }
+
+  async changeAvatar(dto: ChangeAvatarDto, userId: number): Promise<Boolean> {
+    try{
+      const user: User = await this.userRepository.findByPk(userId);
+      user.avatar = dto.avatarName;
+      await user.save()
+      console.log(user)
+      console.log(dto)
+      return true
+    } catch(e) {  
+      console.log(e)
+      throw new BadRequestException()
     }
   }
 }

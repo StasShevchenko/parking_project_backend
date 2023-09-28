@@ -23,6 +23,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { join } from 'path';
 import { ServeStaticModule } from '@nestjs/serve-static';
+import { AvatarModule } from 'src/avatar/avatar.module';
 
 @Module({
   controllers: [AppController],
@@ -34,6 +35,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
     }),
     ServeStaticModule.forRoot({
       rootPath: '/home/develop/src/static',
+      // rootPath: 'D:/parking_project/src/static',
       serveRoot: '/static',
       exclude: ['/api/(.*)'],
     }),
@@ -62,6 +64,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
     NotificationsModule,
     MailModule,
     MailKeyModule,
+    AvatarModule
   ],
 })
 export class AppModule implements NestModule {

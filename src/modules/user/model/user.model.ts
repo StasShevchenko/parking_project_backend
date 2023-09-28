@@ -39,6 +39,10 @@ export class User extends Model {
   @Column
   last_active_period: Date;
 
+  @Default(null)
+  @Column
+  avatar: String // Новое поле
+
   @Default(false)
   @Column
   changePassword: boolean;

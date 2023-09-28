@@ -32,6 +32,7 @@ import { UpdateAllUserDataDto } from './dto/update.all_user_data';
 import { User } from './model/user.model';
 import { UserService } from './user.service';
 import { join } from 'path';
+import { ChangeAvatarDto } from './dto/changeAvatar.dto';
 
 @ApiTags('Users')
 @Controller('user')
@@ -230,11 +231,20 @@ export class UserController {
     return this.userService.KeyReview(dto);
   }
 
-  @Get("/test/test")
-  test() {
-    const a = join(__dirname, '..')
-    return a
-}
+
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Изменение аватарки пользователя - только авторизованным',
+  })
+  @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
+  @ApiResponse({ status: 201, type: ChangeAvatarDto })
+  @UseGuards(JWTAuthGuard)
+  @Post('changeAvatar')
+  changeAvatar(@Body() dto: ChangeAvatarDto, @Request() req): Promise<Boolean> {
+    return this.userService.changeAvatar(dto, req.user.id);
+  }
+
+  
 
 
 }

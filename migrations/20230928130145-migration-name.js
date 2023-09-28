@@ -2,10 +2,10 @@
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.addColumn('Users', 'changePassword', {
-      type: Sequelize.BOOLEAN,
-      defaultValue: false, // Установите дефолтное значение
-      allowNull: false,
+    await queryInterface.addColumn('Users', 'avatar', {
+      type: Sequelize.CHAR,
+      defaultValue: null, // Установите дефолтное значение
+      allowNull: true,
     });
   },
 
