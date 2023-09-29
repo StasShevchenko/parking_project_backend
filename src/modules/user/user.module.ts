@@ -8,6 +8,7 @@ import { TokenModule } from '../token/token.module';
 import { User } from './model/user.model';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
+import { AvatarService } from '../avatar/avatar.service';
 
 @Module({
   imports: [
@@ -18,7 +19,7 @@ import { UserService } from './user.service';
     forwardRef(() => QueueModule),
   ],
   controllers: [UserController],
-  providers: [UserService, JwtService],
+  providers: [UserService, JwtService, AvatarService],
   exports: [UserService],
 })
 export class UserModule {}

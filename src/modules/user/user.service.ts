@@ -13,6 +13,7 @@ import { MailKeyReviewDto } from './dto/mail_key_review.dto';
 import { UpdateAllUserDataDto } from './dto/update.all_user_data';
 import { User } from './model/user.model';
 import { ChangeAvatarDto } from './dto/changeAvatar.dto';
+import { AvatarService } from '../avatar/avatar.service';
 
 @Injectable()
 export class UserService {
@@ -21,6 +22,7 @@ export class UserService {
     private readonly queueService: QueueService,
     private readonly mailService: MailService,
     private readonly mailKeyService: MailKeyService,
+    private readonly avatarServcice: AvatarService,
   ) {}
 
   async findUserByEmail(email: string) {
@@ -46,12 +48,13 @@ export class UserService {
       if (validate) {
         throw new BadRequestException('User with this email exist');
       }
-
+      const avatar = this.avatarServcice.getAvatarToRegistrationUser()
       const key = this.uniqueKey().substring(0, 8);
       const password = await this.hashPassword(key);
       const newUser = await this.userRepository.create({
         ...dto,
         password: password,
+        avatar: avatar,
       });
       if (dto.in_queue) {
         const user = await this.findUserByEmail(dto.email);
@@ -350,4 +353,7 @@ export class UserService {
       throw new BadRequestException()
     }
   }
+
+  async 
+
 }
