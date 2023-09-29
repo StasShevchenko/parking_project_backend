@@ -10,8 +10,8 @@ export class AvatarService {
     }
 
     getAvatarToRegistrationUser(): String{
-        const rand = Math.random() * (25-21) + 21
-        const avatarName = 'ava' + rand
+        const rand = Math.floor(Math.random() * (25 - 21 + 1)) + 21;
+        const avatarName = 'ava' + rand + '.png'
         return avatarName
     }
 }
