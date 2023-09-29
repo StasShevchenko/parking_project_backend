@@ -13,7 +13,7 @@ import { AuthUserResponseDTO, LoginUserDTO } from './dto';
 import { Roles } from './has-roles.decorator';
 import { RolesGuard } from './roles.guard';
 
-// @ApiBearerAuth()
+@ApiBearerAuth()
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
@@ -26,8 +26,8 @@ export class AuthController {
   })
   @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  // @UseGuards(RolesGuard)
-  // @Roles('is_staff')
+  @UseGuards(RolesGuard)
+  @Roles('is_staff')
   @Post('register')
   register(@Body() dto: CreateUserDto): Promise<CreateUserDto> {
     return this.authService.registerUsers(dto);
