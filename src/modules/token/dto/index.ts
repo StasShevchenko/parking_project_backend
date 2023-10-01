@@ -8,6 +8,9 @@ export class RefreshTokenDto {
 export class CompleteRefreshTokenDto {
   @ApiProperty()
   access: string;
+
+  @ApiProperty()
+  refresh: string;
 }
 
 export class TokenDataDto {
