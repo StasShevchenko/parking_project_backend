@@ -3,17 +3,20 @@ import { InjectModel } from '@nestjs/sequelize';
 import * as bcrypt from 'bcrypt';
 import { Op } from 'sequelize';
 import * as uuid from 'uuid';
+import { AvatarService } from '../avatar/avatar.service';
 import { MailService } from '../mail/mail.service';
 import { MailKeyService } from '../mail_key/mail_key.service';
 import { QueueService } from '../queue/queue.service';
 import { CreateUserDto } from './dto';
-import { PasswordForgotChangeDto, changePasswordFromProfileDto } from './dto/changePassword.dto';
+import { ChangeAvatarDto } from './dto/changeAvatar.dto';
+import {
+  PasswordForgotChangeDto,
+  changePasswordFromProfileDto,
+} from './dto/changePassword.dto';
 import { ForgotPasswordDto } from './dto/forgot_password.dto';
 import { MailKeyReviewDto } from './dto/mail_key_review.dto';
 import { UpdateAllUserDataDto } from './dto/update.all_user_data';
 import { User } from './model/user.model';
-import { ChangeAvatarDto } from './dto/changeAvatar.dto';
-import { AvatarService } from '../avatar/avatar.service';
 
 @Injectable()
 export class UserService {
@@ -48,7 +51,7 @@ export class UserService {
       if (validate) {
         throw new BadRequestException('User with this email exist');
       }
-      const avatar = this.avatarServcice.getAvatarToRegistrationUser()
+      const avatar = this.avatarServcice.getAvatarToRegistrationUser();
       const key = this.uniqueKey().substring(0, 8);
       const password = await this.hashPassword(key);
       const newUser = await this.userRepository.create({
@@ -58,12 +61,12 @@ export class UserService {
       });
       if (dto.in_queue) {
         const user = await this.findUserByEmail(dto.email);
-        const nowDate = new Date()
+        const nowDate = new Date();
         const userId = {
           userId: user.id,
         };
-        user.last_active_period = nowDate
-        await user.save()
+        user.last_active_period = nowDate;
+        await user.save();
         await this.queueService.create(userId);
       }
       await this.mailService.sendRegistrationsEmail(newUser, key);
@@ -97,20 +100,41 @@ export class UserService {
     });
   }
 
-  async getUserById(id: number): Promise<User> {
+  async getUserById(id: number) {
     try {
       const user = await this.userRepository.findOne({
         where: { id },
         attributes: { exclude: ['password', 'createdAt', 'updatedAt'] },
       });
+      let nextUserData;
+      let previousUserData;
+      if (user.next_active) {
+        const NextUser = await this.userRepository.findByPk(user.next_active);
+        nextUserData = {
+          firstName: NextUser.firstName,
+          secondName: NextUser.secondName,
+          email: NextUser.email,
+        };
+      }
+      if (user.previous_active) {
+        const PreviousUser = await this.userRepository.findByPk(
+          user.previous_active,
+        );
+        previousUserData = {
+          firstName: PreviousUser.firstName,
+          secondName: PreviousUser.secondName,
+          email: PreviousUser.email,
+        };
+      }
+
       if (user.active || !user.in_queue) {
-        return user;
+        return { ...user.toJSON(), nextUserData, previousUserData };
       } else {
         const start_time = await this.queueService.nextPeriodNoActiveUser(user);
         user.start_active_time = start_time.start_active_time;
         user.end_active_time = start_time.end_active_time;
 
-        return user;
+        return { ...user.toJSON(), nextUserData, previousUserData };
       }
     } catch (e) {
       console.log(e);
@@ -169,7 +193,10 @@ export class UserService {
     }
   }
 
-  async changePasswordFromProfile(dto: changePasswordFromProfileDto, email: string): Promise<boolean> {
+  async changePasswordFromProfile(
+    dto: changePasswordFromProfileDto,
+    email: string,
+  ): Promise<boolean> {
     try {
       const user = await this.userRepository.findOne({
         where: { email: email },
@@ -181,29 +208,30 @@ export class UserService {
       if (!compareOldPassword || dto.newPassword != dto.repeat_newPassword) {
         throw new BadRequestException('Wrong Data');
       }
-        if (this.PasswordValidation(dto.newPassword)) {
-          const hashPassword = await this.hashPassword(dto.newPassword);
-          user.password = hashPassword;
-          user.changePassword = true;
-          await user.save();
-          return true;
-        } else {
-          throw new BadRequestException({ messange: 'Простой пароль' });
-        }
-      
-    } catch(e) {
-      throw new BadRequestException()
+      if (this.PasswordValidation(dto.newPassword)) {
+        const hashPassword = await this.hashPassword(dto.newPassword);
+        user.password = hashPassword;
+        user.changePassword = true;
+        await user.save();
+        return true;
+      } else {
+        throw new BadRequestException({ messange: 'Простой пароль' });
+      }
+    } catch (e) {
+      throw new BadRequestException();
     }
   }
 
   async ForgotPasswordChange(dto: PasswordForgotChangeDto): Promise<boolean> {
     try {
-      const mailKey = await this.KeyReview( {key : dto.key})
-      const user = await this.userRepository.findOne({where: {email: mailKey}})
+      const mailKey = await this.KeyReview({ key: dto.key });
+      const user = await this.userRepository.findOne({
+        where: { email: mailKey },
+      });
       if (!user) {
-        throw new BadRequestException({message: "USER EXIST"})
+        throw new BadRequestException({ message: 'USER EXIST' });
       }
-      await this.mailKeyService.deleteByKey(dto.key)
+      await this.mailKeyService.deleteByKey(dto.key);
       if (dto.newPassword == dto.repeat_newPassword) {
         if (this.PasswordValidation(dto.newPassword)) {
           const hashPassword = await this.hashPassword(dto.newPassword);
@@ -215,11 +243,11 @@ export class UserService {
           throw new BadRequestException({ messange: 'Простой пароль' });
         }
       } else {
-        throw new BadRequestException({message: 'USER EXIST'});
+        throw new BadRequestException({ message: 'USER EXIST' });
       }
-    } catch(e) {
-      console.log(e)
-      throw new BadRequestException()
+    } catch (e) {
+      console.log(e);
+      throw new BadRequestException();
     }
   }
 
@@ -335,25 +363,22 @@ export class UserService {
         return DBkey.email;
       }
     } catch (e) {
-      console.log(e)
+      console.log(e);
       throw new BadRequestException();
     }
   }
 
   async changeAvatar(dto: ChangeAvatarDto, userId: number): Promise<Boolean> {
-    try{
+    try {
       const user: User = await this.userRepository.findByPk(userId);
       user.avatar = dto.avatarName;
-      await user.save()
-      console.log(user)
-      console.log(dto)
-      return true
-    } catch(e) {  
-      console.log(e)
-      throw new BadRequestException()
+      await user.save();
+      console.log(user);
+      console.log(dto);
+      return true;
+    } catch (e) {
+      console.log(e);
+      throw new BadRequestException();
     }
   }
-
-  async 
-
 }

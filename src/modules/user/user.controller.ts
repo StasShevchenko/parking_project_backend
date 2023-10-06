@@ -24,15 +24,17 @@ import { Roles } from '../auth/has-roles.decorator';
 import { JWTAuthGuard } from '../auth/jwt-guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { MailKey } from '../mail_key/model/mail_key.model';
-import { PasswordForgotChangeDto, changePasswordFromProfileDto } from './dto/changePassword.dto';
+import { ChangeAvatarDto } from './dto/changeAvatar.dto';
+import {
+  PasswordForgotChangeDto,
+  changePasswordFromProfileDto,
+} from './dto/changePassword.dto';
 import { ForgotPasswordDto } from './dto/forgot_password.dto';
 import { MailKeyReviewDto } from './dto/mail_key_review.dto';
 import { ResponseUserDto } from './dto/response_user.dto';
 import { UpdateAllUserDataDto } from './dto/update.all_user_data';
 import { User } from './model/user.model';
 import { UserService } from './user.service';
-import { join } from 'path';
-import { ChangeAvatarDto } from './dto/changeAvatar.dto';
 
 @ApiTags('Users')
 @Controller('user')
@@ -52,7 +54,7 @@ export class UserController {
     return this.userService.getAdminsList();
   }
 
-  @ApiBearerAuth()
+  // @ApiBearerAuth()
   @ApiOperation({
     summary: 'Получение конкретного пользователя - только авторизованным',
   })
@@ -61,9 +63,9 @@ export class UserController {
     type: ResponseUserDto,
   })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  @UseGuards(JWTAuthGuard)
+  // @UseGuards(JWTAuthGuard)
   @Get(':id')
-  getUser(@Param('id') id: number): Promise<User> {
+  getUser(@Param('id') id: number) {
     return this.userService.getUserById(id);
   }
 
@@ -122,10 +124,12 @@ export class UserController {
   @ApiResponse({ status: 201, type: changePasswordFromProfileDto })
   @UseGuards(JWTAuthGuard)
   @Post('changePassword')
-  changePassword(@Body() dto: changePasswordFromProfileDto, @Request() req): Promise<Boolean> {
+  changePassword(
+    @Body() dto: changePasswordFromProfileDto,
+    @Request() req,
+  ): Promise<Boolean> {
     return this.userService.changePasswordFromProfile(dto, req.user.email);
   }
-
 
   @ApiOperation({
     summary: 'Изменение пароля пользователя, если забыл - всем',
@@ -188,8 +192,8 @@ export class UserController {
     if (roles) {
       const rolesString = roles.slice(1, -1);
       rolesFilter = rolesString.split(',').map((role) => role.trim());
-      if (roles.length <=3) {
-        console.log(roles[0])
+      if (roles.length <= 3) {
+        console.log(roles[0]);
         return [];
       }
     }
@@ -231,7 +235,6 @@ export class UserController {
     return this.userService.KeyReview(dto);
   }
 
-
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Изменение аватарки пользователя - только авторизованным',
@@ -243,8 +246,4 @@ export class UserController {
   changeAvatar(@Body() dto: ChangeAvatarDto, @Request() req): Promise<Boolean> {
     return this.userService.changeAvatar(dto, req.user.id);
   }
-
-  
-
-
 }

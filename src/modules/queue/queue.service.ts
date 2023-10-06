@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectModel } from '@nestjs/sequelize';
+import { Op } from 'sequelize';
 import { Period } from 'src/interfaces/period.interface';
 import { User } from 'src/modules/user/model/user.model';
 import { combinedLogger } from 'src/utils/logger.config';
@@ -82,6 +83,24 @@ export class QueueService {
     return result;
   }
 
+  async getAllNextUsersId(): Promise<number[]> {
+    try {
+      const seats = (await this.inputDataRepository.findOne()).seats;
+      const result = await this.queueRepository.findAll({
+        where: {},
+        order: [['number', 'ASC']],
+        limit: seats,
+      });
+      let nextUsersId = [];
+      for (const queue of result) {
+        nextUsersId.push(queue.userId);
+      }
+      return nextUsersId;
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
   @Cron(CronExpression.EVERY_DAY_AT_4AM)
   async CheckUserActivation() {
     const nowDate = new Date();
@@ -126,6 +145,8 @@ export class QueueService {
     user.active = false;
     user.end_active_time = null;
     user.start_active_time = null;
+    user.next_active = null;
+    user.previous_active = null;
     await user.save();
 
     await this.deleteFromQueue(minUser.id);
@@ -138,9 +159,11 @@ export class QueueService {
     let end_active_time = new Date();
     end_active_time.setDate(nowDate.getDate() + period);
     user.active = true;
-    user.start_active_time = nowDate
-    user.end_active_time = end_active_time
-    user.last_active_period = nowDate
+    user.start_active_time = nowDate;
+    user.end_active_time = end_active_time;
+    user.last_active_period = nowDate;
+    user.next_active = null;
+    user.previous_active = null;
     await user.save();
   }
 
@@ -176,7 +199,7 @@ export class QueueService {
     const period = (await this.inputDataRepository.findOne()).period;
     const seats = 3;
     const nowDate = new Date();
-    const start_time = new Date()
+    const start_time = new Date();
     const end_time = new Date();
     const millisecondsPerDay = 24 * 60 * 60 * 1000;
     const countQueue = await this.queueRepository.count();
@@ -251,7 +274,7 @@ export class QueueService {
           email: user.email,
           active: user.active,
           id: user.id,
-          avatar: user.avatar
+          avatar: user.avatar,
         };
         nextUsers.push(nextUser);
       }
@@ -346,5 +369,54 @@ export class QueueService {
       order: [['number', 'ASC']],
     });
     return queue;
+  }
+
+  // @Cron(CronExpression.EVERY_10_SECONDS)
+  async CheckingHowManyDaysToEndTime() {
+    try {
+      const activeUsers = await this.userRepository.findAll({
+        where: { active: true },
+      });
+      for (const user of activeUsers) {
+        const differenceInDays = this.daysUntilTargetDate(user.end_active_time);
+        if (differenceInDays <= 3) {
+          await this.changeNextActiveUserToUserModel(user);
+        }
+      }
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
+  daysUntilTargetDate(targetDate): number {
+    const currentDate = new Date();
+    const targetDateObj = new Date(targetDate);
+    const differenceInMs = targetDateObj.getDate() - currentDate.getDate();
+    const differenceInDays = differenceInMs / (1000 * 60 * 60 * 24);
+    return differenceInDays;
+  }
+
+  async changeNextActiveUserToUserModel(user: User) {
+    try {
+      const allNextUsersId = await this.getAllNextUsersId();
+      const minUser = await this.userRepository.findOne({
+        where: {
+          id: {
+            [Op.in]: allNextUsersId, // Используем оператор $in для поиска по нескольким ID
+          },
+          previous_active: null, // Условие на поле previous_user
+        },
+      });
+      if (!minUser) {
+        return;
+      }
+
+      user.next_active = minUser.id;
+      minUser.previous_active = user.id;
+      await user.save();
+      await minUser.save();
+    } catch (e) {
+      console.log(e);
+    }
   }
 }

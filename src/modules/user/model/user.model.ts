@@ -41,11 +41,17 @@ export class User extends Model {
 
   @Default(null)
   @Column
-  avatar: String // Новое поле
+  avatar: String;
 
   @Default(false)
   @Column
   changePassword: boolean;
+
+  @Column
+  next_active: number;
+
+  @Column
+  previous_active: number;
 
   @HasMany(() => Notification)
   notifications: Notification[];
