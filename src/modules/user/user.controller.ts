@@ -63,7 +63,7 @@ export class UserController {
     type: ResponseUserDto,
   })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  // @UseGuards(JWTAuthGuard)
+  // @UseGuards(JWTAuthGuard)tt
   @Get(':id')
   getUser(@Param('id') id: number) {
     return this.userService.getUserById(id);

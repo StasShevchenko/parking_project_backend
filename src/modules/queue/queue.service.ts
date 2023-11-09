@@ -21,9 +21,60 @@ export class QueueService {
   ) {}
   private readonly logger = new Logger(QueueService.name);
 
+  async AddUserToQueue() {
+    //   : Promise<Queue>
+    //   dto: CreateQueueDTO
+
+    const minNumberActiveInQueue =
+      await this.IncrementNumberActiveUsersAndGetMinNumber();
+
+    const inputData = await this.inputDataRepository.findOne();
+    const nowDate = new Date();
+    const end_time = new Date();
+    end_time.setDate(end_time.getDate() + inputData.period);
+    // const user = await this.userRepository.findOne({
+    //   where: { id: dto.userId },
+    // });
+
+    // if (!user.in_queue) {
+    //   user.in_queue = true;
+    //   user.last_active_period = nowDate;
+    //   user.save();
+    // }
+
+    // if (!user.last_active_period) {
+    //   user.last_active_period = nowDate;
+    // }
+
+    return minNumberActiveInQueue;
+  }
+
+  async IncrementNumberActiveUsersAndGetMinNumber() {
+    const allActiveUsersNow = await this.userRepository.findAll({
+      where: { active: true },
+    });
+
+    const userIds = allActiveUsersNow.map((user) => user.id);
+
+    let activeUsersInQueue = await this.queueRepository.findAll({
+      where: {
+        userId: userIds,
+      },
+      order: [['number', 'ASC']],
+    });
+
+    let MinNumber = activeUsersInQueue[0].number;
+
+    for (var user of activeUsersInQueue) {
+      user.number++;
+      await user.save();
+    }
+
+    return MinNumber;
+  }
+
   async create(dto: CreateQueueDTO): Promise<Queue> {
     const maxNumber = await this.getMaxNumber();
-    console.log(dto);
     const inputData = await this.inputDataRepository.findOne();
     const nowDate = new Date();
     const end_time = new Date();
@@ -34,21 +85,21 @@ export class QueueService {
     const numberActiveUsers = (
       await this.userRepository.findAll({ where: { active: true } })
     ).length;
-    if (numberActiveUsers < inputData.seats) {
-      await this.ActivationUser(user, inputData.period);
-    }
 
     if (!user.in_queue) {
       user.in_queue = true;
       user.last_active_period = nowDate;
       user.save();
-      const queue = await this.getQueue();
-      // await this.queueAheadService.generateNewQueue(user.id, queue);
     }
+
+    if (numberActiveUsers < inputData.seats) {
+      await this.ActivationUser(user, inputData.period);
+    }
+
     if (!user.last_active_period) {
       user.last_active_period = nowDate;
     }
-    // await this.queueAheadService.addUser(user.id);
+
     if (maxNumber) {
       return this.queueRepository.create({
         userId: dto.userId,

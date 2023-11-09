@@ -92,4 +92,9 @@ export class QueueController {
   deleteFromQueue(@Param('id') id: number) {
     return this.queueService.deleteFromQueue(id);
   }
+
+  @Get('/test')
+  testCreateuser() {
+    return this.queueService.AddUserToQueue();
+  }
 }
