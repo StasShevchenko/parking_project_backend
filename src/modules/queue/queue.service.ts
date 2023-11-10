@@ -1,8 +1,6 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectModel } from '@nestjs/sequelize';
-import { Op } from 'sequelize';
-import { Period } from 'src/interfaces/period.interface';
 import { User } from 'src/modules/user/model/user.model';
 import { combinedLogger } from 'src/utils/logger.config';
 import { InputData } from '../input-data/model/input-data.model';
@@ -21,147 +19,154 @@ export class QueueService {
   ) {}
   private readonly logger = new Logger(QueueService.name);
 
-  async AddUserToQueue() {
-    //   : Promise<Queue>
-    //   dto: CreateQueueDTO
-
-    const minNumberActiveInQueue =
-      await this.IncrementNumberActiveUsersAndGetMinNumber();
-
-    const inputData = await this.inputDataRepository.findOne();
-    const nowDate = new Date();
-    const end_time = new Date();
-    end_time.setDate(end_time.getDate() + inputData.period);
-    // const user = await this.userRepository.findOne({
-    //   where: { id: dto.userId },
-    // });
-
-    // if (!user.in_queue) {
-    //   user.in_queue = true;
-    //   user.last_active_period = nowDate;
-    //   user.save();
-    // }
-
-    // if (!user.last_active_period) {
-    //   user.last_active_period = nowDate;
-    // }
-
-    return minNumberActiveInQueue;
-  }
-
+  // При добавлении нового пользователя добавляем его перед активными
   async IncrementNumberActiveUsersAndGetMinNumber() {
-    const allActiveUsersNow = await this.userRepository.findAll({
-      where: { active: true },
-    });
-
-    const userIds = allActiveUsersNow.map((user) => user.id);
-
-    let activeUsersInQueue = await this.queueRepository.findAll({
-      where: {
-        userId: userIds,
-      },
-      order: [['number', 'ASC']],
-    });
-
-    let MinNumber = activeUsersInQueue[0].number;
-
-    for (var user of activeUsersInQueue) {
-      user.number++;
-      await user.save();
-    }
-
-    return MinNumber;
-  }
-
-  async create(dto: CreateQueueDTO): Promise<Queue> {
-    const maxNumber = await this.getMaxNumber();
-    const inputData = await this.inputDataRepository.findOne();
-    const nowDate = new Date();
-    const end_time = new Date();
-    end_time.setDate(end_time.getDate() + inputData.period);
-    const user = await this.userRepository.findOne({
-      where: { id: dto.userId },
-    });
-    const numberActiveUsers = (
-      await this.userRepository.findAll({ where: { active: true } })
-    ).length;
-
-    if (!user.in_queue) {
-      user.in_queue = true;
-      user.last_active_period = nowDate;
-      user.save();
-    }
-
-    if (numberActiveUsers < inputData.seats) {
-      await this.ActivationUser(user, inputData.period);
-    }
-
-    if (!user.last_active_period) {
-      user.last_active_period = nowDate;
-    }
-
-    if (maxNumber) {
-      return this.queueRepository.create({
-        userId: dto.userId,
-        number: maxNumber.number + 1,
-        start_period_time: nowDate,
-        end_period_time: end_time,
-      });
-    }
-    return this.queueRepository.create({
-      userId: dto.userId,
-      number: 1,
-      start_period_time: nowDate,
-      end_period_time: end_time,
-    });
-  }
-
-  async getMaxNumber(): Promise<Queue> {
-    const result = await this.queueRepository.findOne({
-      where: {},
-      order: [['number', 'DESC']],
-      limit: 1,
-    });
-    return result;
-  }
-
-  async getMinNumber(): Promise<Queue> {
-    const result = await this.queueRepository.findOne({
-      where: {},
-      order: [['number', 'ASC']],
-      limit: 1,
-    });
-    return result;
-  }
-
-  async getAllNextUsersId(): Promise<number[]> {
     try {
-      const seats = (await this.inputDataRepository.findOne()).seats;
-      const result = await this.queueRepository.findAll({
-        where: {},
-        order: [['number', 'ASC']],
-        limit: seats,
+      // Добавить чтобы следующий период +1 из-за нового юзера
+      const allActiveUsersNow = await this.userRepository.findAll({
+        where: { active: true },
       });
-      let nextUsersId = [];
-      for (const queue of result) {
-        nextUsersId.push(queue.userId);
+
+      if (allActiveUsersNow.length == 0) {
+        return;
       }
-      return nextUsersId;
+
+      const userIds = allActiveUsersNow.map((user) => user.id);
+
+      let activeUsersInQueue = await this.queueRepository.findAll({
+        where: {
+          userId: userIds,
+        },
+        order: [['number', 'ASC']],
+      });
+
+      let MinNumber = activeUsersInQueue[0].number;
+
+      for (var user of activeUsersInQueue) {
+        user.number++;
+        await user.save();
+      }
+      return MinNumber;
     } catch (e) {
       console.log(e);
     }
   }
 
-  @Cron(CronExpression.EVERY_DAY_AT_4AM)
+  async AddUserToQueue(dto: CreateQueueDTO): Promise<Queue> {
+    try {
+      const inputData = await this.inputDataRepository.findOne();
+      const numberActiveUsers = (
+        await this.userRepository.findAll({ where: { active: true } })
+      ).length;
+
+      // Получаем юзера из бд по userId из dto
+      const user = await this.userRepository.findOne({
+        where: { id: dto.userId },
+      });
+      const MaxNumber = await this.getMaxNumber();
+
+      const nowDate = new Date();
+      const end_time = new Date();
+      end_time.setDate(end_time.getDate() + inputData.period);
+
+      // Если кол-во активных юзеров меньше парковочных мест сразу активируем юзера
+      if (numberActiveUsers < inputData.seats) {
+        await this.ActivationUser(user);
+      }
+
+      // Если юзер только создан и еще не в очереди
+      if (!user.in_queue) {
+        user.in_queue = true;
+        user.last_active_period = nowDate;
+        user.save();
+
+        // Если уже есть активные, то добавляем нового юзера перед ними и нужно поменять их периоды на +1 вперед
+        if (numberActiveUsers >= inputData.seats) {
+          const MinNumberActiveUser =
+            await this.IncrementNumberActiveUsersAndGetMinNumber();
+          //Если есть MinNumber
+          if (MinNumberActiveUser) {
+            return this.queueRepository.create({
+              userId: dto.userId,
+              number: MinNumberActiveUser,
+              start_period_time: nowDate,
+              end_period_time: end_time,
+            });
+          }
+          // Если его нет
+          return this.queueRepository.create({
+            userId: dto.userId,
+            number: 1,
+            start_period_time: nowDate,
+            end_period_time: end_time,
+          });
+        }
+      }
+
+      // Если у юзера поле last_active_period не задано
+      if (!user.last_active_period) {
+        user.last_active_period = nowDate;
+      }
+
+      if (MaxNumber) {
+        return this.queueRepository.create({
+          userId: dto.userId,
+          number: MaxNumber + 1,
+          start_period_time: nowDate,
+          end_period_time: end_time,
+        });
+      }
+      return this.queueRepository.create({
+        userId: dto.userId,
+        number: 1,
+        start_period_time: nowDate,
+        end_period_time: end_time,
+      });
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
+  async getMaxNumber(): Promise<number> {
+    try {
+      const result = await this.queueRepository.findOne({
+        where: {},
+        order: [['number', 'DESC']],
+        limit: 1,
+      });
+
+      return result ? result.number : null;
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
+  async getMinNumberUser(): Promise<Queue> {
+    try {
+      const result = await this.queueRepository.findOne({
+        where: {},
+        order: [['number', 'ASC']],
+        limit: 1,
+      });
+      return result;
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
+  @Cron(CronExpression.EVERY_1ST_DAY_OF_MONTH_AT_MIDNIGHT)
   async CheckUserActivation() {
-    const nowDate = new Date();
-    const activeUsers = await this.userRepository.findAll({
-      where: { active: true },
-    });
-    combinedLogger.info({ Message: 'Сдвиг очереди' });
-    for (const user of activeUsers) {
-      if (nowDate > user.end_active_time) {
-        await this.changeActiveUser(user);
+    try {
+    } catch (e) {
+      const nowDate = new Date();
+      const activeUsers = await this.userRepository.findAll({
+        where: { active: true },
+      });
+      combinedLogger.info({ Message: 'Сдвиг очереди' });
+      for (const user of activeUsers) {
+        if (nowDate > user.end_active_time) {
+          await this.changeActiveUser(user);
+        }
       }
     }
   }
@@ -175,23 +180,10 @@ export class QueueService {
   }
 
   async changeActiveUser(user: User) {
-    const period = (await this.inputDataRepository.findOne()).period;
-    const nowDate = new Date();
-    const millisecondsInNDays = period * 2 * 24 * 60 * 60 * 1000;
-
-    const maxNumber = await this.getMaxNumber();
-
-    const minUserId = (await this.getMinNumber()).userId;
+    const minNumberUserId = (await this.getMinNumberUser()).userId;
     const minUser = await this.userRepository.findOne({
-      where: { id: minUserId },
+      where: { id: minNumberUserId },
     });
-
-    const last_active_period_minUser = new Date(minUser.last_active_period);
-    const timeDifference = Math.abs(
-      nowDate.getTime() - last_active_period_minUser.getTime(),
-    );
-    const activateMoreMonthAgo =
-      timeDifference >= millisecondsInNDays ? true : false;
 
     user.active = false;
     user.end_active_time = null;
@@ -201,124 +193,68 @@ export class QueueService {
     await user.save();
 
     await this.deleteFromQueue(minUser.id);
-    await this.create({ userId: minUser.id });
-    await this.ActivationUser(minUser, period);
+    await this.AddUserToQueue({ userId: minUser.id });
+    await this.ActivationUser(minUser);
   }
 
-  async ActivationUser(user: User, period: number) {
+  async ActivationUser(user: User) {
     const nowDate = new Date();
-    let end_active_time = new Date();
-    end_active_time.setDate(nowDate.getDate() + period);
+    let endDate = new Date();
+    endDate.setMonth(nowDate.getMonth() + 1);
     user.active = true;
     user.start_active_time = nowDate;
-    user.end_active_time = end_active_time;
+    user.end_active_time = endDate;
     user.last_active_period = nowDate;
     user.next_active = null;
     user.previous_active = null;
     await user.save();
   }
 
-  async nextPeriodActiveUser(user: User) {
-    let period = 30;
-    const seats = 3;
-    const nowDate = new Date();
-    const nextPeriod = new Date();
-    const millisecondsPerDay = 24 * 60 * 60 * 1000;
-    const countQueue = await this.queueRepository.count();
-    let periods = [];
-
-    const positionUserFromQueue = (
-      await this.queueRepository.findOne({ where: { userId: user.id } })
-    ).number;
-    const minNumberFromQueue = await this.queueRepository.findOne({
-      where: {},
-      order: [['number', 'ASC']],
-      limit: 1,
+  // Для всех пользователей
+  async GetThisPeriodQueue(): Promise<Queue[]> {
+    // Сейчас активные, они пойдут первые + их start_time точка отсчета
+    const NowActiveUsers = await this.userRepository.findAll({
+      where: { active: true },
     });
+    let nowDate = new Date(NowActiveUsers[0].start_active_time);
+    let nextDate = new Date(NowActiveUsers[0].start_active_time);
 
-    const user_end_date = new Date(user.end_active_time);
-    const day_left =
-      (user_end_date.getTime() - nowDate.getTime()) / millisecondsPerDay;
-    const periodCount = Math.floor(
-      (positionUserFromQueue - minNumberFromQueue.number) / seats,
-    );
-    nextPeriod.setDate(nowDate.getDate() + day_left + periodCount * period + 1);
-    return nextPeriod.toISOString();
-  }
-
-  async nextPeriodNoActiveUser(user: User) {
-    const period = (await this.inputDataRepository.findOne()).period;
-    const seats = 3;
-    const nowDate = new Date();
-    const start_time = new Date();
-    const end_time = new Date();
-    const millisecondsPerDay = 24 * 60 * 60 * 1000;
-    const countQueue = await this.queueRepository.count();
-
-    const positionUserFromQueue = (
-      await this.queueRepository.findOne({ where: { userId: user.id } })
-    ).number;
-    const minNumberFromQueue = await this.queueRepository.findOne({
-      where: {},
-      order: [['number', 'ASC']],
-      limit: 1,
-    });
-    const activeUser = await this.userRepository.findOne({
-      where: {
-        active: true,
-      },
-    });
-    const user_active_end_data = new Date(activeUser.end_active_time);
-    const day_left =
-      (user_active_end_data.getTime() - nowDate.getTime()) / millisecondsPerDay;
-    const periodCount = Math.floor(
-      (positionUserFromQueue - minNumberFromQueue.number) / seats,
-    );
-    start_time.setDate(nowDate.getDate() + day_left + periodCount * period + 1);
-    end_time.setDate(
-      nowDate.getDate() + day_left + periodCount * period + 1 + period,
-    );
-    return { start_active_time: start_time, end_active_time: end_time };
-  }
-
-  async getAllNextPeriods(): Promise<Period[]> {
-    const nowDate = (
-      await this.userRepository.findOne({ where: { active: true } })
-    ).start_active_time;
     const inputData = await this.inputDataRepository.findOne();
+    // Вся очередь
     const usersInQueue = await this.queueRepository.findAll({
       order: [['number', 'ASC']],
     });
-    let nextPeriods = [];
-    let nextQueue = [...usersInQueue];
+    let Period = [];
+    let nextUsers = [];
+    let flag_users_count = 0; // Для того, чтобы помещать юзеров в разные месяцы
+    let flag_periods = 1; // Сколько месяцев добавляем для start_period_time
 
-    let nextDate = new Date();
-    nextDate.setDate(nowDate.getDate() + inputData.period);
-    let flag = 0;
+    // Сдесь добавить в Period активных сейчас юзеров
 
-    for (let i = 0; i < inputData.numberOfOutputPeriods; i++) {
-      let nextUsers = [];
-      let activeUsers;
-      if (flag < 1) {
-        activeUsers = await this.userRepository.findAll({
-          where: { active: true },
-        });
-        console.log('Dadadadadada');
-        flag++;
-      } else {
-        const lastEntries = nextQueue.slice(-inputData.seats);
+    for (let user of NowActiveUsers) {
+      const nextUser = {
+        firstName: user.firstName,
+        secondName: user.secondName,
+        email: user.email,
+        active: user.active,
+        id: user.id,
+        avatar: user.avatar,
+      };
+      nextUsers.push(nextUser);
+    }
+    let nextPeriodForActiveUsers = {
+      start_time: nowDate.toISOString(),
+      end_time: nextDate.toISOString(),
+      nextUsers,
+    };
+    Period.push(nextPeriodForActiveUsers);
+    nextUsers = [];
 
-        activeUsers = await Promise.all(
-          lastEntries.map(async (user) => {
-            const myUser = await this.userRepository.findOne({
-              where: { id: user.userId },
-            });
-            return myUser;
-          }),
-        );
-      }
-
-      for (const user of activeUsers) {
+    for (let queueItem of usersInQueue) {
+      flag_users_count++;
+      // Чтобы последних активных не выводить дважды
+      if (flag_users_count <= usersInQueue.length - inputData.seats) {
+        let user = await this.userRepository.findByPk(queueItem.userId);
         const nextUser = {
           firstName: user.firstName,
           secondName: user.secondName,
@@ -328,146 +264,101 @@ export class QueueService {
           avatar: user.avatar,
         };
         nextUsers.push(nextUser);
+        // Если пора переходить к следующему периоду
+        if (flag_users_count % inputData.seats == 0) {
+          nowDate.setMonth(nowDate.getMonth() + 1);
+          nextDate.setMonth(nowDate.getMonth() + 1);
+          const nextPeriod = {
+            start_time: nowDate.toISOString(),
+            end_time: nextDate.toISOString(),
+            nextUsers,
+          };
+          Period.push(nextPeriod);
+          nextUsers = [];
+        }
+      } else {
+        nowDate.setMonth(nowDate.getMonth() + 1);
+        nextDate.setMonth(nowDate.getMonth() + 1);
+        const nextPeriod = {
+          start_time: nowDate.toISOString(),
+          end_time: nextDate.toISOString(),
+          nextUsers,
+        };
+        Period.push(nextPeriod);
+        break;
       }
-
-      const nextPeriod = {
-        start_time: nowDate.toISOString(),
-        end_time: nextDate.toISOString(),
-        nextUsers,
-      };
-      nextPeriods.push(nextPeriod);
-      nextQueue = await this.generateNewQueue(nextQueue);
-      nextDate.setDate(nextDate.getDate() + inputData.period);
-      nowDate.setDate(nowDate.getDate() + inputData.period);
     }
 
-    return nextPeriods;
+    return Period;
   }
 
-  async filterNextPeriods(firstName, secondName): Promise<Period[]> {
-    const nextPeriods = await this.getAllNextPeriods();
-    const filteredData = await this.getPeriodsByUser(
-      firstName,
-      secondName,
-      nextPeriods,
-    );
-    return filteredData;
-  }
-
-  async generateNewQueue(usersInQueue) {
-    const seats = (await this.inputDataRepository.findOne()).seats;
-    let maxNumber = 0;
-    let usersToMove = [];
-
-    const usersCopy = usersInQueue.slice();
-
-    usersCopy.forEach((user) => {
-      if (user.number > maxNumber) {
-        maxNumber = user.number;
-      }
+  // Для администраторов
+  async GetOneNextPeriod(): Promise<Queue[]> {
+    // Сейчас активные, они пойдут первые + их start_time точка отсчета
+    const NowActiveUsers = await this.userRepository.findAll({
+      where: { active: true },
     });
+    let nowDate = new Date(NowActiveUsers[0].start_active_time);
+    let nextDate = new Date(NowActiveUsers[0].start_active_time);
+    nextDate.setMonth(nowDate.getMonth() + 1);
 
-    usersToMove = usersCopy.splice(0, seats);
-
-    const newQueue = [...usersCopy];
-
-    for (let i = 0; i < seats; i++) {
-      if (usersToMove[i]) {
-        const user = usersToMove[i];
-        console.log(user.userId);
-        const userId: number = user.userId;
-        const newUser = {
-          userId: userId,
-          number: maxNumber + i + 1,
-        };
-        newQueue.push(newUser);
-      }
-
-      return newQueue;
-    }
-  }
-
-  getPeriodsByUser(firstName: string, secondName: string, periods) {
-    firstName = firstName.toLowerCase();
-    if (secondName) {
-      secondName = secondName.toLowerCase();
-    }
-
-    return periods
-      .filter((period) =>
-        period.nextUsers.some(
-          (user) =>
-            user.firstName.toLowerCase().includes(firstName) ||
-            user.secondName.toLowerCase().includes(secondName) ||
-            user.secondName.toLowerCase().includes(firstName),
-        ),
-      )
-      .map((period) => {
-        return {
-          ...period,
-          nextUsers: period.nextUsers.filter(
-            (user) =>
-              user.firstName.toLowerCase().includes(firstName) ||
-              user.secondName.toLowerCase().includes(secondName) ||
-              user.secondName.toLowerCase().includes(firstName),
-          ),
-        };
-      });
-  }
-
-  async getQueue(): Promise<Queue[]> {
-    const queue = await this.queueRepository.findAll({
+    const inputData = await this.inputDataRepository.findOne();
+    // Вся очередь
+    const usersInQueue = await this.queueRepository.findAll({
       order: [['number', 'ASC']],
     });
-    return queue;
-  }
+    let Period = [];
+    let nextUsers = [];
+    let flag_users_count = 0; // Для того, чтобы помещать юзеров в разные месяцы
+    // Сдесь добавить в Period активных сейчас юзеров
 
-  // @Cron(CronExpression.EVERY_10_SECONDS)
-  async CheckingHowManyDaysToEndTime() {
-    try {
-      const activeUsers = await this.userRepository.findAll({
-        where: { active: true },
-      });
-      for (const user of activeUsers) {
-        const differenceInDays = this.daysUntilTargetDate(user.end_active_time);
-        if (differenceInDays <= 3) {
-          await this.changeNextActiveUserToUserModel(user);
+    for (let user of NowActiveUsers) {
+      const nextUser = {
+        firstName: user.firstName,
+        secondName: user.secondName,
+        email: user.email,
+        active: user.active,
+        id: user.id,
+        avatar: user.avatar,
+      };
+      nextUsers.push(nextUser);
+    }
+    let nextPeriodForActiveUsers = {
+      start_time: nowDate.toISOString(),
+      end_time: nextDate.toISOString(),
+      nextUsers,
+    };
+    Period.push(nextPeriodForActiveUsers);
+    nextUsers = [];
+
+    for (let a = 0; a < 3; a++) {
+      for (let queueItem of usersInQueue) {
+        flag_users_count++;
+        let user = await this.userRepository.findByPk(queueItem.userId);
+        const nextUser = {
+          firstName: user.firstName,
+          secondName: user.secondName,
+          email: user.email,
+          active: user.active,
+          id: user.id,
+          avatar: user.avatar,
+        };
+        nextUsers.push(nextUser);
+        // Если пора переходить к следующему периоду
+        if (flag_users_count % inputData.seats == 0) {
+          nowDate.setMonth(nowDate.getMonth() + 1);
+          nextDate.setMonth(nowDate.getMonth() + 1);
+          const nextPeriod = {
+            start_time: nowDate.toISOString(),
+            end_time: nextDate.toISOString(),
+            nextUsers,
+          };
+          Period.push(nextPeriod);
+          nextUsers = [];
         }
       }
-    } catch (e) {
-      console.log(e);
     }
-  }
 
-  daysUntilTargetDate(targetDate): number {
-    const currentDate = new Date();
-    const targetDateObj = new Date(targetDate);
-    const differenceInMs = targetDateObj.getDate() - currentDate.getDate();
-    const differenceInDays = differenceInMs / (1000 * 60 * 60 * 24);
-    return differenceInDays;
-  }
-
-  async changeNextActiveUserToUserModel(user: User) {
-    try {
-      const allNextUsersId = await this.getAllNextUsersId();
-      const minUser = await this.userRepository.findOne({
-        where: {
-          id: {
-            [Op.in]: allNextUsersId, // Используем оператор $in для поиска по нескольким ID
-          },
-          previous_active: null, // Условие на поле previous_user
-        },
-      });
-      if (!minUser) {
-        return;
-      }
-
-      user.next_active = minUser.id;
-      minUser.previous_active = user.id;
-      await user.save();
-      await minUser.save();
-    } catch (e) {
-      console.log(e);
-    }
+    return Period;
   }
 }

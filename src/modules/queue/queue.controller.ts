@@ -5,14 +5,12 @@ import {
   Get,
   Param,
   Post,
-  Query,
   UseGuards,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiForbiddenResponse,
   ApiOperation,
-  ApiParam,
   ApiResponse,
   ApiTags,
   ApiUnprocessableEntityResponse,
@@ -43,7 +41,7 @@ export class QueueController {
   @UseGuards(JWTAuthGuard)
   @Post('')
   create(@Body() dto: CreateQueueDTO): Promise<Queue> {
-    return this.queueService.create(dto);
+    return this.queueService.AddUserToQueue(dto);
   }
 
   @ApiOperation({ summary: 'Двигаем очередь вперед - только админам' })
@@ -59,23 +57,34 @@ export class QueueController {
   }
 
   @ApiOperation({
-    summary:
-      'Получение всех следующих периодов пользователей - только авторизованным',
+    summary: 'Получение текущего периода пользователей - только авторизованным',
   })
-  @ApiParam({ name: 'fullName', type: String })
+  // @ApiParam({ name: 'fullName', type: String })
   @ApiResponse({
     status: 200,
     type: allNextActivePeriod,
   })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  @UseGuards(JWTAuthGuard)
-  @Get('allNextPeriod')
-  getAllNextPeriod(@Query() query: { fullName: string }) {
-    if (query.fullName) {
-      const [firstName, secondName] = query.fullName.split(' ');
-      return this.queueService.filterNextPeriods(firstName, secondName);
-    }
-    return this.queueService.getAllNextPeriods();
+  // @UseGuards(JWTAuthGuard)
+  @Get('thisPeriod')
+  GetThisPeriodQueue() {
+    return this.queueService.GetThisPeriodQueue();
+  }
+
+  @ApiOperation({
+    summary: 'Получение текущего периода пользователей - только авторизованным',
+  })
+  // @ApiParam({ name: 'fullName', type: String })
+  @ApiResponse({
+    status: 200,
+    type: allNextActivePeriod,
+  })
+  @ApiForbiddenResponse({ description: 'Unauthorized Request' })
+  // @UseGuards(RolesGuard)
+  // @Roles('is_staff')
+  @Get('getOneNextPeriod')
+  GetOneNextPeriod() {
+    return this.queueService.GetOneNextPeriod();
   }
 
   @ApiOperation({
@@ -91,10 +100,5 @@ export class QueueController {
   @Delete('')
   deleteFromQueue(@Param('id') id: number) {
     return this.queueService.deleteFromQueue(id);
-  }
-
-  @Get('/test')
-  testCreateuser() {
-    return this.queueService.AddUserToQueue();
   }
 }

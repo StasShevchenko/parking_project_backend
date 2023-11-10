@@ -55,7 +55,9 @@ export class UserService {
       const key = this.uniqueKey().substring(0, 8);
       const password = await this.hashPassword(key);
       const newUser = await this.userRepository.create({
-        ...dto,
+        firstName: dto.firstName,
+        secondName: dto.secondName,
+        email: dto.email,
         password: password,
         avatar: avatar,
       });
@@ -67,7 +69,7 @@ export class UserService {
         };
         user.last_active_period = nowDate;
         await user.save();
-        await this.queueService.create(userId);
+        await this.queueService.AddUserToQueue(userId);
       }
       await this.mailService.sendRegistrationsEmail(newUser, key);
     } catch (e) {
@@ -106,36 +108,36 @@ export class UserService {
         where: { id },
         attributes: { exclude: ['password', 'createdAt', 'updatedAt'] },
       });
-      let nextUserData;
-      let previousUserData;
-      if (user.next_active) {
-        const NextUser = await this.userRepository.findByPk(user.next_active);
-        nextUserData = {
-          firstName: NextUser.firstName,
-          secondName: NextUser.secondName,
-          email: NextUser.email,
-        };
-      }
-      if (user.previous_active) {
-        const PreviousUser = await this.userRepository.findByPk(
-          user.previous_active,
-        );
-        previousUserData = {
-          firstName: PreviousUser.firstName,
-          secondName: PreviousUser.secondName,
-          email: PreviousUser.email,
-        };
-      }
+      // let nextUserData;
+      // let previousUserData;
+      // if (user.next_active) {
+      //   const NextUser = await this.userRepository.findByPk(user.next_active);
+      //   nextUserData = {
+      //     firstName: NextUser.firstName,
+      //     secondName: NextUser.secondName,
+      //     email: NextUser.email,
+      //   };
+      // }
+      // if (user.previous_active) {
+      //   const PreviousUser = await this.userRepository.findByPk(
+      //     user.previous_active,
+      //   );
+      //   previousUserData = {
+      //     firstName: PreviousUser.firstName,
+      //     secondName: PreviousUser.secondName,
+      //     email: PreviousUser.email,
+      //   };
+      // }
 
-      if (user.active || !user.in_queue) {
-        return { ...user.toJSON(), nextUserData, previousUserData };
-      } else {
-        const start_time = await this.queueService.nextPeriodNoActiveUser(user);
-        user.start_active_time = start_time.start_active_time;
-        user.end_active_time = start_time.end_active_time;
+      // if (user.active || !user.in_queue) {
+      //   return { ...user.toJSON(), nextUserData, previousUserData };
+      // } else {
+      //   const start_time = await this.queueService.nextPeriodNoActiveUser(user);
+      //   user.start_active_time = start_time.start_active_time;
+      //   user.end_active_time = start_time.end_active_time;
 
-        return { ...user.toJSON(), nextUserData, previousUserData };
-      }
+      //   return { ...user.toJSON(), nextUserData, previousUserData };
+      return user;
     } catch (e) {
       console.log(e);
       throw new BadRequestException({ status: 401 });
