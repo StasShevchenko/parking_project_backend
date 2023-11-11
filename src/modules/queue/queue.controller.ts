@@ -5,12 +5,14 @@ import {
   Get,
   Param,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiForbiddenResponse,
   ApiOperation,
+  ApiParam,
   ApiResponse,
   ApiTags,
   ApiUnprocessableEntityResponse,
@@ -59,22 +61,26 @@ export class QueueController {
   @ApiOperation({
     summary: 'Получение текущего периода пользователей - только авторизованным',
   })
-  // @ApiParam({ name: 'fullName', type: String })
+  @ApiParam({ name: 'fullName', type: String })
   @ApiResponse({
     status: 200,
     type: allNextActivePeriod,
   })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
   // @UseGuards(JWTAuthGuard)
-  @Get('thisPeriod')
-  GetThisPeriodQueue() {
+  @Get('getThisPeriod')
+  GetThisPeriodQueue(@Query() query: { fullName: string }) {
+    if (query.fullName) {
+      const [firstName, secondName] = query.fullName.split(' ');
+      return this.queueService.filterThisPeriods(firstName, secondName);
+    }
     return this.queueService.GetThisPeriodQueue();
   }
 
   @ApiOperation({
     summary: 'Получение текущего периода пользователей - только авторизованным',
   })
-  // @ApiParam({ name: 'fullName', type: String })
+  @ApiParam({ name: 'fullName', type: String })
   @ApiResponse({
     status: 200,
     type: allNextActivePeriod,
@@ -83,7 +89,11 @@ export class QueueController {
   // @UseGuards(RolesGuard)
   // @Roles('is_staff')
   @Get('getOneNextPeriod')
-  GetOneNextPeriod() {
+  GetOneNextPeriod(@Query() query: { fullName: string }) {
+    if (query.fullName) {
+      const [firstName, secondName] = query.fullName.split(' ');
+      return this.queueService.filterOneNextPeriods(firstName, secondName);
+    }
     return this.queueService.GetOneNextPeriod();
   }
 
@@ -100,5 +110,20 @@ export class QueueController {
   @Delete('')
   deleteFromQueue(@Param('id') id: number) {
     return this.queueService.deleteFromQueue(id);
+  }
+
+  @ApiOperation({
+    summary: 'Следующие периоды пользователя - только авторизованным',
+  })
+  @ApiResponse({
+    status: 200,
+  })
+  @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
+  @ApiForbiddenResponse({ description: 'Unauthorized Request' })
+  // @UseGuards(JWTAuthGuard)
+  @Post('NextPeriodsById')
+  GetNextPeriodsForOneUser(@Body() dto: CreateQueueDTO) {
+    console.log(dto);
+    return this.queueService.GetNextPeriodsForOneUser(dto);
   }
 }

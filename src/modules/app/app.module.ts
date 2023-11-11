@@ -3,8 +3,12 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SequelizeModule } from '@nestjs/sequelize';
 // import { getMailConfig } from 'src/configs/mail.config';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { AvatarModule } from 'src/modules/avatar/avatar.module';
 import { Queue } from 'src/modules/queue/model/queue.model';
 import { QueueModule } from 'src/modules/queue/queue.module';
+import { Swap } from 'src/swap/model/swap.model';
+import { SwapModule } from 'src/swap/swap.module';
 import { LoggerMiddleware } from 'src/utils/logger.middleware';
 import { AuthModule } from '../auth/auth.module';
 import { InputDataModule } from '../input-data/input-data.module';
@@ -21,8 +25,6 @@ import { User } from '../user/model/user.model';
 import { UserModule } from '../user/user.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ServeStaticModule } from '@nestjs/serve-static';
-import { AvatarModule } from 'src/modules/avatar/avatar.module';
 
 @Module({
   controllers: [AppController],
@@ -51,7 +53,15 @@ import { AvatarModule } from 'src/modules/avatar/avatar.module';
         database: configService.get('POSTGRES_DATABASE'),
         synchronize: true,
         autoLoadModels: true,
-        models: [User, Queue, InputData, QueueAhead, Notification, MailKey],
+        models: [
+          User,
+          Queue,
+          InputData,
+          QueueAhead,
+          Notification,
+          MailKey,
+          Swap,
+        ],
       }),
     }),
     UserModule,
@@ -63,7 +73,8 @@ import { AvatarModule } from 'src/modules/avatar/avatar.module';
     NotificationsModule,
     MailModule,
     MailKeyModule,
-    AvatarModule
+    AvatarModule,
+    SwapModule,
   ],
 })
 export class AppModule implements NestModule {
