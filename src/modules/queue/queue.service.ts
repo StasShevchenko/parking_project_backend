@@ -307,6 +307,8 @@ export class QueueService {
       order: [['number', 'ASC']],
     });
     let Period = [];
+    let ThisPeriod =[]
+    let NextPeriod = []
     let nextUsers = [];
     let flag_users_count = 0; // Для того, чтобы помещать юзеров в разные месяцы
     // Сдесь добавить в Period активных сейчас юзеров
@@ -353,8 +355,15 @@ export class QueueService {
             end_time: nextDate.toISOString(),
             nextUsers,
           };
-          Period.push(nextPeriod);
-          nextUsers = [];
+          if (a == 0) {
+            ThisPeriod.push(nextPeriod)
+            Period.push(ThisPeriod)
+          } else {
+            NextPeriod.push(nextPeriod)
+            Period.push(NextPeriod)
+          }
+          // Period.push(nextPeriod);
+          // nextUsers = [];
         }
       }
     }
