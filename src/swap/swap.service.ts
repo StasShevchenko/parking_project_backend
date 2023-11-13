@@ -20,7 +20,7 @@ export class SwapService {
       let from = new Date(dto.swap.from);
       let to = new Date(dto.swap.to);
       return await this.swapRepository.create({
-        is_active: false,
+        is_active: true,
         sent: sent,
         from: from,
         to: to,
@@ -107,7 +107,7 @@ export class SwapService {
       let senderUser = await this.userService.findUserById(swap.sender);
       let receiverUser = await this.userService.findUserById(swap.receiver);
       // Если соглашается получатель запроса и запрос еще не обработан
-      if (swap.receiver == dto.userId && swap.is_active == false) {
+      if (swap.receiver == dto.userId && swap.is_active == true) {
         // Если оба юзера неактивны, то меняемся
         if (senderUser.active || receiverUser.active) {
           throw new BadRequestException({
@@ -115,7 +115,7 @@ export class SwapService {
           });
         } else {
           await this.queueService.SwapUsers(swap.receiver, swap.sender);
-          swap.is_active = true;
+          swap.is_active = false;
           swap.result = true;
           await swap.save();
           return true;
@@ -133,8 +133,8 @@ export class SwapService {
     try {
       let swap = await this.swapRepository.findByPk(dto.id);
       // Если соглашается получатель запроса и запрос еще не обработан
-      if (swap.receiver == dto.userId && swap.is_active == false) {
-        swap.is_active = true;
+      if (swap.receiver == dto.userId && swap.is_active == true) {
+        swap.is_active = false;
         swap.result = false;
         await swap.save();
         return true;
