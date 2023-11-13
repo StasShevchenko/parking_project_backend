@@ -307,8 +307,7 @@ export class QueueService {
       order: [['number', 'ASC']],
     });
     let Period = [];
-    let ThisPeriod =[]
-    let NextPeriod = []
+    let AllPeriods = [];
     let nextUsers = [];
     let flag_users_count = 0; // Для того, чтобы помещать юзеров в разные месяцы
     // Сдесь добавить в Period активных сейчас юзеров
@@ -333,6 +332,7 @@ export class QueueService {
     nextUsers = [];
 
     for (let a = 0; a < 3; a++) {
+      Period = [];
       for (let queueItem of usersInQueue) {
         flag_users_count++;
         let user = await this.userRepository.findByPk(queueItem.userId);
@@ -349,25 +349,22 @@ export class QueueService {
         // Если пора переходить к следующему периоду
         if (flag_users_count % inputData.seats == 0) {
           nowDate.setMonth(nowDate.getMonth() + 1);
+          console.log(nowDate);
+          console.log(`a = ${a}`);
+
           nextDate.setMonth(nowDate.getMonth() + 1);
           const nextPeriod = {
             start_time: nowDate.toISOString(),
             end_time: nextDate.toISOString(),
             nextUsers,
           };
-          if (a == 0) {
-            ThisPeriod.push(nextPeriod)
-            Period.push(ThisPeriod)
-          } else {
-            NextPeriod.push(nextPeriod)
-            Period.push(NextPeriod)
-          }
-          // Period.push(nextPeriod);
-          // nextUsers = [];
+          Period.push(nextPeriod);
+          nextUsers = [];
         }
       }
+      AllPeriods.push(Period);
     }
-    return Period;
+    return AllPeriods;
   }
 
   async GetNextPeriodsForOneUser(dto: CreateQueueDTO) {
