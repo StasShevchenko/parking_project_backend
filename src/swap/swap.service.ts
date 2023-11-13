@@ -16,7 +16,6 @@ export class SwapService {
 
   async CreateNewSwap(dto): Promise<Swap> {
     try {
-      dto = dto[0];
       let sent = new Date(dto.sent);
       let from = new Date(dto.swap.from);
       let to = new Date(dto.swap.to);
