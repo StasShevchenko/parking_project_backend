@@ -523,4 +523,67 @@ export class QueueService {
         };
       });
   }
+
+  async nextPeriodActiveUser(user: User) {
+    let period = 30;
+    const seats = 3;
+    const nowDate = new Date();
+    const nextPeriod = new Date();
+    const millisecondsPerDay = 24 * 60 * 60 * 1000;
+    const countQueue = await this.queueRepository.count();
+    let periods = [];
+
+    const positionUserFromQueue = (
+      await this.queueRepository.findOne({ where: { userId: user.id } })
+    ).number;
+    const minNumberFromQueue = await this.queueRepository.findOne({
+      where: {},
+      order: [['number', 'ASC']],
+      limit: 1,
+    });
+
+    const user_end_date = new Date(user.end_active_time);
+    const day_left =
+      (user_end_date.getTime() - nowDate.getTime()) / millisecondsPerDay;
+    const periodCount = Math.floor(
+      (positionUserFromQueue - minNumberFromQueue.number) / seats,
+    );
+    nextPeriod.setDate(nowDate.getDate() + day_left + periodCount * period + 1);
+    return nextPeriod.toISOString();
+  }
+
+  async nextPeriodNoActiveUser(user: User) {
+    const period = (await this.inputDataRepository.findOne()).period;
+    const seats = 3;
+    const nowDate = new Date();
+    const start_time = new Date();
+    const end_time = new Date();
+    const millisecondsPerDay = 24 * 60 * 60 * 1000;
+    const countQueue = await this.queueRepository.count();
+
+    const positionUserFromQueue = (
+      await this.queueRepository.findOne({ where: { userId: user.id } })
+    ).number;
+    const minNumberFromQueue = await this.queueRepository.findOne({
+      where: {},
+      order: [['number', 'ASC']],
+      limit: 1,
+    });
+    const activeUser = await this.userRepository.findOne({
+      where: {
+        active: true,
+      },
+    });
+    const user_active_end_data = new Date(activeUser.end_active_time);
+    const day_left =
+      (user_active_end_data.getTime() - nowDate.getTime()) / millisecondsPerDay;
+    const periodCount = Math.floor(
+      (positionUserFromQueue - minNumberFromQueue.number) / seats,
+    );
+    start_time.setDate(nowDate.getDate() + day_left + periodCount * period + 1);
+    end_time.setDate(
+      nowDate.getDate() + day_left + periodCount * period + 1 + period,
+    );
+    return { start_active_time: start_time, end_active_time: end_time };
+  }
 }

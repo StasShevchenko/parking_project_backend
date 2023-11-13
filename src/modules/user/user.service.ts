@@ -108,36 +108,37 @@ export class UserService {
         where: { id },
         attributes: { exclude: ['password', 'createdAt', 'updatedAt'] },
       });
-      // let nextUserData;
-      // let previousUserData;
-      // if (user.next_active) {
-      //   const NextUser = await this.userRepository.findByPk(user.next_active);
-      //   nextUserData = {
-      //     firstName: NextUser.firstName,
-      //     secondName: NextUser.secondName,
-      //     email: NextUser.email,
-      //   };
-      // }
-      // if (user.previous_active) {
-      //   const PreviousUser = await this.userRepository.findByPk(
-      //     user.previous_active,
-      //   );
-      //   previousUserData = {
-      //     firstName: PreviousUser.firstName,
-      //     secondName: PreviousUser.secondName,
-      //     email: PreviousUser.email,
-      //   };
-      // }
+      let nextUserData;
+      let previousUserData;
+      if (user.next_active) {
+        const NextUser = await this.userRepository.findByPk(user.next_active);
+        nextUserData = {
+          firstName: NextUser.firstName,
+          secondName: NextUser.secondName,
+          email: NextUser.email,
+        };
+      }
+      if (user.previous_active) {
+        const PreviousUser = await this.userRepository.findByPk(
+          user.previous_active,
+        );
+        previousUserData = {
+          firstName: PreviousUser.firstName,
+          secondName: PreviousUser.secondName,
+          email: PreviousUser.email,
+        };
+      }
 
-      // if (user.active || !user.in_queue) {
-      //   return { ...user.toJSON(), nextUserData, previousUserData };
-      // } else {
-      //   const start_time = await this.queueService.nextPeriodNoActiveUser(user);
-      //   user.start_active_time = start_time.start_active_time;
-      //   user.end_active_time = start_time.end_active_time;
+      if (user.active || !user.in_queue) {
+        return { ...user.toJSON(), nextUserData, previousUserData };
+      } else {
+        const start_time = await this.queueService.nextPeriodNoActiveUser(user);
+        user.start_active_time = start_time.start_active_time;
+        user.end_active_time = start_time.end_active_time;
 
-      //   return { ...user.toJSON(), nextUserData, previousUserData };
-      return user;
+        return { ...user.toJSON(), nextUserData, previousUserData };
+      }
+      // return user;
     } catch (e) {
       console.log(e);
       throw new BadRequestException({ status: 401 });
