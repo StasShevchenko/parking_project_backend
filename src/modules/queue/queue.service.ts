@@ -163,9 +163,9 @@ export class QueueService {
       });
       combinedLogger.info({ Message: 'Сдвиг очереди' });
       for (const user of activeUsers) {
-        if (nowDate > user.end_active_time) {
-          await this.changeActiveUser(user);
-        }
+        // if (nowDate > user.end_active_time) {
+        await this.changeActiveUser(user);
+        // }
       }
     }
   }
@@ -472,7 +472,7 @@ export class QueueService {
 
   async filterOneNextPeriods(firstName, secondName): Promise<Period[]> {
     const nextPeriods = await this.GetOneNextPeriod();
-    const filteredData = await this.getPeriodsByUser(
+    const filteredData = await this.filterPeriods(
       firstName,
       secondName,
       nextPeriods,
@@ -482,7 +482,7 @@ export class QueueService {
 
   async filterThisPeriods(firstName, secondName): Promise<Period[]> {
     const nextPeriods = await this.GetThisPeriodQueue();
-    const filteredData = await this.getPeriodsByUser(
+    const filteredData = await this.filterPeriods(
       firstName,
       secondName,
       nextPeriods,
@@ -490,7 +490,7 @@ export class QueueService {
     return filteredData;
   }
 
-  getPeriodsByUser(firstName: string, secondName: string, periods) {
+  filterPeriods(firstName: string, secondName: string, periods) {
     firstName = firstName.toLowerCase();
     if (secondName) {
       secondName = secondName.toLowerCase();
