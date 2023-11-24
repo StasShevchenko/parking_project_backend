@@ -67,7 +67,7 @@ export class QueueController {
     type: allNextActivePeriod,
   })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  // @UseGuards(JWTAuthGuard)
+  @UseGuards(JWTAuthGuard)
   @Get('getThisPeriod')
   GetThisPeriodQueue(@Query() query: { fullName: string }) {
     if (query.fullName) {
@@ -86,12 +86,13 @@ export class QueueController {
     type: allNextActivePeriod,
   })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  // @UseGuards(RolesGuard)
-  // @Roles('is_staff')
+  @UseGuards(RolesGuard)
+  @Roles('is_staff')
   @Get('getOneNextPeriod')
   GetOneNextPeriod(@Query() query: { fullName: string }) {
     if (query.fullName) {
       const [firstName, secondName] = query.fullName.split(' ');
+      console.log(firstName + ' ' + secondName);
       return this.queueService.filterOneNextPeriods(firstName, secondName);
     }
     return this.queueService.GetOneNextPeriod();
@@ -120,7 +121,7 @@ export class QueueController {
   })
   @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  // @UseGuards(JWTAuthGuard)
+  @UseGuards(JWTAuthGuard)
   @Post('NextPeriodsById')
   GetNextPeriodsForOneUser(@Body() dto: CreateQueueDTO) {
     console.log(dto);

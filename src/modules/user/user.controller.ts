@@ -54,7 +54,7 @@ export class UserController {
     return this.userService.getAdminsList();
   }
 
-  // @ApiBearerAuth()
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Получение конкретного пользователя - только авторизованным',
   })
@@ -63,7 +63,7 @@ export class UserController {
     type: ResponseUserDto,
   })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  // @UseGuards(JWTAuthGuard)tt
+  @UseGuards(JWTAuthGuard)
   @Get(':id')
   getUser(@Param('id') id: number) {
     return this.userService.getUserById(id);

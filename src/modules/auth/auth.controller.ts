@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiForbiddenResponse,
@@ -10,6 +10,8 @@ import {
 import { CreateUserDto } from '../user/dto';
 import { AuthService } from './auth.service';
 import { AuthUserResponseDTO, LoginUserDTO } from './dto';
+import { Roles } from './has-roles.decorator';
+import { RolesGuard } from './roles.guard';
 
 @ApiBearerAuth()
 @ApiTags('auth')
@@ -24,8 +26,8 @@ export class AuthController {
   })
   @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  // @UseGuards(RolesGuard)
-  // @Roles('is_staff')
+  @UseGuards(RolesGuard)
+  @Roles('is_staff')
   @Post('register')
   register(@Body() dto: CreateUserDto): Promise<CreateUserDto> {
     return this.authService.registerUsers(dto);
