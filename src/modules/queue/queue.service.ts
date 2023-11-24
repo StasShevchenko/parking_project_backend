@@ -250,7 +250,7 @@ export class QueueService {
       }
       let nextPeriodForActiveUsers = {
         start_time: nowDate.toISOString(),
-        end_time: nextDate.toISOString(),
+        end_time: NowActiveUsers[0].end_active_time,
         nextUsers,
       };
       Period.push(nextPeriodForActiveUsers);
@@ -344,7 +344,11 @@ export class QueueService {
       nextUsers = [];
 
       for (let a = 0; a < 3; a++) {
-        Period = [];
+        // Чтобы в AllPeriods записались нынешние активные
+        if (a > 0) {
+          Period = [];
+        }
+
         for (let queueItem of usersInQueue) {
           flag_users_count++;
           let user = await this.userRepository.findByPk(queueItem.userId);
@@ -605,7 +609,6 @@ export class QueueService {
       const start_time = new Date();
       const end_time = new Date();
       const millisecondsPerDay = 24 * 60 * 60 * 1000;
-      const countQueue = await this.queueRepository.count();
 
       const positionUserFromQueue = (
         await this.queueRepository.findOne({ where: { userId: user.id } })
