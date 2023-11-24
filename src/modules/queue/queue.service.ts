@@ -604,7 +604,6 @@ export class QueueService {
   async nextPeriodNoActiveUser(user: User) {
     try {
       const INPUT_DATA = await this.inputDataRepository.findOne()
-      const period = INPUT_DATA.period
       const seats = INPUT_DATA.seats
 
       const positionUserFromQueue = (
@@ -621,14 +620,16 @@ export class QueueService {
         },
       });
       const user_active_end_data = new Date(activeUser.end_active_time);
+
       const start_time = new Date(user_active_end_data);
       const end_time = new Date(start_time);
+
       const periodCount = Math.floor(
         (positionUserFromQueue - minNumberFromQueue.number) / seats,
       );
       start_time.setMonth(start_time.getMonth() + periodCount)
       end_time.setMonth(
-        end_time.getMonth() + 1
+        start_time.getMonth() + 1
       );
       return { start_active_time: start_time, end_active_time: end_time };
     } catch (e) {
