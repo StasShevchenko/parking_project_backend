@@ -23,12 +23,8 @@ import { QueueAheadModule } from '../queue-ahead/queue-ahead.module';
 import { TokenModule } from '../token/token.module';
 import { User } from '../user/model/user.model';
 import { UserModule } from '../user/user.module';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 
 @Module({
-  controllers: [AppController],
-  providers: [AppService],
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
@@ -36,7 +32,6 @@ import { AppService } from './app.service';
     }),
     ServeStaticModule.forRoot({
       rootPath: '/home/develop/src/static',
-      // rootPath: 'D:/parking_project/src/static',
       serveRoot: '/static',
       exclude: ['/api/(.*)'],
     }),

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { mailer } from 'src/configs/nodemailer';
+//import { mailer } from 'src/configs/nodemailer';
 import { User } from '../user/model/user.model';
 
 @Injectable()
@@ -25,7 +25,7 @@ export class MailService {
             `,
     };
 
-    mailer(message);
+   // mailer(message);
   }
 
   async changePassword(key: number, user: User) {
@@ -45,6 +45,6 @@ export class MailService {
             `,
     };
     console.log(`---------------`);
-    mailer(message);
+   // mailer(message);
   }
 }

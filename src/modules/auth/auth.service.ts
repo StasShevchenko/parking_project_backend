@@ -13,24 +13,18 @@ export class AuthService {
   ) {}
 
   async registerUsers(dto: CreateUserDto): Promise<CreateUserDto> {
-    try {
       const existUser = await this.userService.findUserByEmail(dto.email);
       if (existUser) {
         throw new BadRequestException('USER EXIST');
       }
       const user = await this.userService.createUser(dto);
       return user;
-    } catch (e) {
-      console.log(e);
-      throw new BadRequestException({ statusCode: 401 });
-    }
   }
 
   async loginUser(dto: LoginUserDTO): Promise<AuthUserResponseDTO> {
     const existUser = await this.userService.findUserByEmail(dto.email);
-    // console.log(existUser);
     if (!existUser) {
-      throw new BadRequestException('USER EXIST');
+      throw new BadRequestException({message: "USER EXISTS"});
     }
     const validatePassword = await this.userService.comparePassword(
       dto.password,

@@ -25,7 +25,7 @@ export class UserService {
     private readonly queueService: QueueService,
     private readonly mailService: MailService,
     private readonly mailKeyService: MailKeyService,
-    private readonly avatarServcice: AvatarService,
+    private readonly avatarService: AvatarService,
   ) {}
 
   async findUserByEmail(email: string) {
@@ -51,7 +51,7 @@ export class UserService {
       if (validate) {
         throw new BadRequestException('User with this email exist');
       }
-      const avatar = this.avatarServcice.getAvatarToRegistrationUser();
+      const avatar = this.avatarService.getAvatarToRegistrationUser();
       const key = this.uniqueKey().substring(0, 8);
       const password = await this.hashPassword(key);
       const newUser = await this.userRepository.create({
