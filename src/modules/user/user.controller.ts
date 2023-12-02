@@ -41,19 +41,6 @@ import { UserService } from './user.service';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Получение всех админов - только авторизованным' })
-  @ApiResponse({
-    status: 200,
-    type: ResponseUserDto,
-  })
-  @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  @Get('adminList')
-  adminList(): Promise<User[]> {
-    combinedLogger.info({ Message: 'Admin List' });
-    return this.userService.getAdminsList();
-  }
-
   // @ApiBearerAuth()
   @ApiOperation({
     summary: 'Получение конкретного пользователя - только авторизованным',
@@ -153,7 +140,7 @@ export class UserController {
   @Roles('is_superuser')
   @Get('getAdminRole/:id')
   getAdminRole(@Param('id') id: number): Promise<User> {
-    return this.userService.getAdminRole(id);
+    return this.userService.addAdminRole(id);
   }
 
   @ApiOperation({

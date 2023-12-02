@@ -36,8 +36,7 @@ export class UserService {
     }
 
     uniqueKey() {
-        let pass = uuid.v4().substring(0, 8);
-        return pass;
+        return uuid.v4().substring(0, 8);
     }
 
     async hashPassword(password: string) {
@@ -75,61 +74,15 @@ export class UserService {
         });
     }
 
-    async getAdminsList(): Promise<User[]> {
-        return await this.userRepository.findAll({
-            where: {is_staff: true},
-            attributes: {
-                exclude: [
-                    'password',
-                    'createdAt',
-                    'updatedAt',
-                    'start_active_time',
-                    'end_active_time',
-                    'last_active_period',
-                ],
-            },
-        });
-    }
-
     async getUserById(id: number) {
         try {
-            const user = await this.userRepository.findOne({
+            return await this.userRepository.findOne({
                 where: {id},
                 attributes: {exclude: ['password', 'createdAt', 'updatedAt']},
             });
-            // let nextUserData;
-            // let previousUserData;
-            // if (user.next_active) {
-            //   const NextUser = await this.userRepository.findByPk(user.next_active);
-            //   nextUserData = {
-            //     firstName: NextUser.firstName,
-            //     secondName: NextUser.secondName,
-            //     email: NextUser.email,
-            //   };
-            // }
-            // if (user.previous_active) {
-            //   const PreviousUser = await this.userRepository.findByPk(
-            //     user.previous_active,
-            //   );
-            //   previousUserData = {
-            //     firstName: PreviousUser.firstName,
-            //     secondName: PreviousUser.secondName,
-            //     email: PreviousUser.email,
-            //   };
-            // }
-
-            // if (user.active || !user.in_queue) {
-            //   return { ...user.toJSON(), nextUserData, previousUserData };
-            // } else {
-            //   const start_time = await this.queueService.nextPeriodNoActiveUser(user);
-            //   user.start_active_time = start_time.start_active_time;
-            //   user.end_active_time = start_time.end_active_time;
-
-            //   return { ...user.toJSON(), nextUserData, previousUserData };
-            return user;
         } catch (e) {
             console.log(e);
-            throw new BadRequestException({status: 401});
+            throw new BadRequestException();
         }
     }
 
@@ -137,14 +90,14 @@ export class UserService {
         id: number,
         dto: UpdateAllUserDataDto,
     ): Promise<UpdateAllUserDataDto> {
-        const user = await this.userRepository.update(dto, {where: {id}});
+        await this.userRepository.update(dto, {where: {id}});
         return dto;
     }
 
     async deleteUserById(id): Promise<number> {
         const user = await this.userRepository.findOne({where: {id}});
         if (user.is_staff) {
-            throw new BadRequestException('Поьзователь является администратором');
+            throw new BadRequestException('Пользователь является администратором');
         }
         const deleteUser = await this.userRepository.destroy({where: {id}});
         await this.queueService.deleteFromQueue(id);
@@ -167,28 +120,21 @@ export class UserService {
         return bcrypt.compare(password1, password2);
     }
 
-    PasswordValidation(password: string) {
-        const Validationpassword = password.trim();
+    validatePassword(password: string) {
+        const validationPassword = password.trim();
         const containsLetters = /^.*[a-zA-Z]+.*$/;
         const minimum8Chars = /^.{8,}$/;
         const withoutSpaces = /^\S+$/;
 
-        if (
-            minimum8Chars.test(Validationpassword) &&
-            withoutSpaces.test(Validationpassword) &&
-            containsLetters.test(Validationpassword)
-        ) {
-            return true;
-        } else {
-            return false;
-        }
+        return minimum8Chars.test(validationPassword) &&
+            withoutSpaces.test(validationPassword) &&
+            containsLetters.test(validationPassword);
     }
 
     async changePasswordFromProfile(
         dto: changePasswordFromProfileDto,
         email: string,
     ): Promise<boolean> {
-        try {
             const user = await this.userRepository.findOne({
                 where: {email: email},
             });
@@ -199,22 +145,17 @@ export class UserService {
             if (!compareOldPassword || dto.newPassword != dto.repeat_newPassword) {
                 throw new BadRequestException('Wrong Data');
             }
-            if (this.PasswordValidation(dto.newPassword)) {
-                const hashPassword = await this.hashPassword(dto.newPassword);
-                user.password = hashPassword;
+            if (this.validatePassword(dto.newPassword)) {
+                user.password = await this.hashPassword(dto.newPassword);
                 user.changePassword = true;
                 await user.save();
                 return true;
             } else {
-                throw new BadRequestException({messange: 'Простой пароль'});
+                throw new BadRequestException({message: 'Простой пароль'});
             }
-        } catch (e) {
-            throw new BadRequestException();
-        }
     }
 
     async ForgotPasswordChange(dto: PasswordForgotChangeDto): Promise<boolean> {
-        try {
             const mailKey = await this.KeyReview({key: dto.key});
             const user = await this.userRepository.findOne({
                 where: {email: mailKey},
@@ -224,22 +165,17 @@ export class UserService {
             }
             await this.mailKeyService.deleteByKey(dto.key);
             if (dto.newPassword == dto.repeat_newPassword) {
-                if (this.PasswordValidation(dto.newPassword)) {
-                    const hashPassword = await this.hashPassword(dto.newPassword);
-                    user.password = hashPassword;
+                if (this.validatePassword(dto.newPassword)) {
+                    user.password = await this.hashPassword(dto.newPassword);
                     user.changePassword = true;
                     await user.save();
                     return true;
                 } else {
-                    throw new BadRequestException({messange: 'Простой пароль'});
+                    throw new BadRequestException({message: 'Простой пароль'});
                 }
             } else {
                 throw new BadRequestException({message: 'USER EXIST'});
             }
-        } catch (e) {
-            console.log(e);
-            throw new BadRequestException();
-        }
     }
 
     async getUsersByRolesTest(
@@ -247,7 +183,6 @@ export class UserService {
         firstName: string,
         secondName: string,
     ) {
-        try {
             let rolesFilter = [];
             console.log(roles);
             if (roles.includes('user')) {
@@ -272,8 +207,6 @@ export class UserService {
                 users = await this.getUsersByNameAndRole(firstName, secondName, users);
             }
             return users;
-        } catch (e) {
-        }
     }
 
     getUsersByNameAndRole(firstName: string, secondName: string, users) {
@@ -281,15 +214,12 @@ export class UserService {
         if (secondName) {
             secondName = secondName.toLowerCase();
         }
-
-        const filteredUsers = users.filter(
+        return users.filter(
             (user) =>
                 user.firstName.toLowerCase().includes(firstName) ||
                 user.secondName.toLowerCase().includes(secondName) ||
                 user.secondName.toLowerCase().includes(firstName),
         );
-
-        return filteredUsers;
     }
 
     async getUsersByName(firstName: string, secondName: string) {
@@ -303,17 +233,15 @@ export class UserService {
             secondName = secondName.toLowerCase();
         }
 
-        const filteredUsers = users.filter(
+        return users.filter(
             (user) =>
                 user.firstName.toLowerCase().includes(firstName) ||
                 user.secondName.toLowerCase().includes(secondName) ||
                 user.secondName.toLowerCase().includes(firstName),
         );
-
-        return filteredUsers;
     }
 
-    async getAdminRole(id: number): Promise<User> {
+    async addAdminRole(id: number): Promise<User> {
         try {
             let user = await this.userRepository.findByPk(id);
             user.is_staff = true;
@@ -336,16 +264,12 @@ export class UserService {
     }
 
     async forgotPasswordMailKey(dto: ForgotPasswordDto): Promise<Boolean> {
-        try {
             const user = await this.findUserByEmail(dto.email);
             if (user) {
                 await this.mailKeyService.generateMailKey(user);
                 return true;
-            }
+            } else
             throw new BadRequestException({status: 401});
-        } catch (e) {
-            throw new BadRequestException({status: 401});
-        }
     }
 
     async KeyReview(dto: MailKeyReviewDto): Promise<String> {
