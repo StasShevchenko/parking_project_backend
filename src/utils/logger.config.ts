@@ -1,4 +1,5 @@
 import * as winston from 'winston';
+import {transports} from "winston";
 
 const errorTransport = new winston.transports.File({
   filename: 'logs/error.log',
@@ -25,7 +26,7 @@ const errorLogger = winston.createLogger({
       );
     }),
   ),
-  transports: [errorTransport],
+  transports: [errorTransport, new transports.Console()],
 });
 
 const combinedLogger = winston.createLogger({

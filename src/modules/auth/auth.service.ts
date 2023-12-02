@@ -1,9 +1,9 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { TokenService } from '../token/token.service'; 
-import { CreateUserDto } from '../user/dto'; 
-import { User } from '../user/model/user.model';
-import { UserService } from '../user/user.service';
-import { AuthUserResponseDTO, LoginUserDTO } from './dto'; 
+import {BadRequestException, Injectable} from '@nestjs/common';
+import {TokenService} from '../token/token.service';
+import {CreateUserDto} from '../user/dto';
+import {User} from '../user/model/user.model';
+import {UserService} from '../user/user.service';
+import {AuthUserResponseDTO, LoginUserDTO} from './dto';
 
 @Injectable()
 export class AuthService {
@@ -17,8 +17,7 @@ export class AuthService {
       if (existUser) {
         throw new BadRequestException('USER EXIST');
       }
-      const user = await this.userService.createUser(dto);
-      return user;
+    return await this.userService.createUser(dto);
   }
 
   async loginUser(dto: LoginUserDTO): Promise<AuthUserResponseDTO> {

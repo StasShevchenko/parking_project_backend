@@ -37,7 +37,6 @@ export class AllExceptionsFilter implements ExceptionFilter {
         };
 
         errorLogger.error(logData);
-        console.log(logData);
 
         if (!response.headersSent) {
             response.status(statusCode).json({
