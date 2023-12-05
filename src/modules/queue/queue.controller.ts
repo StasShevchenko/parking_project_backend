@@ -43,7 +43,7 @@ export class QueueController {
   @UseGuards(JWTAuthGuard)
   @Post('')
   create(@Body() dto: CreateQueueDTO): Promise<Queue> {
-    return this.queueService.AddUserToQueue(dto);
+    return this.queueService.addUserToQueue(dto);
   }
 
   @ApiOperation({ summary: 'Двигаем очередь вперед - только админам' })

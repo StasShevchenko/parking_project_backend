@@ -1,5 +1,5 @@
 import { Column, Default, HasMany, Model, Table } from 'sequelize-typescript';
-import { Notification } from 'src/modules/notifications/model/notifications.model';
+import { Notification } from '../../notifications/model/notifications.model';
 
 @Table
 export class User extends Model {

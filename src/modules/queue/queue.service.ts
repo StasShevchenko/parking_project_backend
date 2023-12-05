@@ -1,12 +1,12 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
-import { InjectModel } from '@nestjs/sequelize';
-import { Period } from 'src/interfaces/period.interface';
-import { User } from 'src/modules/user/model/user.model';
-import { combinedLogger } from 'src/utils/logger.config';
-import { InputData } from '../input-data/model/input-data.model';
-import { CreateQueueDTO } from './dto/create-queue.dto';
-import { Queue } from './model/queue.model';
+import {BadRequestException, Injectable} from '@nestjs/common';
+import {Cron, CronExpression} from '@nestjs/schedule';
+import {InjectModel} from '@nestjs/sequelize';
+import {Period} from 'src/interfaces/period.interface';
+import {User} from '../user/model/user.model';
+import {combinedLogger} from '../../utils/logger.config';
+import {InputData} from '../input-data/model/input-data.model';
+import {CreateQueueDTO} from './dto/create-queue.dto';
+import {Queue} from './model/queue.model';
 
 @Injectable()
 export class QueueService {
@@ -16,10 +16,9 @@ export class QueueService {
     private readonly inputDataRepository: typeof InputData,
     @InjectModel(User) private readonly userRepository: typeof User,
   ) {}
-  private readonly logger = new Logger(QueueService.name);
 
   // При добавлении нового пользователя добавляем его перед активными
-  async IncrementNumberActiveUsersAndGetMinNumber() {
+  async incrementNumberActiveUsersAndGetMinNumber() {
     try {
       // Добавить чтобы следующий период +1 из-за нового юзера
       const allActiveUsersNow = await this.userRepository.findAll({
@@ -39,19 +38,18 @@ export class QueueService {
         order: [['number', 'ASC']],
       });
 
-      let MinNumber = activeUsersInQueue[0].number;
-
-      for (var user of activeUsersInQueue) {
+      let minActiveUserNumber = activeUsersInQueue[0].number;
+      for (let user of activeUsersInQueue) {
         user.number++;
         await user.save();
       }
-      return MinNumber;
+      return minActiveUserNumber;
     } catch (e) {
       console.log(e);
     }
   }
 
-  async AddUserToQueue(dto: CreateQueueDTO): Promise<Queue> {
+  async addUserToQueue(dto: CreateQueueDTO): Promise<Queue> {
     try {
       const inputData = await this.inputDataRepository.findOne();
       const numberActiveUsers = (
@@ -62,7 +60,7 @@ export class QueueService {
       const user = await this.userRepository.findOne({
         where: { id: dto.userId },
       });
-      const MaxNumber = await this.getMaxNumber();
+      const maxNumber = await this.getMaxNumber();
 
       const nowDate = new Date();
       const end_time = new Date();
@@ -70,47 +68,35 @@ export class QueueService {
 
       // Если кол-во активных юзеров меньше парковочных мест сразу активируем юзера
       if (numberActiveUsers < inputData.seats) {
-        await this.ActivationUser(user);
+        await this.makeUserActive(user);
       }
-
       // Если юзер только создан и еще не в очереди
       if (!user.in_queue) {
         user.in_queue = true;
         user.last_active_period = nowDate;
-        user.save();
-
+        await user.save();
         // Если уже есть активные, то добавляем нового юзера перед ними и нужно поменять их периоды на +1 вперед
         if (numberActiveUsers >= inputData.seats) {
-          const MinNumberActiveUser =
-            await this.IncrementNumberActiveUsersAndGetMinNumber();
+          let minActiveUserNumber =
+            await this.incrementNumberActiveUsersAndGetMinNumber()
+          minActiveUserNumber = minActiveUserNumber ?? 1;
           //Если есть MinNumber
-          if (MinNumberActiveUser) {
             return this.queueRepository.create({
               userId: dto.userId,
-              number: MinNumberActiveUser,
+              number: minActiveUserNumber,
               start_period_time: nowDate,
               end_period_time: end_time,
             });
-          }
-          // Если его нет
-          return this.queueRepository.create({
-            userId: dto.userId,
-            number: 1,
-            start_period_time: nowDate,
-            end_period_time: end_time,
-          });
         }
       }
-
       // Если у юзера поле last_active_period не задано
       if (!user.last_active_period) {
         user.last_active_period = nowDate;
       }
-
-      if (MaxNumber) {
+      if (maxNumber) {
         return this.queueRepository.create({
           userId: dto.userId,
-          number: MaxNumber + 1,
+          number: maxNumber + 1,
           start_period_time: nowDate,
           end_period_time: end_time,
         });
@@ -129,11 +115,9 @@ export class QueueService {
   async getMaxNumber(): Promise<number> {
     try {
       const result = await this.queueRepository.findOne({
-        where: {},
         order: [['number', 'DESC']],
         limit: 1,
       });
-
       return result ? result.number : null;
     } catch (e) {
       console.log(e);
@@ -142,12 +126,11 @@ export class QueueService {
 
   async getMinNumberUser(): Promise<Queue> {
     try {
-      const result = await this.queueRepository.findOne({
+      return await this.queueRepository.findOne({
         where: {},
         order: [['number', 'ASC']],
         limit: 1,
       });
-      return result;
     } catch (e) {
       console.log(e);
     }
@@ -155,8 +138,6 @@ export class QueueService {
 
   @Cron(CronExpression.EVERY_1ST_DAY_OF_MONTH_AT_MIDNIGHT)
   async CheckUserActivation() {
-    try {
-    } catch (e) {
       const nowDate = new Date();
       const activeUsers = await this.userRepository.findAll({
         where: { active: true },
@@ -167,7 +148,6 @@ export class QueueService {
           await this.changeActiveUser(user);
         }
       }
-    }
   }
 
   async deleteFromQueue(userId: number) {
@@ -192,11 +172,11 @@ export class QueueService {
     await user.save();
 
     await this.deleteFromQueue(minUser.id);
-    await this.AddUserToQueue({ userId: minUser.id });
-    await this.ActivationUser(minUser);
+    await this.addUserToQueue({ userId: minUser.id });
+    await this.makeUserActive(minUser);
   }
 
-  async ActivationUser(user: User) {
+  async makeUserActive(user: User) {
     const nowDate = new Date();
     let endDate = new Date();
     endDate.setMonth(nowDate.getMonth() + 1);

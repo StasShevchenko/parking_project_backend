@@ -17,9 +17,8 @@ import {User} from './model/user.model';
 
 @Injectable()
 export class UserService {
-    @InjectModel(User) private readonly userRepository: typeof User;
-
     constructor(
+        @InjectModel(User) private readonly userRepository: typeof User,
         private readonly queueService: QueueService,
         private readonly mailService: MailService,
         private readonly mailKeyService: MailKeyService,
@@ -52,9 +51,7 @@ export class UserService {
         const key = this.uniqueKey().substring(0, 8);
         const password = await this.hashPassword(key);
         const newUser = await this.userRepository.create({
-            firstName: dto.firstName,
-            secondName: dto.secondName,
-            email: dto.email,
+            ...dto,
             password: password,
             avatar: avatar,
         });
@@ -62,7 +59,7 @@ export class UserService {
             const user = await this.findUserByEmail(dto.email);
             user.last_active_period = new Date();
             await user.save();
-            await this.queueService.AddUserToQueue(user.id);
+            await this.queueService.addUserToQueue(user.id);
         }
         await this.mailService.sendRegistrationsEmail(newUser, key);
         return dto;
@@ -135,16 +132,36 @@ export class UserService {
         dto: changePasswordFromProfileDto,
         email: string,
     ): Promise<boolean> {
-            const user = await this.userRepository.findOne({
-                where: {email: email},
-            });
-            const compareOldPassword = await this.comparePassword(
-                dto.oldPassword,
-                user.password,
-            );
-            if (!compareOldPassword || dto.newPassword != dto.repeat_newPassword) {
-                throw new BadRequestException('Wrong Data');
-            }
+        const user = await this.userRepository.findOne({
+            where: {email: email},
+        });
+        const compareOldPassword = await this.comparePassword(
+            dto.oldPassword,
+            user.password,
+        );
+        if (!compareOldPassword || dto.newPassword != dto.repeat_newPassword) {
+            throw new BadRequestException('Wrong Data');
+        }
+        if (this.validatePassword(dto.newPassword)) {
+            user.password = await this.hashPassword(dto.newPassword);
+            user.changePassword = true;
+            await user.save();
+            return true;
+        } else {
+            throw new BadRequestException({message: 'Простой пароль'});
+        }
+    }
+
+    async ForgotPasswordChange(dto: PasswordForgotChangeDto): Promise<boolean> {
+        const mailKey = await this.KeyReview({key: dto.key});
+        const user = await this.userRepository.findOne({
+            where: {email: mailKey},
+        });
+        if (!user) {
+            throw new BadRequestException({message: 'USER EXIST'});
+        }
+        await this.mailKeyService.deleteByKey(dto.key);
+        if (dto.newPassword == dto.repeat_newPassword) {
             if (this.validatePassword(dto.newPassword)) {
                 user.password = await this.hashPassword(dto.newPassword);
                 user.changePassword = true;
@@ -153,92 +170,49 @@ export class UserService {
             } else {
                 throw new BadRequestException({message: 'Простой пароль'});
             }
+        } else {
+            throw new BadRequestException({message: 'USER EXIST'});
+        }
     }
 
-    async ForgotPasswordChange(dto: PasswordForgotChangeDto): Promise<boolean> {
-            const mailKey = await this.KeyReview({key: dto.key});
-            const user = await this.userRepository.findOne({
-                where: {email: mailKey},
-            });
-            if (!user) {
-                throw new BadRequestException({message: 'USER EXIST'});
-            }
-            await this.mailKeyService.deleteByKey(dto.key);
-            if (dto.newPassword == dto.repeat_newPassword) {
-                if (this.validatePassword(dto.newPassword)) {
-                    user.password = await this.hashPassword(dto.newPassword);
-                    user.changePassword = true;
-                    await user.save();
-                    return true;
-                } else {
-                    throw new BadRequestException({message: 'Простой пароль'});
-                }
-            } else {
-                throw new BadRequestException({message: 'USER EXIST'});
-            }
-    }
-
-    async getUsersByRolesTest(
+    async getUsers(
         roles: string[],
-        firstName: string,
-        secondName: string,
+        fullName: string
     ) {
-            let rolesFilter = [];
-            console.log(roles);
-            if (roles.includes('user')) {
-                rolesFilter.push({in_queue: true});
-            }
-            if (roles.includes('admin')) {
-                rolesFilter.push({is_staff: true});
-            }
-            if (roles.includes('super_admin')) {
-                rolesFilter.push({is_superuser: true});
-            }
-            let users = await this.userRepository.findAll({
-                where: {
-                    [Op.or]: rolesFilter,
-                },
-                attributes: {exclude: ['password', 'createdAt', 'updatedAt']},
-            });
-            if (users.length < 1) {
-                throw new BadRequestException();
-            }
-            if (firstName) {
-                users = await this.getUsersByNameAndRole(firstName, secondName, users);
-            }
-            return users;
-    }
-
-    getUsersByNameAndRole(firstName: string, secondName: string, users) {
-        firstName = firstName.toLowerCase();
-        if (secondName) {
-            secondName = secondName.toLowerCase();
+        let rolesFilter = [];
+        console.log(roles);
+        if (roles.includes('user')) {
+            rolesFilter.push({in_queue: true});
         }
-        return users.filter(
-            (user) =>
-                user.firstName.toLowerCase().includes(firstName) ||
-                user.secondName.toLowerCase().includes(secondName) ||
-                user.secondName.toLowerCase().includes(firstName),
-        );
-    }
+        if (roles.includes('admin')) {
+            rolesFilter.push({is_staff: true});
+        }
+        if (roles.includes('super_admin')) {
+            rolesFilter.push({is_superuser: true});
+        }
+        let firstName = fullName;
+        let secondName = fullName;
+        if (fullName.includes(' ')) {
+            firstName = fullName.split(' ')[0]
+            secondName = fullName.split(' ')[1]
+        }
+        return await this.userRepository.findAll({
+            where: {
+                [Op.and]: [
+                    rolesFilter,
+                    {
+                        [Op.or]: [
+                            {firstName: {[Op.like]: `%${firstName}%`}},
+                            {secondName: {[Op.like]: `%${secondName}%`}},
+                            {firstName: {[Op.like]: `%${secondName}%`}},
+                            {secondName: {[Op.like]: `%${firstName}%`}}
+                        ]
+                    }
+                ],
 
-    async getUsersByName(firstName: string, secondName: string) {
-        const users = await this.userRepository.findAll({
-            attributes: {
-                exclude: ['password', 'createdAt', 'updatedAt'],
             },
+            attributes: {exclude: ['password', 'createdAt', 'updatedAt']},
         });
-        firstName = firstName.toLowerCase();
-        if (secondName) {
-            secondName = secondName.toLowerCase();
-        }
-
-        return users.filter(
-            (user) =>
-                user.firstName.toLowerCase().includes(firstName) ||
-                user.secondName.toLowerCase().includes(secondName) ||
-                user.secondName.toLowerCase().includes(firstName),
-        );
     }
 
     async addAdminRole(id: number): Promise<User> {
@@ -264,11 +238,11 @@ export class UserService {
     }
 
     async forgotPasswordMailKey(dto: ForgotPasswordDto): Promise<Boolean> {
-            const user = await this.findUserByEmail(dto.email);
-            if (user) {
-                await this.mailKeyService.generateMailKey(user);
-                return true;
-            } else
+        const user = await this.findUserByEmail(dto.email);
+        if (user) {
+            await this.mailKeyService.generateMailKey(user);
+            return true;
+        } else
             throw new BadRequestException({status: 401});
     }
 

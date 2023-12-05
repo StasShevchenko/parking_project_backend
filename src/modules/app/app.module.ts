@@ -18,8 +18,6 @@ import { MailKeyModule } from '../mail_key/mail_key.module';
 import { MailKey } from '../mail_key/model/mail_key.model';
 import { Notification } from '../notifications/model/notifications.model';
 import { NotificationsModule } from '../notifications/notifications.module';
-import { QueueAhead } from '../queue-ahead/model/queue_ahead.model';
-import { QueueAheadModule } from '../queue-ahead/queue-ahead.module';
 import { TokenModule } from '../token/token.module';
 import { User } from '../user/model/user.model';
 import { UserModule } from '../user/user.module';
@@ -52,7 +50,6 @@ import { UserModule } from '../user/user.module';
           User,
           Queue,
           InputData,
-          QueueAhead,
           Notification,
           MailKey,
           Swap,
@@ -64,7 +61,6 @@ import { UserModule } from '../user/user.module';
     TokenModule,
     QueueModule,
     InputDataModule,
-    QueueAheadModule,
     NotificationsModule,
     MailModule,
     MailKeyModule,
