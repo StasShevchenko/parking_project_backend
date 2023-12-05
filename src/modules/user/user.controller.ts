@@ -41,7 +41,7 @@ import { UserService } from './user.service';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  // @ApiBearerAuth()
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Получение конкретного пользователя - только авторизованным',
   })
@@ -50,7 +50,7 @@ export class UserController {
     type: ResponseUserDto,
   })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  // @UseGuards(JWTAuthGuard)tt
+  @UseGuards(JWTAuthGuard)
   @Get(':id')
   getUser(@Param('id') id: number) {
     return this.userService.getUserById(id);
@@ -169,7 +169,7 @@ export class UserController {
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
   @UseGuards(JWTAuthGuard)
   @Get('')
-  getUsers(
+  getUsersByRolesTest(
     @Query('roles') roles: string,
     @Query('fullName') fullName: string,
   ) {

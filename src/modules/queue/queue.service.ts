@@ -49,7 +49,7 @@ export class QueueService {
     }
   }
 
-  async addUserToQueue(dto: CreateQueueDTO): Promise<Queue> {
+  async AddUserToQueue(dto: CreateQueueDTO): Promise<Queue> {
     try {
       const inputData = await this.inputDataRepository.findOne();
       const numberActiveUsers = (
@@ -68,7 +68,7 @@ export class QueueService {
 
       // Если кол-во активных юзеров меньше парковочных мест сразу активируем юзера
       if (numberActiveUsers < inputData.seats) {
-        await this.makeUserActive(user);
+        await this.ActivationUser(user);
       }
       // Если юзер только создан и еще не в очереди
       if (!user.in_queue) {
@@ -138,16 +138,17 @@ export class QueueService {
 
   @Cron(CronExpression.EVERY_1ST_DAY_OF_MONTH_AT_MIDNIGHT)
   async CheckUserActivation() {
-      const nowDate = new Date();
+    try {
       const activeUsers = await this.userRepository.findAll({
         where: { active: true },
       });
       combinedLogger.info({ Message: 'Сдвиг очереди' });
       for (const user of activeUsers) {
-        if (nowDate > user.end_active_time) {
-          await this.changeActiveUser(user);
-        }
+        await this.changeActiveUser(user);
       }
+    } catch (e) {
+      console.log(e);
+    }
   }
 
   async deleteFromQueue(userId: number) {
@@ -159,80 +160,66 @@ export class QueueService {
   }
 
   async changeActiveUser(user: User) {
-    const minNumberUserId = (await this.getMinNumberUser()).userId;
-    const minUser = await this.userRepository.findOne({
-      where: { id: minNumberUserId },
-    });
+    try {
+      const minNumberUserId = (await this.getMinNumberUser()).userId;
+      const minUser = await this.userRepository.findOne({
+        where: { id: minNumberUserId },
+      });
 
-    user.active = false;
-    user.end_active_time = null;
-    user.start_active_time = null;
-    user.next_active = null;
-    user.previous_active = null;
-    await user.save();
+      user.active = false;
+      user.end_active_time = null;
+      user.start_active_time = null;
+      user.next_active = null;
+      user.previous_active = null;
+      await user.save();
 
-    await this.deleteFromQueue(minUser.id);
-    await this.addUserToQueue({ userId: minUser.id });
-    await this.makeUserActive(minUser);
+      await this.deleteFromQueue(minUser.id);
+      await this.AddUserToQueue({ userId: minUser.id });
+      await this.ActivationUser(minUser);
+    } catch (e) {
+      console.log(e);
+    }
   }
 
-  async makeUserActive(user: User) {
-    const nowDate = new Date();
-    let endDate = new Date();
-    endDate.setMonth(nowDate.getMonth() + 1);
-    user.active = true;
-    user.start_active_time = nowDate;
-    user.end_active_time = endDate;
-    user.last_active_period = nowDate;
-    user.next_active = null;
-    user.previous_active = null;
-    await user.save();
+  async ActivationUser(user: User) {
+    try {
+      const nowDate = new Date();
+      let endDate = new Date();
+      endDate.setMonth(nowDate.getMonth() + 1);
+      user.active = true;
+      user.start_active_time = nowDate;
+      user.end_active_time = endDate;
+      user.last_active_period = nowDate;
+      user.next_active = null;
+      user.previous_active = null;
+      await user.save();
+    } catch (e) {
+      console.log(e);
+    }
   }
 
   // Для всех пользователей
   async GetThisPeriodQueue(): Promise<Queue[]> {
-    // Сейчас активные, они пойдут первые + их start_time точка отсчета
-    const NowActiveUsers = await this.userRepository.findAll({
-      where: { active: true },
-    });
-    let nowDate = new Date(NowActiveUsers[0].start_active_time);
-    let nextDate = new Date(NowActiveUsers[0].start_active_time);
+    try {
+      // Сейчас активные, они пойдут первые + их start_time точка отсчета
+      const NowActiveUsers = await this.userRepository.findAll({
+        where: { active: true },
+      });
+      let nowDate = new Date(NowActiveUsers[0].start_active_time);
+      let nextDate = new Date(NowActiveUsers[0].start_active_time);
 
-    const inputData = await this.inputDataRepository.findOne();
-    // Вся очередь
-    const usersInQueue = await this.queueRepository.findAll({
-      order: [['number', 'ASC']],
-    });
-    let Period = [];
-    let nextUsers = [];
-    let flag_users_count = 0; // Для того, чтобы помещать юзеров в разные месяцы
+      const inputData = await this.inputDataRepository.findOne();
+      // Вся очередь
+      const usersInQueue = await this.queueRepository.findAll({
+        order: [['number', 'ASC']],
+      });
+      let Period = [];
+      let nextUsers = [];
+      let flag_users_count = 0; // Для того, чтобы помещать юзеров в разные месяцы
 
-    // Сдесь добавить в Period активных сейчас юзеров
+      // Сдесь добавить в Period активных сейчас юзеров
 
-    for (let user of NowActiveUsers) {
-      const nextUser = {
-        firstName: user.firstName,
-        secondName: user.secondName,
-        email: user.email,
-        active: user.active,
-        id: user.id,
-        avatar: user.avatar,
-      };
-      nextUsers.push(nextUser);
-    }
-    let nextPeriodForActiveUsers = {
-      start_time: nowDate.toISOString(),
-      end_time: nextDate.toISOString(),
-      nextUsers,
-    };
-    Period.push(nextPeriodForActiveUsers);
-    nextUsers = [];
-
-    for (let queueItem of usersInQueue) {
-      flag_users_count++;
-      // Чтобы последних активных не выводить дважды
-      if (flag_users_count <= usersInQueue.length - inputData.seats) {
-        let user = await this.userRepository.findByPk(queueItem.userId);
+      for (let user of NowActiveUsers) {
         const nextUser = {
           firstName: user.firstName,
           secondName: user.secondName,
@@ -240,11 +227,45 @@ export class QueueService {
           active: user.active,
           id: user.id,
           avatar: user.avatar,
-          swap: queueItem.swap,
         };
         nextUsers.push(nextUser);
-        // Если пора переходить к следующему периоду
-        if (flag_users_count % inputData.seats == 0) {
+      }
+      let nextPeriodForActiveUsers = {
+        start_time: nowDate.toISOString(),
+        end_time: NowActiveUsers[0].end_active_time,
+        nextUsers,
+      };
+      Period.push(nextPeriodForActiveUsers);
+      nextUsers = [];
+
+      for (let queueItem of usersInQueue) {
+        flag_users_count++;
+        // Чтобы последних активных не выводить дважды
+        if (flag_users_count <= usersInQueue.length - inputData.seats) {
+          let user = await this.userRepository.findByPk(queueItem.userId);
+          const nextUser = {
+            firstName: user.firstName,
+            secondName: user.secondName,
+            email: user.email,
+            active: user.active,
+            id: user.id,
+            avatar: user.avatar,
+            swap: queueItem.swap,
+          };
+          nextUsers.push(nextUser);
+          // Если пора переходить к следующему периоду
+          if (flag_users_count % inputData.seats == 0) {
+            nowDate.setMonth(nowDate.getMonth() + 1);
+            nextDate.setMonth(nowDate.getMonth() + 1);
+            const nextPeriod = {
+              start_time: nowDate.toISOString(),
+              end_time: nextDate.toISOString(),
+              nextUsers,
+            };
+            Period.push(nextPeriod);
+            nextUsers = [];
+          }
+        } else {
           nowDate.setMonth(nowDate.getMonth() + 1);
           nextDate.setMonth(nowDate.getMonth() + 1);
           const nextPeriod = {
@@ -253,67 +274,39 @@ export class QueueService {
             nextUsers,
           };
           Period.push(nextPeriod);
-          nextUsers = [];
+          break;
         }
-      } else {
-        nowDate.setMonth(nowDate.getMonth() + 1);
-        nextDate.setMonth(nowDate.getMonth() + 1);
-        const nextPeriod = {
-          start_time: nowDate.toISOString(),
-          end_time: nextDate.toISOString(),
-          nextUsers,
-        };
-        Period.push(nextPeriod);
-        break;
       }
-    }
 
-    return Period;
+      return Period;
+    } catch (e) {
+      console.log(e);
+    }
   }
 
   // Для администраторов
   async GetOneNextPeriod(): Promise<Queue[]> {
-    // Сейчас активные, они пойдут первые + их start_time точка отсчета
-    const NowActiveUsers = await this.userRepository.findAll({
-      where: { active: true },
-    });
-    let nowDate = new Date(NowActiveUsers[0].start_active_time);
-    let nextDate = new Date(NowActiveUsers[0].start_active_time);
-    nextDate.setMonth(nowDate.getMonth() + 1);
+    try {
+      // Сейчас активные, они пойдут первые + их start_time точка отсчета
+      const NowActiveUsers = await this.userRepository.findAll({
+        where: { active: true },
+      });
+      let nowDate = new Date(NowActiveUsers[0].start_active_time);
+      let nextDate = new Date(NowActiveUsers[0].start_active_time);
+      nextDate.setMonth(nowDate.getMonth() + 1);
 
-    const inputData = await this.inputDataRepository.findOne();
-    // Вся очередь
-    const usersInQueue = await this.queueRepository.findAll({
-      order: [['number', 'ASC']],
-    });
-    let Period = [];
-    let nextUsers = [];
-    let flag_users_count = 0; // Для того, чтобы помещать юзеров в разные месяцы
-    // Сдесь добавить в Period активных сейчас юзеров
+      const inputData = await this.inputDataRepository.findOne();
+      // Вся очередь
+      const usersInQueue = await this.queueRepository.findAll({
+        order: [['number', 'ASC']],
+      });
+      let Period = [];
+      let AllPeriods = [];
+      let nextUsers = [];
+      let flag_users_count = 0; // Для того, чтобы помещать юзеров в разные месяцы
+      // Сдесь добавить в Period активных сейчас юзеров
 
-    for (let user of NowActiveUsers) {
-      const nextUser = {
-        firstName: user.firstName,
-        secondName: user.secondName,
-        email: user.email,
-        active: user.active,
-        id: user.id,
-        avatar: user.avatar,
-      };
-      nextUsers.push(nextUser);
-    }
-    let nextPeriodForActiveUsers = {
-      start_time: nowDate.toISOString(),
-      end_time: nextDate.toISOString(),
-      nextUsers,
-    };
-    Period.push(nextPeriodForActiveUsers);
-    nextUsers = [];
-
-    for (let a = 0; a < 3; a++) {
-      for (let queueItem of usersInQueue) {
-        flag_users_count++;
-        let user = await this.userRepository.findByPk(queueItem.userId);
+      for (let user of NowActiveUsers) {
         const nextUser = {
           firstName: user.firstName,
           secondName: user.secondName,
@@ -321,24 +314,56 @@ export class QueueService {
           active: user.active,
           id: user.id,
           avatar: user.avatar,
-          swap: queueItem.swap,
         };
         nextUsers.push(nextUser);
-        // Если пора переходить к следующему периоду
-        if (flag_users_count % inputData.seats == 0) {
-          nowDate.setMonth(nowDate.getMonth() + 1);
-          nextDate.setMonth(nowDate.getMonth() + 1);
-          const nextPeriod = {
-            start_time: nowDate.toISOString(),
-            end_time: nextDate.toISOString(),
-            nextUsers,
-          };
-          Period.push(nextPeriod);
-          nextUsers = [];
-        }
       }
+      let nextPeriodForActiveUsers = {
+        start_time: nowDate.toISOString(),
+        end_time: nextDate.toISOString(),
+        nextUsers,
+      };
+      Period.push(nextPeriodForActiveUsers);
+      nextUsers = [];
+
+      for (let a = 0; a < 3; a++) {
+        // Чтобы в AllPeriods записались нынешние активные
+        if (a > 0) {
+          Period = [];
+        }
+
+        for (let queueItem of usersInQueue) {
+          flag_users_count++;
+          let user = await this.userRepository.findByPk(queueItem.userId);
+          const nextUser = {
+            firstName: user.firstName,
+            secondName: user.secondName,
+            email: user.email,
+            active: user.active,
+            id: user.id,
+            avatar: user.avatar,
+            swap: queueItem.swap,
+          };
+          nextUsers.push(nextUser);
+          // Если пора переходить к следующему периоду
+          if (flag_users_count % inputData.seats == 0) {
+            nowDate.setMonth(nowDate.getMonth() + 1);
+
+            nextDate.setMonth(nowDate.getMonth() + 1);
+            const nextPeriod = {
+              start_time: nowDate.toISOString(),
+              end_time: nextDate.toISOString(),
+              nextUsers,
+            };
+            Period.push(nextPeriod);
+            nextUsers = [];
+          }
+        }
+        AllPeriods.push(Period);
+      }
+      return AllPeriods;
+    } catch (e) {
+      console.log(e);
     }
-    return Period;
   }
 
   async GetNextPeriodsForOneUser(dto: CreateQueueDTO) {
@@ -451,50 +476,146 @@ export class QueueService {
   }
 
   async filterOneNextPeriods(firstName, secondName): Promise<Period[]> {
-    const nextPeriods = await this.GetOneNextPeriod();
-    const filteredData = await this.getPeriodsByUser(
-      firstName,
-      secondName,
-      nextPeriods,
-    );
-    return filteredData;
+    try {
+      const nextPeriods = await this.GetOneNextPeriod();
+
+      let filteredPeriods = [];
+      for (let i = 0; i < nextPeriods.length; i++) {
+        filteredPeriods.push(
+          this.filterPeriods(firstName, secondName, nextPeriods[i]),
+        );
+      }
+      return filteredPeriods;
+    } catch (e) {
+      console.log(e);
+    }
   }
 
   async filterThisPeriods(firstName, secondName): Promise<Period[]> {
-    const nextPeriods = await this.GetThisPeriodQueue();
-    const filteredData = await this.getPeriodsByUser(
-      firstName,
-      secondName,
-      nextPeriods,
-    );
-    return filteredData;
+    try {
+      const nextPeriods = await this.GetThisPeriodQueue();
+      const filteredData = await this.filterPeriods(
+        firstName,
+        secondName,
+        nextPeriods,
+      );
+      return filteredData;
+    } catch (e) {
+      console.log(e);
+    }
   }
 
-  getPeriodsByUser(firstName: string, secondName: string, periods) {
-    firstName = firstName.toLowerCase();
-    if (secondName) {
-      secondName = secondName.toLowerCase();
-    }
+  filterPeriods(firstName: string, secondName: string, periods) {
+    try {
+      const lowerFirstName = firstName.toLowerCase();
+      const lowerSecondName = secondName ? secondName.toLowerCase() : '';
 
-    return periods
-      .filter((period) =>
-        period.nextUsers.some(
-          (user) =>
-            user.firstName.toLowerCase().includes(firstName) ||
-            user.secondName.toLowerCase().includes(secondName) ||
-            user.secondName.toLowerCase().includes(firstName),
-        ),
-      )
-      .map((period) => {
-        return {
-          ...period,
-          nextUsers: period.nextUsers.filter(
-            (user) =>
-              user.firstName.toLowerCase().includes(firstName) ||
-              user.secondName.toLowerCase().includes(secondName) ||
-              user.secondName.toLowerCase().includes(firstName),
-          ),
-        };
+      return periods
+        .filter((period) =>
+          period.nextUsers.some((user) => {
+            const lowerUserFirstName = user.firstName.toLowerCase();
+            const lowerUserSecondName = user.secondName
+              ? user.secondName.toLowerCase()
+              : '';
+
+            // Проверяем совпадение хотя бы в одном из случаев: имя-имя, имя-фамилия, фамилия-имя, фамилия-фамилия
+            return (
+              (lowerUserFirstName.includes(lowerFirstName) &&
+                lowerUserSecondName.includes(lowerSecondName)) ||
+              (lowerUserFirstName.includes(lowerSecondName) &&
+                lowerUserSecondName.includes(lowerFirstName))
+            );
+          }),
+        )
+        .map((period) => {
+          return {
+            ...period,
+            nextUsers: period.nextUsers.filter((user) => {
+              const lowerUserFirstName = user.firstName.toLowerCase();
+              const lowerUserSecondName = user.secondName
+                ? user.secondName.toLowerCase()
+                : '';
+
+              // Повторяем те же проверки внутри map
+              return (
+                (lowerUserFirstName.includes(lowerFirstName) &&
+                  lowerUserSecondName.includes(lowerSecondName)) ||
+                (lowerUserFirstName.includes(lowerSecondName) &&
+                  lowerUserSecondName.includes(lowerFirstName))
+              );
+            }),
+          };
+        });
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
+  async nextPeriodActiveUser(user: User) {
+    try {
+      let period = 30;
+      const seats = 3;
+      const nowDate = new Date();
+      const nextPeriod = new Date();
+      const millisecondsPerDay = 24 * 60 * 60 * 1000;
+
+      const positionUserFromQueue = (
+        await this.queueRepository.findOne({ where: { userId: user.id } })
+      ).number;
+      const minNumberFromQueue = await this.queueRepository.findOne({
+        where: {},
+        order: [['number', 'ASC']],
+        limit: 1,
       });
+
+      const user_end_date = new Date(user.end_active_time);
+      const day_left =
+        (user_end_date.getTime() - nowDate.getTime()) / millisecondsPerDay;
+      const periodCount = Math.floor(
+        (positionUserFromQueue - minNumberFromQueue.number) / seats,
+      );
+      nextPeriod.setDate(
+        nowDate.getDate() + day_left + periodCount * period + 1,
+      );
+      return nextPeriod.toISOString();
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
+  async nextPeriodNoActiveUser(user: User) {
+    try {
+      const INPUT_DATA = await this.inputDataRepository.findOne()
+      const seats = INPUT_DATA.seats
+
+      const positionUserFromQueue = (
+        await this.queueRepository.findOne({ where: { userId: user.id } })
+      ).number;
+      const minNumberFromQueue = await this.queueRepository.findOne({
+        where: {},
+        order: [['number', 'ASC']],
+        limit: 1,
+      });
+      const activeUser = await this.userRepository.findOne({
+        where: {
+          active: true,
+        },
+      });
+      const user_active_end_data = new Date(activeUser.end_active_time);
+
+      const start_time = new Date(user_active_end_data);
+      const end_time = new Date(start_time);
+
+      const periodCount = Math.floor(
+        (positionUserFromQueue - minNumberFromQueue.number) / seats,
+      );
+      start_time.setMonth(start_time.getMonth() + periodCount)
+      end_time.setMonth(
+        start_time.getMonth() + 1
+      );
+      return { start_active_time: start_time, end_active_time: end_time };
+    } catch (e) {
+      console.log(e);
+    }
   }
 }

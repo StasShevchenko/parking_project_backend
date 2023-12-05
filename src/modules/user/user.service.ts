@@ -59,7 +59,7 @@ export class UserService {
             const user = await this.findUserByEmail(dto.email);
             user.last_active_period = new Date();
             await user.save();
-            await this.queueService.addUserToQueue(user.id);
+            await this.queueService.AddUserToQueue(user.id);
         }
         await this.mailService.sendRegistrationsEmail(newUser, key);
         return dto;
