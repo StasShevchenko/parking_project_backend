@@ -1,5 +1,5 @@
 import * as winston from 'winston';
-import {transports} from "winston";
+import { transports } from 'winston';
 
 const errorTransport = new winston.transports.File({
   filename: 'logs/error.log',

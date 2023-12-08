@@ -9,7 +9,10 @@ import {MailKeyService} from '../mail_key/mail_key.service';
 import {QueueService} from '../queue/queue.service';
 import {CreateUserDto} from './dto';
 import {ChangeAvatarDto} from './dto/changeAvatar.dto';
-import {changePasswordFromProfileDto, PasswordForgotChangeDto,} from './dto/changePassword.dto';
+import {
+    changePasswordFromProfileDto,
+    PasswordForgotChangeDto,
+} from './dto/changePassword.dto';
 import {ForgotPasswordDto} from './dto/forgot_password.dto';
 import {MailKeyReviewDto} from './dto/mail_key_review.dto';
 import {UpdateAllUserDataDto} from './dto/update.all_user_data';
@@ -59,7 +62,10 @@ export class UserService {
             const user = await this.findUserByEmail(dto.email);
             user.last_active_period = new Date();
             await user.save();
-            await this.queueService.AddUserToQueue(user.id);
+            await this.queueService.addUserToQueue({
+                    userId: user.id
+                }
+            );
         }
         await this.mailService.sendRegistrationsEmail(newUser, key);
         return dto;
@@ -123,9 +129,11 @@ export class UserService {
         const minimum8Chars = /^.{8,}$/;
         const withoutSpaces = /^\S+$/;
 
-        return minimum8Chars.test(validationPassword) &&
+        return (
+            minimum8Chars.test(validationPassword) &&
             withoutSpaces.test(validationPassword) &&
-            containsLetters.test(validationPassword);
+            containsLetters.test(validationPassword)
+        );
     }
 
     async changePasswordFromProfile(
@@ -175,11 +183,8 @@ export class UserService {
         }
     }
 
-    async getUsers(
-        roles: string[],
-        fullName: string
-    ) {
-        let rolesFilter = [];
+    async getUsers(roles: string[], fullName: string) {
+        const rolesFilter = [];
         console.log(roles);
         if (roles.includes('user')) {
             rolesFilter.push({in_queue: true});
@@ -190,11 +195,14 @@ export class UserService {
         if (roles.includes('super_admin')) {
             rolesFilter.push({is_superuser: true});
         }
-        let firstName = fullName;
-        let secondName = fullName;
+        let firstName: string;
+        let secondName: string;
         if (fullName.includes(' ')) {
-            firstName = fullName.split(' ')[0]
-            secondName = fullName.split(' ')[1]
+            firstName = fullName.split(' ')[0];
+            secondName = fullName.split(' ')[1];
+        } else {
+            firstName = fullName;
+            secondName = '';
         }
         return await this.userRepository.findAll({
             where: {
@@ -202,14 +210,27 @@ export class UserService {
                     rolesFilter,
                     {
                         [Op.or]: [
-                            {firstName: {[Op.like]: `%${firstName}%`}},
-                            {secondName: {[Op.like]: `%${secondName}%`}},
-                            {firstName: {[Op.like]: `%${secondName}%`}},
-                            {secondName: {[Op.like]: `%${firstName}%`}}
-                        ]
-                    }
+                            {
+                                [Op.and]: [
+                                    {firstName: {[Op.like]: `%${firstName}%`}},
+                                    {secondName: {[Op.like]: `%${secondName}%`}},
+                                ],
+                            },
+                            {
+                                [Op.and]: [
+                                    {firstName: {[Op.like]: `%${secondName}%`}},
+                                    {secondName: {[Op.like]: `%${firstName}%`}},
+                                ],
+                            },
+                            {
+                                [Op.or]: [
+                                    {secondName: {[Op.like]: `%${firstName + secondName}%`}},
+                                    {firstName: {[Op.like]: `%${firstName + secondName}%`}},
+                                ],
+                            },
+                        ],
+                    },
                 ],
-
             },
             attributes: {exclude: ['password', 'createdAt', 'updatedAt']},
         });
@@ -217,7 +238,7 @@ export class UserService {
 
     async addAdminRole(id: number): Promise<User> {
         try {
-            let user = await this.userRepository.findByPk(id);
+            const user = await this.userRepository.findByPk(id);
             user.is_staff = true;
             await user.save();
             return user;
@@ -228,7 +249,7 @@ export class UserService {
 
     async deleteAdminRole(id: number): Promise<User> {
         try {
-            let user = await this.userRepository.findByPk(id);
+            const user = await this.userRepository.findByPk(id);
             user.is_staff = false;
             await user.save();
             return user;
@@ -237,18 +258,17 @@ export class UserService {
         }
     }
 
-    async forgotPasswordMailKey(dto: ForgotPasswordDto): Promise<Boolean> {
+    async forgotPasswordMailKey(dto: ForgotPasswordDto): Promise<boolean> {
         const user = await this.findUserByEmail(dto.email);
         if (user) {
             await this.mailKeyService.generateMailKey(user);
             return true;
-        } else
-            throw new BadRequestException({status: 401});
+        } else throw new BadRequestException({status: 401});
     }
 
-    async KeyReview(dto: MailKeyReviewDto): Promise<String> {
+    async KeyReview(dto: MailKeyReviewDto): Promise<string> {
         try {
-            const DBkey = await this.mailKeyService.KeyReview(dto.key);
+            const DBkey = await this.mailKeyService.reviewKey(dto.key);
             if (DBkey) {
                 return DBkey.email;
             }
@@ -258,7 +278,7 @@ export class UserService {
         }
     }
 
-    async changeAvatar(dto: ChangeAvatarDto, userId: number): Promise<Boolean> {
+    async changeAvatar(dto: ChangeAvatarDto, userId: number): Promise<boolean> {
         try {
             const user: User = await this.userRepository.findByPk(userId);
             user.avatar = dto.avatarName;

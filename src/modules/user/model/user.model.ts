@@ -41,7 +41,7 @@ export class User extends Model {
 
   @Default(null)
   @Column
-  avatar: String;
+  avatar: string;
 
   @Default(false)
   @Column

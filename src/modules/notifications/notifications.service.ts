@@ -33,7 +33,7 @@ export class NotificationsService {
   }
 
   async readNotification(id: number): Promise<Notification> {
-    let notification = await this.notificationRepository.findByPk(id);
+    const notification = await this.notificationRepository.findByPk(id);
     notification.read = true;
     await notification.save();
     return notification;

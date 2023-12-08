@@ -7,8 +7,8 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { AvatarModule } from 'src/modules/avatar/avatar.module';
 import { Queue } from 'src/modules/queue/model/queue.model';
 import { QueueModule } from 'src/modules/queue/queue.module';
-import { Swap } from 'src/swap/model/swap.model';
-import { SwapModule } from 'src/swap/swap.module';
+import { Swap } from '../swap/model/swap.model';
+import { SwapModule } from '../swap/swap.module';
 import { LoggerMiddleware } from 'src/utils/logger.middleware';
 import { AuthModule } from '../auth/auth.module';
 import { InputDataModule } from '../input-data/input-data.module';
@@ -46,14 +46,7 @@ import { UserModule } from '../user/user.module';
         database: configService.get('POSTGRES_DATABASE'),
         synchronize: true,
         autoLoadModels: true,
-        models: [
-          User,
-          Queue,
-          InputData,
-          Notification,
-          MailKey,
-          Swap,
-        ],
+        models: [User, Queue, InputData, Notification, MailKey, Swap],
       }),
     }),
     UserModule,

@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
-//import { mailer } from 'src/configs/nodemailer';
+import { mailer } from '../../configs/nodemailer';
 import { User } from '../user/model/user.model';
+import { MailerService } from '@nestjs-modules/mailer';
 
 @Injectable()
 export class MailService {
-  // constructor(private readonly mailerService: MailerService) {}
+  constructor(private readonly mailerService: MailerService) {}
 
   async sendRegistrationsEmail(user: User, password: string) {
     const message = {
@@ -25,7 +26,7 @@ export class MailService {
             `,
     };
 
-   // mailer(message);
+    mailer(message);
   }
 
   async changePassword(key: number, user: User) {
@@ -45,6 +46,6 @@ export class MailService {
             `,
     };
     console.log(`---------------`);
-   // mailer(message);
+    mailer(message);
   }
 }

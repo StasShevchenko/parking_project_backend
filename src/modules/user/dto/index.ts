@@ -22,4 +22,3 @@ export class CreateUserDto {
   @IsBoolean()
   in_queue?: boolean | null;
 }
-

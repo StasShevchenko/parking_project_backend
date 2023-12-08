@@ -24,6 +24,7 @@ import { CreateQueueDTO } from './dto/create-queue.dto';
 import { allNextActivePeriod } from './dto/next_active_period.dto';
 import { Queue } from './model/queue.model';
 import { QueueService } from './queue.service';
+import { Period } from '../../interfaces/period.interface';
 
 @ApiBearerAuth()
 @ApiTags('Queue')
@@ -55,7 +56,7 @@ export class QueueController {
   @UseGuards(RolesGuard)
   @Roles('is_staff')
   CheckUserActivation() {
-    return this.queueService.CheckUserActivation();
+    return this.queueService.checkUserActivation();
   }
 
   @ApiOperation({
@@ -69,12 +70,12 @@ export class QueueController {
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
   @UseGuards(JWTAuthGuard)
   @Get('getThisPeriod')
-  GetThisPeriodQueue(@Query() query: { fullName: string }) {
+  getCurrentPeriod(@Query() query: { fullName: string }) {
     if (query.fullName) {
       const [firstName, secondName] = query.fullName.split(' ');
       return this.queueService.filterThisPeriods(firstName, secondName);
     }
-    return this.queueService.GetThisPeriodQueue();
+    return this.queueService.getThisQueuePeriod();
   }
 
   @ApiOperation({
@@ -95,7 +96,7 @@ export class QueueController {
       console.log(firstName + ' ' + secondName);
       return this.queueService.filterOneNextPeriods(firstName, secondName);
     }
-    return this.queueService.GetOneNextPeriod();
+    return this.queueService.getOneNextPeriod();
   }
 
   @ApiOperation({
