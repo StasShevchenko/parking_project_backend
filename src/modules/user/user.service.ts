@@ -54,14 +54,15 @@ export class UserService {
         const key = this.uniqueKey().substring(0, 8);
         const password = await this.hashPassword(key);
         const newUser = await this.userRepository.create({
-            ...dto,
+            firstName: dto.firstName,
+            secondName: dto.secondName,
+            email: dto.email,
+            is_staff: dto.is_staff,
             password: password,
             avatar: avatar,
         });
         if (dto.in_queue) {
             const user = await this.findUserByEmail(dto.email);
-            user.last_active_period = new Date();
-            await user.save();
             await this.queueService.addUserToQueue({
                     userId: user.id
                 }

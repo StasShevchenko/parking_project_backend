@@ -75,7 +75,7 @@ export class QueueController {
       const [firstName, secondName] = query.fullName.split(' ');
       return this.queueService.filterThisPeriods(firstName, secondName);
     }
-    return this.queueService.getThisQueuePeriod();
+    return this.queueService.getCurrentQueuePeriod();
   }
 
   @ApiOperation({
@@ -90,11 +90,12 @@ export class QueueController {
   @UseGuards(RolesGuard)
   @Roles('is_staff')
   @Get('getOneNextPeriod')
-  GetOneNextPeriod(@Query() query: { fullName: string }) {
+  getNextPeriod(@Query() query: { fullName: string }): Promise<Period[][]> {
     if (query.fullName) {
       const [firstName, secondName] = query.fullName.split(' ');
       console.log(firstName + ' ' + secondName);
-      return this.queueService.filterOneNextPeriods(firstName, secondName);
+      // return this.queueService.filterOneNextPeriods(firstName, secondName);
+      return this.queueService.getOneNextPeriod()
     }
     return this.queueService.getOneNextPeriod();
   }
