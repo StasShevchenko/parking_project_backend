@@ -1,6 +1,6 @@
 import {Test, TestingModule} from '@nestjs/testing';
 import {ConfigModule} from '@nestjs/config';
-import {SequelizeModule} from '@nestjs/sequelize';
+import {getModelToken, SequelizeModule} from '@nestjs/sequelize';
 import {User} from '../../user/model/user.model';
 import {Notification} from '../../notifications/model/notifications.model';
 import {TokenModule} from '../../token/token.module';
@@ -159,6 +159,40 @@ describe('Queue module testing', () => {
     expect(email).toEqual('bc@mail.ru')
   })
 
+  //Число пользователей НЕ делится на целое на число мест (3 места, 5 юзеров)
+  //Проверяем что четвертый будущий срок для Egorka1 - начинается в июне
+  it('Should return 5 as start time of fourth next period for Egorka1', async () => {
+    const userRepository = queueModule.get(getModelToken(User))
+    const userService = queueModule.get(UserService);
+    for (const user of oddQueueUsersTestArray) {
+      await userService.createUser(user)
+    }
+    const userId = (await userRepository.findOne({where: {email: 'egorka@mail.ru'}})).id
+    const queueController = queueModule.get(QueueController);
+    const finalResult = await queueController.getUserNextPeriods({
+      userId: userId
+    })
+    const monthNumber = new Date(finalResult[3].start_time).getMonth() + 1
+    expect(monthNumber).toEqual(6)
+  })
+
+  //Число пользователей делится на целое число мест (3 места, 6 юзеров)
+  //Проверяем что четвертый будущий срок для Egorka1 - начинается в июле
+  it('Should return 6 as start time of fourth next period for Egorka1', async () => {
+    const userRepository = queueModule.get(getModelToken(User))
+    const userService = queueModule.get(UserService);
+    for (const user of evenQueueUsersTestArray) {
+      await userService.createUser(user)
+    }
+    const userId = (await userRepository.findOne({where: {email: 'egorka@mail.ru'}})).id
+    const queueController = queueModule.get(QueueController);
+    const finalResult = await queueController.getUserNextPeriods({
+      userId: userId
+    })
+    console.log(finalResult)
+    const monthNumber = new Date(finalResult[3].start_time).getMonth() + 1
+    expect(monthNumber).toEqual(7)
+  })
 });
 
 

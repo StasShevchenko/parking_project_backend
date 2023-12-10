@@ -125,8 +125,7 @@ export class QueueController {
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
   @UseGuards(JWTAuthGuard)
   @Post('NextPeriodsById')
-  GetNextPeriodsForOneUser(@Body() dto: CreateQueueDTO) {
-    console.log(dto);
-    return this.queueService.GetNextPeriodsForOneUser(dto);
+  getUserNextPeriods(@Body() dto: CreateQueueDTO) {
+    return this.queueService.getUserNextPeriods(dto);
   }
 }
