@@ -255,9 +255,6 @@ export class QueueService {
                     globalUsersIndex++
                     if (globalUsersIndex % inputData.seats == 0) {
                         lastUserStartDate.setMonth(lastUserStartDate.getMonth() + 1)
-                        if (lastUserStartDate.getMonth() == 0) {
-                            lastUserStartDate.setFullYear(lastUserStartDate.getFullYear() + 1)
-                        }
                     }
                 }
             }
