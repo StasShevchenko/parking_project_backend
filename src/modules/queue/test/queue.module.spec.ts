@@ -117,6 +117,19 @@ describe('Queue module testing', () => {
     expect(periodsCount).toBe(2)
   })
 
+  it('Should return filtered periods array of 1 length for six users', async () => {
+    const userService = queueModule.get(UserService);
+    for (const user of evenQueueUsersTestArray) {
+      await userService.createUser(user)
+    }
+    const queueController = queueModule.get(QueueController);
+    const finalResult = await queueController.getCurrentPeriod({
+      fullName: 'Maxim6',
+    });
+    const periodsCount = finalResult.length
+    expect(periodsCount).toBe(1)
+  })
+
   //Число пользователей делится на цело на число мест (3 места 6 юзеров)
   it('Should return periods array of fourth length for six users', async () => {
     const userService = queueModule.get(UserService);
@@ -129,6 +142,20 @@ describe('Queue module testing', () => {
     });
     const periodsCount = finalResult[0].length + finalResult[1].length
     expect(periodsCount).toBe(4)
+  })
+
+  //Число пользователей делится на цело на число мест (3 места 6 юзеров)
+  it('Should return only one user in each of two periods', async () => {
+    const userService = queueModule.get(UserService);
+    for (const user of evenQueueUsersTestArray) {
+      await userService.createUser(user)
+    }
+    const queueController = queueModule.get(QueueController);
+    const finalResult = await queueController.getNextPeriod({
+      fullName: 'Maxim6',
+    });
+    const periodsCount = finalResult[0][0].nextUsers.length + finalResult[1][0].nextUsers.length
+    expect(periodsCount).toBe(2)
   })
 
   //Число пользователей делится на цело на число мест (3 места, 6 юзеров)
@@ -304,7 +331,6 @@ describe('Queue module testing', () => {
     jest.setSystemTime(new Date(2024, 0))
     expect(periods).toEqual([])
   })
-
 
 });
 

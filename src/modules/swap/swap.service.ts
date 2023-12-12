@@ -114,7 +114,7 @@ export class SwapService {
             message: 'Один из пользователей активен',
           });
         } else {
-          await this.queueService.SwapUsers(swap.receiver, swap.sender);
+          await this.queueService.swapUsers(swap.receiver, swap.sender);
           swap.is_active = false;
           swap.result = true;
           await swap.save();

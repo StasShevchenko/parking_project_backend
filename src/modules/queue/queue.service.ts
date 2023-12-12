@@ -8,6 +8,7 @@ import {InputData} from '../input-data/model/input-data.model';
 import {CreateQueueDTO} from './dto/create-queue.dto';
 import {Queue} from './model/queue.model';
 import {mapToUserInPeriod, UserInPeriod} from '../../interfaces/user.interface';
+import {Op} from "sequelize";
 
 
 @Injectable()
@@ -171,10 +172,43 @@ export class QueueService implements OnModuleInit {
         }
     }
 
-    async getCurrentQueuePeriod(): Promise<Period[]> {
+    async getCurrentQueuePeriod(fullName: string = ""): Promise<Period[]> {
         try {
+            let firstName: string;
+            let secondName: string;
+            if (fullName.includes(' ')) {
+                firstName = fullName.split(' ')[0];
+                secondName = fullName.split(' ')[1];
+            } else {
+                firstName = fullName;
+                secondName = '';
+            }
             const queueUsers = await this.userRepository.findAll({
-                where: {in_queue: true},
+                where: [
+                    {in_queue: true},
+                    {
+                        [Op.or]: [
+                            {
+                                [Op.and]: [
+                                    {firstName: {[Op.like]: `%${firstName}%`}},
+                                    {secondName: {[Op.like]: `%${secondName}%`}},
+                                ],
+                            },
+                            {
+                                [Op.and]: [
+                                    {firstName: {[Op.like]: `%${secondName}%`}},
+                                    {secondName: {[Op.like]: `%${firstName}%`}},
+                                ],
+                            },
+                            {
+                                [Op.or]: [
+                                    {secondName: {[Op.like]: `%${firstName + secondName}%`}},
+                                    {firstName: {[Op.like]: `%${firstName + secondName}%`}},
+                                ],
+                            },
+                        ],
+                    }
+                ],
                 order: [['start_active_time', 'ASC'], ['active', 'DESC'], ['id', 'ASC']]
             });
             const periods: Period[] = [];
@@ -203,7 +237,7 @@ export class QueueService implements OnModuleInit {
         }
     }
 
-    async getOneNextPeriod(): Promise<Period[][]> {
+    async getOneNextPeriod(fullName: string = ""): Promise<Period[][]> {
         try {
             const queueUsers = await this.userRepository.findAll({
                 where: {in_queue: true},
@@ -241,6 +275,8 @@ export class QueueService implements OnModuleInit {
                 startDate.setMonth(startDate.getMonth() + 1)
             }
             periodsArray.push(nextPeriod)
+            periodsArray[0] = this.filterPeriods(fullName, periodsArray[0])
+            periodsArray[1] = this.filterPeriods(fullName, periodsArray[1])
             return periodsArray
         } catch (e) {
             console.log(e)
@@ -291,7 +327,7 @@ export class QueueService implements OnModuleInit {
         }
     }
 
-    async SwapUsers(senderId: number, receiverId: number): Promise<boolean> {
+    async swapUsers(senderId: number, receiverId: number): Promise<boolean> {
         try {
             const senderInQueue: Queue = await this.queueRepository.findOne({
                 where: {userId: senderId},
@@ -312,22 +348,17 @@ export class QueueService implements OnModuleInit {
         }
     }
 
-    async filterThisPeriods(firstName, secondName): Promise<Period[]> {
+    filterPeriods(fullName: string, periods) {
         try {
-            const nextPeriods = await this.getCurrentQueuePeriod();
-            const filteredData = await this.filterPeriods(
-                firstName,
-                secondName,
-                nextPeriods,
-            );
-            return filteredData;
-        } catch (e) {
-            console.log(e);
-        }
-    }
-
-    filterPeriods(firstName: string, secondName: string, periods) {
-        try {
+            let firstName: string;
+            let secondName: string;
+            if (fullName.includes(' ')) {
+                firstName = fullName.split(' ')[0];
+                secondName = fullName.split(' ')[1];
+            } else {
+                firstName = fullName;
+                secondName = '';
+            }
             const lowerFirstName = firstName.toLowerCase();
             const lowerSecondName = secondName ? secondName.toLowerCase() : '';
 

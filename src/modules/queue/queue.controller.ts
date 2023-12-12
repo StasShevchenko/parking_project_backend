@@ -71,11 +71,7 @@ export class QueueController {
   @UseGuards(JWTAuthGuard)
   @Get('getThisPeriod')
   getCurrentPeriod(@Query() query: { fullName: string }) {
-    if (query.fullName) {
-      const [firstName, secondName] = query.fullName.split(' ');
-      return this.queueService.filterThisPeriods(firstName, secondName);
-    }
-    return this.queueService.getCurrentQueuePeriod();
+    return this.queueService.getCurrentQueuePeriod(query.fullName);
   }
 
   @ApiOperation({
@@ -91,13 +87,7 @@ export class QueueController {
   @Roles('is_staff')
   @Get('getOneNextPeriod')
   getNextPeriod(@Query() query: { fullName: string }): Promise<Period[][]> {
-    if (query.fullName) {
-      const [firstName, secondName] = query.fullName.split(' ');
-      console.log(firstName + ' ' + secondName);
-      // return this.queueService.filterOneNextPeriods(firstName, secondName);
-      return this.queueService.getOneNextPeriod()
-    }
-    return this.queueService.getOneNextPeriod();
+    return this.queueService.getOneNextPeriod(query.fullName);
   }
 
   @ApiOperation({
