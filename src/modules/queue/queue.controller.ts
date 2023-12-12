@@ -56,7 +56,7 @@ export class QueueController {
   @UseGuards(RolesGuard)
   @Roles('is_staff')
   CheckUserActivation() {
-    return this.queueService.checkUserActivation();
+    return this.queueService.changeActiveUsers();
   }
 
   @ApiOperation({

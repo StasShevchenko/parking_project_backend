@@ -84,3 +84,128 @@ export const oddQueueUsersTestArray: CreateUserDto[] = [
         in_queue: true
     },
 ]
+
+export const extendedEvenQueueUsersTestArray: CreateUserDto[] = [
+    {
+        firstName: 'Egorka1',
+        secondName: 'Goremikov',
+        email: 'egorka@mail.ru',
+        is_staff: false,
+        in_queue: true,
+    },
+    {
+        firstName: 'Stas2',
+        secondName: 'Shevchenko',
+        email: 'stas@mail.ru',
+        is_staff: true,
+        in_queue: true
+    },
+    {
+        firstName: 'Denis3',
+        secondName: 'Krylov',
+        email: 'den@mail.ru',
+        is_staff: true,
+        in_queue: true
+    },
+    {
+        firstName: 'Gery4',
+        secondName: 'Mambo',
+        email: 'gery@mail.ru',
+        is_staff: false,
+        in_queue: true
+    },
+    {
+        firstName: 'Denis5',
+        secondName: 'Egorov',
+        email: 'bc@mail.ru',
+        is_staff: false,
+        in_queue: true
+    },
+    {
+        firstName: 'Maxim6',
+        secondName: 'Ivahnenko',
+        email: 'maxim@mail.ru',
+        is_staff: false,
+        in_queue: true
+    },
+    {
+        firstName: 'Maxim7',
+        secondName: 'Ivahnenko',
+        email: 'ex@mail.ru',
+        is_staff: false,
+        in_queue: true
+    },
+    {
+        firstName: 'Jeka8',
+        secondName: 'Cheremihov',
+        email: 'cher@mail.ru',
+        is_staff: false,
+        in_queue: true
+    },
+    {
+        firstName: 'Vova9',
+        secondName: 'Ivahnenko',
+        email: 'vova@mail.ru',
+        is_staff: false,
+        in_queue: true
+    },
+]
+
+export const extendedOddQueueUsersTestArray: CreateUserDto[] = [
+    {
+        firstName: 'Egorka1',
+        secondName: 'Goremikov',
+        email: 'egorka@mail.ru',
+        is_staff: false,
+        in_queue: true,
+    },
+    {
+        firstName: 'Stas2',
+        secondName: 'Shevchenko',
+        email: 'stas@mail.ru',
+        is_staff: true,
+        in_queue: true
+    },
+    {
+        firstName: 'Denis3',
+        secondName: 'Krylov',
+        email: 'den@mail.ru',
+        is_staff: true,
+        in_queue: true
+    },
+    {
+        firstName: 'Gery4',
+        secondName: 'Mambo',
+        email: 'gery@mail.ru',
+        is_staff: false,
+        in_queue: true
+    },
+    {
+        firstName: 'Denis5',
+        secondName: 'Egorov',
+        email: 'bc@mail.ru',
+        is_staff: false,
+        in_queue: true
+    },
+    {
+        firstName: 'Maxim6',
+        secondName: 'Ivahnenko',
+        email: 'maxim@mail.ru',
+        is_staff: false,
+        in_queue: true
+    },
+    {
+        firstName: 'Maxim7',
+        secondName: 'Ivahnenko',
+        email: 'ex@mail.ru',
+        is_staff: false,
+        in_queue: true
+    },
+    {
+        firstName: 'Jeka8',
+        secondName: 'Cheremihov',
+        email: 'cher@mail.ru',
+        is_staff: false,
+        in_queue: true
+    },
+]

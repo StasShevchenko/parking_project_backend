@@ -16,7 +16,11 @@ import {QueueController} from '../queue.controller';
 import {MailService} from '../../mail/mail.service';
 import {MailKeyService} from '../../mail_key/mail_key.service';
 import {InputDataService} from '../../input-data/input-data.service';
-import {evenQueueUsersTestArray, oddQueueUsersTestArray} from "./utils/queueUsersTestArray";
+import {
+  evenQueueUsersTestArray,
+  extendedEvenQueueUsersTestArray, extendedOddQueueUsersTestArray,
+  oddQueueUsersTestArray
+} from "./utils/queueUsersTestArray";
 
 describe('Queue module testing', () => {
   const mockMailService = {
@@ -192,6 +196,79 @@ describe('Queue module testing', () => {
     console.log(finalResult)
     const monthNumber = new Date(finalResult[3].start_time).getMonth() + 1
     expect(monthNumber).toEqual(7)
+  })
+
+  //Тестируем функцию сдвига очереди (число юзеров 6, мест 3)
+  test('Should move queue after one month (even users number)', async() => {
+    const userService = queueModule.get(UserService);
+    for (const user of evenQueueUsersTestArray) {
+      await userService.createUser(user)
+    }
+    const queueController = queueModule.get(QueueController);
+    const queueService = queueModule.get(QueueService)
+    jest.setSystemTime(new Date(2024, 1))
+    await queueService.changeActiveUsers()
+    const periods = await queueController.getCurrentPeriod({
+      fullName: ""
+    })
+    const finalResult = periods[0].nextUsers[0].email
+    jest.setSystemTime(new Date(2024, 0))
+    expect(finalResult).toEqual('gery@mail.ru')
+  })
+
+  //Тестируем функцию сдвига очереди (число юзеров 5, мест 3)
+  test('Should move queue after one month (odd users number)', async () => {
+    const userService = queueModule.get(UserService);
+    for (const user of oddQueueUsersTestArray) {
+      await userService.createUser(user)
+    }
+    const queueController = queueModule.get(QueueController);
+    const queueService = queueModule.get(QueueService)
+    jest.setSystemTime(new Date(2024, 1))
+    await queueService.changeActiveUsers()
+    const periods = await queueController.getCurrentPeriod({
+      fullName: ""
+    })
+    const finalResult = periods[0].nextUsers[2].email
+    jest.setSystemTime(new Date(2024, 0))
+    expect(finalResult).toEqual('bc@mail.ru')
+  })
+
+  //Тестируем функцию сдвига очереди (число юзеров 9, мест 3)
+  test('Should move queue after one month (extended users number)', async () => {
+    const userService = queueModule.get(UserService);
+    for (const user of extendedEvenQueueUsersTestArray) {
+      await userService.createUser(user)
+    }
+    const queueController = queueModule.get(QueueController);
+    const queueService = queueModule.get(QueueService)
+    jest.setSystemTime(new Date(2024, 1))
+    await queueService.changeActiveUsers()
+    const periods = await queueController.getCurrentPeriod({
+      fullName: ""
+    })
+    const finalResult = periods[1].nextUsers[0].email
+    jest.setSystemTime(new Date(2024, 0))
+    expect(finalResult).toEqual('ex@mail.ru')
+  })
+
+
+  //Тестируем функцию сдвига очереди (число юзеров 8, мест 3)
+  test('Should move queue after one month (extended odd users number)', async () => {
+    const userService = queueModule.get(UserService);
+    for (const user of extendedOddQueueUsersTestArray) {
+      await userService.createUser(user)
+    }
+    const queueController = queueModule.get(QueueController);
+    const queueService = queueModule.get(QueueService)
+    jest.setSystemTime(new Date(2024, 1))
+    await queueService.changeActiveUsers()
+    const periods = await queueController.getCurrentPeriod({
+      fullName: ""
+    })
+    const finalResult = periods[1].nextUsers[0].email
+    jest.setSystemTime(new Date(2024, 0))
+    expect(finalResult).toEqual('egorka@mail.ru')
   })
 });
 

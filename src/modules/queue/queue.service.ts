@@ -84,17 +84,81 @@ export class QueueService {
     }
 
     @Cron(CronExpression.EVERY_1ST_DAY_OF_MONTH_AT_MIDNIGHT)
-    async checkUserActivation() {
+    async changeActiveUsers(): Promise<Date> {
         try {
-            const activeUsers = await this.userRepository.findAll({
-                where: {active: true},
-            });
             combinedLogger.info({Message: 'Сдвиг очереди'});
-            for (const user of activeUsers) {
-                await this.changeActiveUser(user);
+            const inputData = await this.inputDataRepository.findOne();
+            const queueUsers = await this.userRepository.findAll({
+                where: {in_queue: true},
+                order: [['start_active_time', 'ASC'], ['active', 'DESC']]
+            });
+            if (queueUsers.length <= inputData.seats) return null
+            const currentDate = new Date()
+            if(queueUsers[0].start_active_time.getMonth() >= currentDate.getMonth()) return null
+            const moveCount = inputData.seats
+            //Продвигаем очередь вперед на нужное число мест
+
+            //Переменная для хранения текущего юзера
+            let currentUser: User = null;
+
+            //Переменная для хранения следующего юзера
+            let nextUser: User = null;
+
+            for (let j = 0; j < moveCount; j++) {
+                for (let i = 0; i < queueUsers.length; i++) {
+                    //Делаем предыдущих юзеров НЕ активными
+                    if (j == 0 && i < inputData.seats) {
+                        queueUsers[i].active = false
+                        await queueUsers[i].save()
+                    }
+                    currentUser = queueUsers[queueUsers.length - 1 - i];
+                    queueUsers[queueUsers.length - i - 1] = nextUser ??
+                        this.getNextElement(queueUsers.length - i - 1, 1, queueUsers);
+                    nextUser = currentUser;
+                    //Обновляем номера в очереди на последней итерации
+                    if (j == moveCount - 1) {
+                        const userQueueEntry =
+                            await this.queueRepository.findOne({where: {userId: queueUsers[queueUsers.length - i - 1].id}});
+                        userQueueEntry.number = queueUsers.length - i
+                        await userQueueEntry.save()
+                        //Делаем новых юзеров активными
+                        if (i < inputData.seats) {
+                            queueUsers[moveCount - i].active = true
+                            userQueueEntry.swap = null
+                            await userQueueEntry.save()
+                            await queueUsers[moveCount - i].save()
+                        }
+                    }
+                }
+                nextUser = null
             }
+            for (let i = 0; i < queueUsers.length; i++) {
+                if (i > inputData.seats - 1 - queueUsers.length % inputData.seats) {
+                    const lastStartDate = new Date(queueUsers[i-1].start_active_time)
+                    if (i % inputData.seats == 0) {
+                        lastStartDate.setMonth(lastStartDate.getMonth() + 1)
+                    }
+                    queueUsers[i].start_active_time = lastStartDate
+                    const endTime = new Date(queueUsers[i].start_active_time)
+                    endTime.setMonth(endTime.getMonth() + 1)
+                    endTime.setDate(endTime.getDate() - 1)
+                    queueUsers[i].end_active_time = endTime
+                    queueUsers[i].last_active_period = endTime
+                    await queueUsers[i].save()
+                }
+            }
+           return queueUsers[0].start_active_time
         } catch (e) {
             console.log(e);
+            return null
+        }
+    }
+
+    //Функция для получения следующего элемента массива
+    getNextElement(currentIndex: number, step: number, array: any[]): any {
+        if (currentIndex + step >= array.length) return array[0]
+        else {
+            return array[currentIndex + step]
         }
     }
 
@@ -106,52 +170,14 @@ export class QueueService {
         }
     }
 
-    async changeActiveUser(user: User) {
-        try {
-            const minNumberUserId = (await this.getMinNumberUser()).userId;
-            const minUser = await this.userRepository.findOne({
-                where: {id: minNumberUserId},
-            });
-
-            user.active = false;
-            user.end_active_time = null;
-            user.start_active_time = null;
-            user.next_active = null;
-            user.previous_active = null;
-            await user.save();
-
-            await this.deleteFromQueue(minUser.id);
-            await this.addUserToQueue({userId: minUser.id});
-            await this.activateUser(minUser);
-        } catch (e) {
-            console.log(e);
-        }
-    }
-
-    async activateUser(user: User) {
-        try {
-            const nowDate = new Date();
-            const endDate = new Date();
-            endDate.setMonth(nowDate.getMonth() + 1);
-            user.active = true;
-            user.start_active_time = nowDate;
-            user.end_active_time = endDate;
-            user.last_active_period = nowDate;
-            user.next_active = null;
-            user.previous_active = null;
-            await user.save();
-        } catch (e) {
-            console.log(e);
-        }
-    }
-
     async getCurrentQueuePeriod(): Promise<Period[]> {
         try {
             const queueUsers = await this.userRepository.findAll({
                 where: {in_queue: true},
-                order: [['start_active_time', 'ASC'], ['active', 'DESC']]
+                order: [['start_active_time', 'ASC'], ['active', 'DESC'], ['id', 'ASC']]
             });
             const periods: Period[] = [];
+            const queue = await this.queueRepository.findAll({order: [['number', 'ASC']]})
             for (let i = 0; i < queueUsers.length; i++) {
                 const startDate = queueUsers[i].start_active_time
                 const endDate = queueUsers[i].end_active_time
@@ -353,18 +379,6 @@ export class QueueService {
                 limit: 1,
             });
             return result ? result.number : null;
-        } catch (e) {
-            console.log(e);
-        }
-    }
-
-    async getMinNumberUser(): Promise<Queue> {
-        try {
-            return await this.queueRepository.findOne({
-                where: {},
-                order: [['number', 'ASC']],
-                limit: 1,
-            });
         } catch (e) {
             console.log(e);
         }
