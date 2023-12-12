@@ -1,4 +1,4 @@
-import {BadRequestException, Injectable} from '@nestjs/common';
+import {BadRequestException, Injectable, OnModuleInit} from '@nestjs/common';
 import {Cron, CronExpression} from '@nestjs/schedule';
 import {InjectModel} from '@nestjs/sequelize';
 import {Period} from 'src/interfaces/period.interface';
@@ -9,8 +9,9 @@ import {CreateQueueDTO} from './dto/create-queue.dto';
 import {Queue} from './model/queue.model';
 import {mapToUserInPeriod, UserInPeriod} from '../../interfaces/user.interface';
 
+
 @Injectable()
-export class QueueService {
+export class QueueService implements OnModuleInit {
     constructor(
         @InjectModel(Queue) private readonly queueRepository: typeof Queue,
         @InjectModel(InputData)
@@ -94,7 +95,7 @@ export class QueueService {
             });
             if (queueUsers.length <= inputData.seats) return null
             const currentDate = new Date()
-            if(queueUsers[0].start_active_time.getMonth() >= currentDate.getMonth()) return null
+            if (queueUsers[0].start_active_time.getMonth() >= currentDate.getMonth()) return null
             const moveCount = inputData.seats
             //Продвигаем очередь вперед на нужное число мест
 
@@ -134,7 +135,7 @@ export class QueueService {
             }
             for (let i = 0; i < queueUsers.length; i++) {
                 if (i > inputData.seats - 1 - queueUsers.length % inputData.seats) {
-                    const lastStartDate = new Date(queueUsers[i-1].start_active_time)
+                    const lastStartDate = new Date(queueUsers[i - 1].start_active_time)
                     if (i % inputData.seats == 0) {
                         lastStartDate.setMonth(lastStartDate.getMonth() + 1)
                     }
@@ -147,7 +148,7 @@ export class QueueService {
                     await queueUsers[i].save()
                 }
             }
-           return queueUsers[0].start_active_time
+            return queueUsers[0].start_active_time
         } catch (e) {
             console.log(e);
             return null
@@ -177,7 +178,6 @@ export class QueueService {
                 order: [['start_active_time', 'ASC'], ['active', 'DESC'], ['id', 'ASC']]
             });
             const periods: Period[] = [];
-            const queue = await this.queueRepository.findAll({order: [['number', 'ASC']]})
             for (let i = 0; i < queueUsers.length; i++) {
                 const startDate = queueUsers[i].start_active_time
                 const endDate = queueUsers[i].end_active_time
@@ -382,6 +382,25 @@ export class QueueService {
         } catch (e) {
             console.log(e);
         }
+    }
+
+    //Функция, которая будет запускаться при старте сервера
+    //и прокручивать очередь до нужного момента, если
+    //была пропущена cron таска
+    async adjustQueue() {
+        const currentDate = new Date()
+        let queueNotInCorrectState = true
+        while (queueNotInCorrectState) {
+            const activeUsersPeriod = await this.changeActiveUsers()
+            const activeUsersPeriodDate = new Date(activeUsersPeriod)
+            if (activeUsersPeriod == null || activeUsersPeriodDate.getTime() >= currentDate.getTime()) {
+                queueNotInCorrectState = false
+            }
+        }
+    }
+
+    async onModuleInit() {
+        await this.adjustQueue()
     }
 }
 

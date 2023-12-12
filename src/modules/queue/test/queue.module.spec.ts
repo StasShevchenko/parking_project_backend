@@ -270,6 +270,42 @@ describe('Queue module testing', () => {
     jest.setSystemTime(new Date(2024, 0))
     expect(finalResult).toEqual('egorka@mail.ru')
   })
+
+  //Тестируем функцию сдвига очереди (moduleInit функция)
+  //Если мы 2 месяца не двигали очередь, то функция должна сдвинуть ее
+  //к марту
+  test('Should correctly adjust queue to appropriate state', async () => {
+    const userService = queueModule.get(UserService);
+    for (const user of evenQueueUsersTestArray) {
+      await userService.createUser(user)
+    }
+    const queueController = queueModule.get(QueueController);
+    const queueService = queueModule.get(QueueService)
+    jest.setSystemTime(new Date(2024, 2))
+    await queueService.adjustQueue()
+    const periods = await queueController.getCurrentPeriod({
+      fullName: ""
+    })
+    const dateString = periods[0].start_time
+    const date = new Date(dateString)
+    jest.setSystemTime(new Date(2024, 0))
+    expect(date.getMonth()).toBe(2)
+  })
+
+  //Тестируем функцию сдвига очереди при пустых юзерах(moduleInit функция)
+  test('Should do nothing', async () => {
+    const queueController = queueModule.get(QueueController);
+    const queueService = queueModule.get(QueueService)
+    jest.setSystemTime(new Date(2024, 2))
+    await queueService.adjustQueue()
+    const periods = await queueController.getCurrentPeriod({
+      fullName: ""
+    })
+    jest.setSystemTime(new Date(2024, 0))
+    expect(periods).toEqual([])
+  })
+
+
 });
 
 
