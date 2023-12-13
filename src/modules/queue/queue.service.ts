@@ -9,6 +9,7 @@ import {CreateQueueDTO} from './dto/create-queue.dto';
 import {Queue} from './model/queue.model';
 import {mapToUserInPeriod, UserInPeriod} from '../../interfaces/user.interface';
 import {Op} from "sequelize";
+import {sequenceEqual} from "rxjs";
 
 
 @Injectable()
@@ -166,7 +167,47 @@ export class QueueService implements OnModuleInit {
 
     async deleteFromQueue(userId: number) {
         try {
-            return await this.queueRepository.destroy({where: {userId: userId}});
+            let queueUsers = await this.userRepository.findAll({
+                where: {in_queue: true},
+                order: [['start_active_time', 'ASC'], ['active', 'DESC']]
+            });
+            const user = await this.userRepository.findOne({where: {id: userId}})
+            const inputData = await this.inputDataRepository.findOne()
+            const userIndex = queueUsers.findIndex((it) => it.id == user.id)
+            user.in_queue = false
+            user.active = false
+            user.last_active_period = null
+            user.start_active_time = null
+            user.end_active_time = null
+            await user.save()
+            await this.queueRepository.destroy({where: {userId: userId}});
+            queueUsers = queueUsers.filter((it) => it.email !== user.email)
+            //Необходимо переназначить даты
+            if(queueUsers.length > 1 && userIndex != queueUsers.length - 1){
+                for (let i = userIndex; i < queueUsers.length; i++) {
+                    if (i < inputData.seats) {
+                        queueUsers[i].active = true
+                    }
+                    if (i > 0) {
+                        const lastStartDate = new Date(queueUsers[i - 1].start_active_time)
+                        if (i % inputData.seats == 0) {
+                            lastStartDate.setMonth(lastStartDate.getMonth() + 1)
+                        }
+                        const queueItem = await this.queueRepository.findOne({where: {userId: queueUsers[i].id}})
+                        queueItem.number = i + 1
+                        await queueItem.save()
+                        queueUsers[i].start_active_time = lastStartDate
+                        const endTime = new Date(queueUsers[i].start_active_time)
+                        endTime.setMonth(endTime.getMonth() + 1)
+                        endTime.setDate(endTime.getDate() - 1)
+                        queueUsers[i].end_active_time = endTime
+                        queueUsers[i].last_active_period = endTime
+                    }
+                    await queueUsers[i].save()
+                }
+                return;
+            }
+            else return;
         } catch (e) {
             throw new BadRequestException();
         }
@@ -217,10 +258,10 @@ export class QueueService implements OnModuleInit {
                 const endDate = queueUsers[i].end_active_time
                 const nextUsers: UserInPeriod[] = []
                 const userQueueItem = await this.queueRepository.findOne({where: {userId: queueUsers[i].id}})
-                nextUsers.push(mapToUserInPeriod(queueUsers[i], userQueueItem.swap ?? null))
+                nextUsers.push(mapToUserInPeriod(queueUsers[i], userQueueItem?.swap ?? null))
                 while (i < queueUsers.length - 1 && queueUsers[i + 1].start_active_time.getTime() == startDate.getTime()) {
                     const userQueueItem = await this.queueRepository.findOne({where: {userId: queueUsers[i + 1].id}})
-                    nextUsers.push(mapToUserInPeriod(queueUsers[i + 1], userQueueItem.swap ?? null))
+                    nextUsers.push(mapToUserInPeriod(queueUsers[i + 1], userQueueItem?.swap ?? null))
                     i++
                 }
                 const currentPeriod: Period = {
@@ -264,7 +305,7 @@ export class QueueService implements OnModuleInit {
                 nextUsers.push(mapToUserInPeriod(queueUsers[i], null))
                 while (i < queueUsers.length - 1 && nextUsers.length % inputData.seats != 0) {
                     const currentUserQueueItem = await this.queueRepository.findOne({where: {userId: queueUsers[i + 1].id}})
-                    nextUsers.push(mapToUserInPeriod(queueUsers[i + 1], currentUserQueueItem.swap ?? null))
+                    nextUsers.push(mapToUserInPeriod(queueUsers[i + 1], currentUserQueueItem?.swap ?? null))
                     i++
                 }
                 nextPeriod.push({
