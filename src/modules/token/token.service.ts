@@ -59,7 +59,7 @@ export class TokenService {
     const payLoad = { user };
     const refreshToken = await this.jwtService.sign(payLoad, {
       secret: process.env.SECRET_REFRESH_KEY,
-      expiresIn: '30d',
+      expiresIn: '30d'
     });
 
     return refreshToken;

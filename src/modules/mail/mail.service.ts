@@ -1,11 +1,10 @@
-import { Injectable } from '@nestjs/common';
-import { mailer } from '../../configs/nodemailer';
-import { User } from '../user/model/user.model';
-import { MailerService } from '@nestjs-modules/mailer';
+import {Injectable} from '@nestjs/common';
+import {mailer} from '../../configs/nodemailer';
+import {User} from '../user/model/user.model';
 
 @Injectable()
 export class MailService {
-  constructor(private readonly mailerService: MailerService) {}
+  constructor() {}
 
   async sendRegistrationsEmail(user: User, password: string) {
     const message = {

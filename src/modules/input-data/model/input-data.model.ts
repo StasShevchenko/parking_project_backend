@@ -1,6 +1,6 @@
 import { Column, Model, Table } from 'sequelize-typescript';
 
-@Table
+@Table({timestamps: false})
 export class InputData extends Model {
   @Column
   seats: number;
