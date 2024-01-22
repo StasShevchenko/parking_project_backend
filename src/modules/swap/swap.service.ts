@@ -16,9 +16,9 @@ export class SwapService {
 
   async CreateNewSwap(dto): Promise<Swap> {
     try {
-      let sent = new Date(dto.sent);
-      let from = new Date(dto.swap.from);
-      let to = new Date(dto.swap.to);
+      const sent = new Date(dto.sent);
+      const from = new Date(dto.swap.from);
+      const to = new Date(dto.swap.to);
       return await this.swapRepository.create({
         is_active: true,
         sent: sent,
@@ -39,13 +39,13 @@ export class SwapService {
 
   async GetAllSwapByUserId(dto: GetAllSwapByUserId) {
     try {
-      let UserSenderSwap: Swap[] = await this.swapRepository.findAll({
+      const UserSenderSwap: Swap[] = await this.swapRepository.findAll({
         where: { sender: dto.userId },
       });
-      let UserReceiverSwap: Swap[] = await this.swapRepository.findAll({
+      const UserReceiverSwap: Swap[] = await this.swapRepository.findAll({
         where: { receiver: dto.userId },
       });
-      let response = [];
+      const response = [];
       // Запросы на обмен, которые отправил наш пользователь
       for (var swap of UserSenderSwap) {
         const SwapData = {
@@ -103,9 +103,9 @@ export class SwapService {
 
   async AcceptSwap(dto: AcceptDeclineSwap) {
     try {
-      let swap = await this.swapRepository.findByPk(dto.id);
-      let senderUser = await this.userService.findUserById(swap.sender);
-      let receiverUser = await this.userService.findUserById(swap.receiver);
+      const swap = await this.swapRepository.findByPk(dto.id);
+      const senderUser = await this.userService.findUserById(swap.sender);
+      const receiverUser = await this.userService.findUserById(swap.receiver);
       // Если соглашается получатель запроса и запрос еще не обработан
       if (swap.receiver == dto.userId && swap.is_active == true) {
         // Если оба юзера неактивны, то меняемся
@@ -114,7 +114,7 @@ export class SwapService {
             message: 'Один из пользователей активен',
           });
         } else {
-          await this.queueService.SwapUsers(swap.receiver, swap.sender);
+          await this.queueService.swapUsers(swap.receiver, swap.sender);
           swap.is_active = false;
           swap.result = true;
           await swap.save();
@@ -131,7 +131,7 @@ export class SwapService {
 
   async DeclineSwap(dto: AcceptDeclineSwap): Promise<boolean> {
     try {
-      let swap = await this.swapRepository.findByPk(dto.id);
+      const swap = await this.swapRepository.findByPk(dto.id);
       // Если соглашается получатель запроса и запрос еще не обработан
       if (swap.receiver == dto.userId && swap.is_active == true) {
         swap.is_active = false;

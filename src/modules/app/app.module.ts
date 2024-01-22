@@ -1,14 +1,13 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SequelizeModule } from '@nestjs/sequelize';
-// import { getMailConfig } from 'src/configs/mail.config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { AvatarModule } from 'src/modules/avatar/avatar.module';
 import { Queue } from 'src/modules/queue/model/queue.model';
 import { QueueModule } from 'src/modules/queue/queue.module';
-import { Swap } from 'src/swap/model/swap.model';
-import { SwapModule } from 'src/swap/swap.module';
+import { Swap } from '../swap/model/swap.model';
+import { SwapModule } from '../swap/swap.module';
 import { LoggerMiddleware } from 'src/utils/logger.middleware';
 import { AuthModule } from '../auth/auth.module';
 import { InputDataModule } from '../input-data/input-data.module';
@@ -18,17 +17,11 @@ import { MailKeyModule } from '../mail_key/mail_key.module';
 import { MailKey } from '../mail_key/model/mail_key.model';
 import { Notification } from '../notifications/model/notifications.model';
 import { NotificationsModule } from '../notifications/notifications.module';
-import { QueueAhead } from '../queue-ahead/model/queue_ahead.model';
-import { QueueAheadModule } from '../queue-ahead/queue-ahead.module';
 import { TokenModule } from '../token/token.module';
 import { User } from '../user/model/user.model';
 import { UserModule } from '../user/user.module';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 
 @Module({
-  controllers: [AppController],
-  providers: [AppService],
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
@@ -36,7 +29,6 @@ import { AppService } from './app.service';
     }),
     ServeStaticModule.forRoot({
       rootPath: '/home/develop/src/static',
-      // rootPath: 'D:/parking_project/src/static',
       serveRoot: '/static',
       exclude: ['/api/(.*)'],
     }),
@@ -53,15 +45,7 @@ import { AppService } from './app.service';
         database: configService.get('POSTGRES_DATABASE'),
         synchronize: true,
         autoLoadModels: true,
-        models: [
-          User,
-          Queue,
-          InputData,
-          QueueAhead,
-          Notification,
-          MailKey,
-          Swap,
-        ],
+        models: [User, Queue, InputData, Notification, MailKey, Swap],
       }),
     }),
     UserModule,
@@ -69,7 +53,6 @@ import { AppService } from './app.service';
     TokenModule,
     QueueModule,
     InputDataModule,
-    QueueAheadModule,
     NotificationsModule,
     MailModule,
     MailKeyModule,

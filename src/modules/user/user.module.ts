@@ -1,4 +1,4 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { SequelizeModule } from '@nestjs/sequelize';
 import { MailModule } from '../mail/mail.module';
@@ -16,7 +16,7 @@ import { AvatarService } from '../avatar/avatar.service';
     TokenModule,
     MailModule,
     MailKeyModule,
-    forwardRef(() => QueueModule),
+    QueueModule,
   ],
   controllers: [UserController],
   providers: [UserService, JwtService, AvatarService],

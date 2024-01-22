@@ -6,7 +6,7 @@ import {
   Model,
   Table,
 } from 'sequelize-typescript';
-import { User } from 'src/modules/user/model/user.model';
+import { User } from '../../user/model/user.model';
 
 @Table
 export class Notification extends Model {

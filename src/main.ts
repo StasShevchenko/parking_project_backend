@@ -5,14 +5,10 @@ import { AllExceptionsFilter } from './utils/AllExceptionsFilter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
-
-    cors:true
-    
-    });
+    cors: true,
+  });
 
   app.useGlobalFilters(new AllExceptionsFilter()); // Регистрируйте глобально AllExceptionsFilter
-  // app.use(LoggerMiddleware);
-
   app.enableCors();
 
   const config = new DocumentBuilder()

@@ -23,21 +23,17 @@ export class MailKeyService {
     }
   }
 
-  async KeyReview(key: number): Promise<MailKey> {
-    try {
-      const DBkey = await this.mailKeyRepository.findOne({
-        where: { key: key },
-      });
-      if (DBkey) {
-        return DBkey;
-      }
-      throw new BadRequestException('KEY EXIST');
-    } catch (e) {
-      throw new BadRequestException('KEY EXIST');
+  async reviewKey(key: number): Promise<MailKey> {
+    const DBkey = await this.mailKeyRepository.findOne({
+      where: { key: key },
+    });
+    if (DBkey) {
+      return DBkey;
     }
+    throw new BadRequestException('KEY EXIST');
   }
 
-  async deleteByKey(key: number) : Promise<number> {
-    return await this.mailKeyRepository.destroy({where: {key: key}})
+  async deleteByKey(key: number): Promise<number> {
+    return await this.mailKeyRepository.destroy({ where: { key: key } });
   }
 }

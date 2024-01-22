@@ -7,7 +7,7 @@ import { NotificationsService } from './notifications.service';
 import { TokenModule } from '../token/token.module';
 
 @Module({
-  imports: [SequelizeModule.forFeature([Notification]),   TokenModule,],
+  imports: [SequelizeModule.forFeature([Notification]), TokenModule],
   providers: [NotificationsService, JwtService],
   controllers: [NotificationsController],
 })

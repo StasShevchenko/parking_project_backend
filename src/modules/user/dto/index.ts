@@ -22,25 +22,3 @@ export class CreateUserDto {
   @IsBoolean()
   in_queue?: boolean | null;
 }
-
-export class CreateAdminDto {
-  @ApiProperty()
-  @IsString()
-  firstName: string;
-
-  @ApiProperty()
-  @IsString()
-  secondName: string;
-
-  @ApiProperty()
-  @IsString()
-  email: string;
-
-  @IsBoolean()
-  @ApiProperty()
-  is_staff: boolean;
-
-  @ApiProperty()
-  @IsBoolean()
-  is_superuser: boolean;
-}
