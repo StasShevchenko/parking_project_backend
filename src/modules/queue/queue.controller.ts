@@ -24,6 +24,7 @@ import { CreateQueueDTO } from './dto/create-queue.dto';
 import { allNextActivePeriod } from './dto/next_active_period.dto';
 import { Queue } from './model/queue.model';
 import { QueueService } from './queue.service';
+import { Period } from '../../interfaces/period.interface';
 
 @ApiBearerAuth()
 @ApiTags('Queue')
@@ -43,7 +44,7 @@ export class QueueController {
   @UseGuards(JWTAuthGuard)
   @Post('')
   create(@Body() dto: CreateQueueDTO): Promise<Queue> {
-    return this.queueService.create(dto);
+    return this.queueService.addUserToQueue(dto);
   }
 
   @ApiOperation({ summary: 'Двигаем очередь вперед - только админам' })
@@ -55,12 +56,11 @@ export class QueueController {
   @UseGuards(RolesGuard)
   @Roles('is_staff')
   CheckUserActivation() {
-    return this.queueService.CheckUserActivation();
+    return this.queueService.changeActiveUsers();
   }
 
   @ApiOperation({
-    summary:
-      'Получение всех следующих периодов пользователей - только авторизованным',
+    summary: 'Получение текущего периода пользователей - только авторизованным',
   })
   @ApiParam({ name: 'fullName', type: String })
   @ApiResponse({
@@ -69,13 +69,25 @@ export class QueueController {
   })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
   @UseGuards(JWTAuthGuard)
-  @Get('allNextPeriod')
-  getAllNextPeriod(@Query() query: { fullName: string }) {
-    if (query.fullName) {
-      const [firstName, secondName] = query.fullName.split(' ');
-      return this.queueService.filterNextPeriods(firstName, secondName);
-    }
-    return this.queueService.getAllNextPeriods();
+  @Get('getThisPeriod')
+  getCurrentPeriod(@Query() query: { fullName: string }) {
+    return this.queueService.getCurrentQueuePeriod(query.fullName);
+  }
+
+  @ApiOperation({
+    summary: 'Получение текущего периода пользователей - только авторизованным',
+  })
+  @ApiParam({ name: 'fullName', type: String })
+  @ApiResponse({
+    status: 200,
+    type: allNextActivePeriod,
+  })
+  @ApiForbiddenResponse({ description: 'Unauthorized Request' })
+  @UseGuards(RolesGuard)
+  @Roles('is_staff')
+  @Get('getOneNextPeriod')
+  getNextPeriod(@Query() query: { fullName: string }): Promise<Period[][]> {
+    return this.queueService.getOneNextPeriod(query.fullName);
   }
 
   @ApiOperation({
@@ -91,5 +103,19 @@ export class QueueController {
   @Delete('')
   deleteFromQueue(@Param('id') id: number) {
     return this.queueService.deleteFromQueue(id);
+  }
+
+  @ApiOperation({
+    summary: 'Следующие периоды пользователя - только авторизованным',
+  })
+  @ApiResponse({
+    status: 200,
+  })
+  @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
+  @ApiForbiddenResponse({ description: 'Unauthorized Request' })
+  @UseGuards(JWTAuthGuard)
+  @Post('NextPeriodsById')
+  getUserNextPeriods(@Body() dto: CreateQueueDTO) {
+    return this.queueService.getUserNextPeriods(dto);
   }
 }

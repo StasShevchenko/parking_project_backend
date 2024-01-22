@@ -1,350 +1,524 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, OnModuleInit } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectModel } from '@nestjs/sequelize';
 import { Period } from 'src/interfaces/period.interface';
-import { User } from 'src/modules/user/model/user.model';
-import { combinedLogger } from 'src/utils/logger.config';
+import { User } from '../user/model/user.model';
+import { combinedLogger } from '../../utils/logger.config';
 import { InputData } from '../input-data/model/input-data.model';
-import { QueueAheadService } from '../queue-ahead/queue-ahead.service';
 import { CreateQueueDTO } from './dto/create-queue.dto';
 import { Queue } from './model/queue.model';
-
+import {
+  mapToUserInPeriod,
+  UserInPeriod,
+} from '../../interfaces/user.interface';
+import { Op } from 'sequelize';
+export * from 'src/interfaces/period.interface';
 @Injectable()
-export class QueueService {
+export class QueueService implements OnModuleInit {
   constructor(
     @InjectModel(Queue) private readonly queueRepository: typeof Queue,
     @InjectModel(InputData)
     private readonly inputDataRepository: typeof InputData,
     @InjectModel(User) private readonly userRepository: typeof User,
-    private readonly queueAheadService: QueueAheadService,
   ) {}
-  private readonly logger = new Logger(QueueService.name);
 
-  async create(dto: CreateQueueDTO): Promise<Queue> {
-    const maxNumber = await this.getMaxNumber();
-    console.log(dto);
-    const inputData = await this.inputDataRepository.findOne();
-    const nowDate = new Date();
-    const end_time = new Date();
-    end_time.setDate(end_time.getDate() + inputData.period);
-    const user = await this.userRepository.findOne({
-      where: { id: dto.userId },
-    });
-    const numberActiveUsers = (
-      await this.userRepository.findAll({ where: { active: true } })
-    ).length;
-    if (numberActiveUsers < inputData.seats) {
-      await this.ActivationUser(user, inputData.period);
-    }
-
-    if (!user.in_queue) {
-      user.in_queue = true;
-      user.last_active_period = nowDate;
-      user.save();
-      const queue = await this.getQueue();
-      // await this.queueAheadService.generateNewQueue(user.id, queue);
-    }
-    if (!user.last_active_period) {
-      user.last_active_period = nowDate;
-    }
-    // await this.queueAheadService.addUser(user.id);
-    if (maxNumber) {
-      return this.queueRepository.create({
-        userId: dto.userId,
-        number: maxNumber.number + 1,
-        start_period_time: nowDate,
-        end_period_time: end_time,
+  async addUserToQueue(dto: CreateQueueDTO): Promise<Queue> {
+    try {
+      const inputData = await this.inputDataRepository.findOne();
+      const queueUsers = await this.userRepository.findAll({
+        where: { in_queue: true },
+        order: [['start_active_time', 'ASC']],
       });
-    }
-    return this.queueRepository.create({
-      userId: dto.userId,
-      number: 1,
-      start_period_time: nowDate,
-      end_period_time: end_time,
-    });
-  }
+      // Получаем юзера из бд по userId из dto
+      const user = await this.userRepository.findOne({
+        where: { id: dto.userId },
+      });
+      // Если юзер только создан и еще не в очереди
+      if (!user.in_queue) {
+        let isActive = false;
+        if (queueUsers.length < inputData.seats) {
+          isActive = true;
+        }
+        let startDate = new Date();
+        let endDate = new Date();
+        //Если в очереди еще нет юзеров, то выставляем срок на месяц
+        //от начала текущего месяца
+        if (queueUsers.length == 0) {
+          endDate.setMonth(startDate.getMonth() + 1);
+          endDate.setDate(endDate.getDate() - 1);
+          const userTimezoneOffset = startDate.getTimezoneOffset() * 60000;
+          startDate = new Date(startDate.getTime() - userTimezoneOffset);
+          endDate = new Date(endDate.getTime() - userTimezoneOffset);
+        } // Если не делится на число мест, то значит в этом
+        //месяце еще остались места и сроки как у последнего юзера в очереди
+        else if (queueUsers.length % inputData.seats != 0) {
+          const lastUser = queueUsers[queueUsers.length - 1];
+          startDate = lastUser.start_active_time;
+          endDate = lastUser.end_active_time;
+        } else {
+          // В этом месяце нет мест, значит сроки рассчитываем на след месяц
+          const lastUserStartDate =
+            queueUsers[queueUsers.length - 1].start_active_time;
+          startDate.setMonth(lastUserStartDate.getMonth() + 1);
+          endDate.setMonth(startDate.getMonth() + 1);
+          endDate.setDate(endDate.getDate() - 1);
+          const userTimezoneOffset = startDate.getTimezoneOffset() * 60000;
+          startDate = new Date(startDate.getTime() - userTimezoneOffset);
+          endDate = new Date(endDate.getTime() - userTimezoneOffset);
+        }
 
-  async getMaxNumber(): Promise<Queue> {
-    const result = await this.queueRepository.findOne({
-      where: {},
-      order: [['number', 'DESC']],
-      limit: 1,
-    });
-    return result;
-  }
-
-  async getMinNumber(): Promise<Queue> {
-    const result = await this.queueRepository.findOne({
-      where: {},
-      order: [['number', 'ASC']],
-      limit: 1,
-    });
-    return result;
-  }
-
-  @Cron(CronExpression.EVERY_DAY_AT_4AM)
-  async CheckUserActivation() {
-    const nowDate = new Date();
-    const activeUsers = await this.userRepository.findAll({
-      where: { active: true },
-    });
-    combinedLogger.info({ Message: 'Сдвиг очереди' });
-    for (const user of activeUsers) {
-      if (nowDate > user.end_active_time) {
-        await this.changeActiveUser(user);
+        user.in_queue = true;
+        user.active = isActive;
+        user.last_active_period = startDate;
+        user.start_active_time = startDate;
+        user.end_active_time = endDate;
+        await user.save();
+        return await this.queueRepository.create({
+          userId: dto.userId,
+          number: (await this.getMaxNumber()) + 1,
+          start_period_time: startDate,
+          end_period_time: endDate,
+        });
       }
+    } catch (e) {
+      console.log(e);
+      return null;
+    }
+  }
+
+  @Cron(CronExpression.EVERY_1ST_DAY_OF_MONTH_AT_MIDNIGHT)
+  async changeActiveUsers(): Promise<Date> {
+    try {
+      combinedLogger.info({ Message: 'Сдвиг очереди' });
+      const inputData = await this.inputDataRepository.findOne();
+      const queueUsers = await this.userRepository.findAll({
+        where: { in_queue: true },
+        order: [
+          ['start_active_time', 'ASC'],
+          ['active', 'DESC'],
+        ],
+      });
+      if (queueUsers.length <= inputData.seats) return null;
+      const currentDate = new Date();
+      if (queueUsers[0].start_active_time.getMonth() >= currentDate.getMonth())
+        return null;
+      const moveCount = inputData.seats;
+      //Продвигаем очередь вперед на нужное число мест
+
+      //Переменная для хранения текущего юзера
+      let currentUser: User = null;
+
+      //Переменная для хранения следующего юзера
+      let nextUser: User = null;
+
+      for (let j = 0; j < moveCount; j++) {
+        for (let i = 0; i < queueUsers.length; i++) {
+          //Делаем предыдущих юзеров НЕ активными
+          if (j == 0 && i < inputData.seats) {
+            queueUsers[i].active = false;
+            await queueUsers[i].save();
+          }
+          currentUser = queueUsers[queueUsers.length - 1 - i];
+          queueUsers[queueUsers.length - i - 1] =
+            nextUser ??
+            this.getNextElement(queueUsers.length - i - 1, 1, queueUsers);
+          nextUser = currentUser;
+          //Обновляем номера в очереди на последней итерации
+          if (j == moveCount - 1) {
+            const userQueueEntry = await this.queueRepository.findOne({
+              where: { userId: queueUsers[queueUsers.length - i - 1].id },
+            });
+            userQueueEntry.number = queueUsers.length - i;
+            await userQueueEntry.save();
+            //Делаем новых юзеров активными
+            if (i < inputData.seats) {
+              queueUsers[moveCount - i].active = true;
+              userQueueEntry.swap = null;
+              await userQueueEntry.save();
+              await queueUsers[moveCount - i].save();
+            }
+          }
+        }
+        nextUser = null;
+      }
+      for (let i = 0; i < queueUsers.length; i++) {
+        if (i > inputData.seats - 1 - (queueUsers.length % inputData.seats)) {
+          const lastStartDate = new Date(queueUsers[i - 1].start_active_time);
+          if (i % inputData.seats == 0) {
+            lastStartDate.setMonth(lastStartDate.getMonth() + 1);
+          }
+          queueUsers[i].start_active_time = lastStartDate;
+          const endTime = new Date(queueUsers[i].start_active_time);
+          endTime.setMonth(endTime.getMonth() + 1);
+          endTime.setDate(endTime.getDate() - 1);
+          queueUsers[i].end_active_time = endTime;
+          queueUsers[i].last_active_period = endTime;
+          await queueUsers[i].save();
+        }
+      }
+      return queueUsers[0].start_active_time;
+    } catch (e) {
+      console.log(e);
+      return null;
+    }
+  }
+
+  //Функция для получения следующего элемента массива
+  getNextElement(currentIndex: number, step: number, array: any[]): any {
+    if (currentIndex + step >= array.length) return array[0];
+    else {
+      return array[currentIndex + step];
     }
   }
 
   async deleteFromQueue(userId: number) {
     try {
-      return await this.queueRepository.destroy({ where: { userId: userId } });
+      let queueUsers = await this.userRepository.findAll({
+        where: { in_queue: true },
+        order: [
+          ['start_active_time', 'ASC'],
+          ['active', 'DESC'],
+        ],
+      });
+      const user = await this.userRepository.findOne({ where: { id: userId } });
+      const inputData = await this.inputDataRepository.findOne();
+      const userIndex = queueUsers.findIndex((it) => it.id == user.id);
+      user.in_queue = false;
+      user.active = false;
+      user.last_active_period = null;
+      user.start_active_time = null;
+      user.end_active_time = null;
+      await user.save();
+      await this.queueRepository.destroy({ where: { userId: userId } });
+      queueUsers = queueUsers.filter((it) => it.email !== user.email);
+      //Необходимо переназначить даты
+      if (queueUsers.length > 1 && userIndex != queueUsers.length - 1) {
+        for (let i = userIndex; i < queueUsers.length; i++) {
+          if (i < inputData.seats) {
+            queueUsers[i].active = true;
+          }
+          if (i > 0) {
+            const lastStartDate = new Date(queueUsers[i - 1].start_active_time);
+            if (i % inputData.seats == 0) {
+              lastStartDate.setMonth(lastStartDate.getMonth() + 1);
+            }
+            const queueItem = await this.queueRepository.findOne({
+              where: { userId: queueUsers[i].id },
+            });
+            queueItem.number = i + 1;
+            await queueItem.save();
+            queueUsers[i].start_active_time = lastStartDate;
+            const endTime = new Date(queueUsers[i].start_active_time);
+            endTime.setMonth(endTime.getMonth() + 1);
+            endTime.setDate(endTime.getDate() - 1);
+            queueUsers[i].end_active_time = endTime;
+            queueUsers[i].last_active_period = endTime;
+          }
+          await queueUsers[i].save();
+        }
+        return;
+      } else return;
     } catch (e) {
       throw new BadRequestException();
     }
   }
 
-  async changeActiveUser(user: User) {
-    const period = (await this.inputDataRepository.findOne()).period;
-    const nowDate = new Date();
-    const millisecondsInNDays = period * 2 * 24 * 60 * 60 * 1000;
-
-    const maxNumber = await this.getMaxNumber();
-
-    const minUserId = (await this.getMinNumber()).userId;
-    const minUser = await this.userRepository.findOne({
-      where: { id: minUserId },
-    });
-
-    const last_active_period_minUser = new Date(minUser.last_active_period);
-    const timeDifference = Math.abs(
-      nowDate.getTime() - last_active_period_minUser.getTime(),
-    );
-    const activateMoreMonthAgo =
-      timeDifference >= millisecondsInNDays ? true : false;
-
-    user.active = false;
-    user.end_active_time = null;
-    user.start_active_time = null;
-    await user.save();
-
-    await this.deleteFromQueue(minUser.id);
-    await this.create({ userId: minUser.id });
-    await this.ActivationUser(minUser, period);
-  }
-
-  async ActivationUser(user: User, period: number) {
-    const nowDate = new Date();
-    let end_active_time = new Date();
-    end_active_time.setDate(nowDate.getDate() + period);
-    user.active = true;
-    user.start_active_time = nowDate
-    user.end_active_time = end_active_time
-    user.last_active_period = nowDate
-    await user.save();
-  }
-
-  async nextPeriodActiveUser(user: User) {
-    let period = 30;
-    const seats = 3;
-    const nowDate = new Date();
-    const nextPeriod = new Date();
-    const millisecondsPerDay = 24 * 60 * 60 * 1000;
-    const countQueue = await this.queueRepository.count();
-    let periods = [];
-
-    const positionUserFromQueue = (
-      await this.queueRepository.findOne({ where: { userId: user.id } })
-    ).number;
-    const minNumberFromQueue = await this.queueRepository.findOne({
-      where: {},
-      order: [['number', 'ASC']],
-      limit: 1,
-    });
-
-    const user_end_date = new Date(user.end_active_time);
-    const day_left =
-      (user_end_date.getTime() - nowDate.getTime()) / millisecondsPerDay;
-    const periodCount = Math.floor(
-      (positionUserFromQueue - minNumberFromQueue.number) / seats,
-    );
-    nextPeriod.setDate(nowDate.getDate() + day_left + periodCount * period + 1);
-    return nextPeriod.toISOString();
-  }
-
-  async nextPeriodNoActiveUser(user: User) {
-    const period = (await this.inputDataRepository.findOne()).period;
-    const seats = 3;
-    const nowDate = new Date();
-    const start_time = new Date()
-    const end_time = new Date();
-    const millisecondsPerDay = 24 * 60 * 60 * 1000;
-    const countQueue = await this.queueRepository.count();
-
-    const positionUserFromQueue = (
-      await this.queueRepository.findOne({ where: { userId: user.id } })
-    ).number;
-    const minNumberFromQueue = await this.queueRepository.findOne({
-      where: {},
-      order: [['number', 'ASC']],
-      limit: 1,
-    });
-    const activeUser = await this.userRepository.findOne({
-      where: {
-        active: true,
-      },
-    });
-    const user_active_end_data = new Date(activeUser.end_active_time);
-    const day_left =
-      (user_active_end_data.getTime() - nowDate.getTime()) / millisecondsPerDay;
-    const periodCount = Math.floor(
-      (positionUserFromQueue - minNumberFromQueue.number) / seats,
-    );
-    start_time.setDate(nowDate.getDate() + day_left + periodCount * period + 1);
-    end_time.setDate(
-      nowDate.getDate() + day_left + periodCount * period + 1 + period,
-    );
-    return { start_active_time: start_time, end_active_time: end_time };
-  }
-
-  async getAllNextPeriods(): Promise<Period[]> {
-    const nowDate = (
-      await this.userRepository.findOne({ where: { active: true } })
-    ).start_active_time;
-    const inputData = await this.inputDataRepository.findOne();
-    const usersInQueue = await this.queueRepository.findAll({
-      order: [['number', 'ASC']],
-    });
-    let nextPeriods = [];
-    let nextQueue = [...usersInQueue];
-
-    let nextDate = new Date();
-    nextDate.setDate(nowDate.getDate() + inputData.period);
-    let flag = 0;
-
-    for (let i = 0; i < inputData.numberOfOutputPeriods; i++) {
-      let nextUsers = [];
-      let activeUsers;
-      if (flag < 1) {
-        activeUsers = await this.userRepository.findAll({
-          where: { active: true },
-        });
-        console.log('Dadadadadada');
-        flag++;
+  async getCurrentQueuePeriod(fullName: string = ''): Promise<Period[]> {
+    try {
+      let firstName: string;
+      let secondName: string;
+      if (fullName.includes(' ')) {
+        firstName = fullName.split(' ')[0];
+        secondName = fullName.split(' ')[1];
       } else {
-        const lastEntries = nextQueue.slice(-inputData.seats);
+        firstName = fullName;
+        secondName = '';
+      }
+      const queueUsers = await this.userRepository.findAll({
+        where: [
+          { in_queue: true },
+          {
+            [Op.or]: [
+              {
+                [Op.and]: [
+                  { firstName: { [Op.like]: `%${firstName}%` } },
+                  { secondName: { [Op.like]: `%${secondName}%` } },
+                ],
+              },
+              {
+                [Op.and]: [
+                  { firstName: { [Op.like]: `%${secondName}%` } },
+                  { secondName: { [Op.like]: `%${firstName}%` } },
+                ],
+              },
+              {
+                [Op.or]: [
+                  { secondName: { [Op.like]: `%${firstName + secondName}%` } },
+                  { firstName: { [Op.like]: `%${firstName + secondName}%` } },
+                ],
+              },
+            ],
+          },
+        ],
+        order: [
+          ['start_active_time', 'ASC'],
+          ['active', 'DESC'],
+          ['id', 'ASC'],
+        ],
+      });
+      const periods: Period[] = [];
+      for (let i = 0; i < queueUsers.length; i++) {
+        const startDate = queueUsers[i].start_active_time;
+        const endDate = queueUsers[i].end_active_time;
+        const nextUsers: UserInPeriod[] = [];
+        const userQueueItem = await this.queueRepository.findOne({
+          where: { userId: queueUsers[i].id },
+        });
+        nextUsers.push(
+          mapToUserInPeriod(queueUsers[i], userQueueItem?.swap ?? null),
+        );
+        while (
+          i < queueUsers.length - 1 &&
+          queueUsers[i + 1].start_active_time.getTime() == startDate.getTime()
+        ) {
+          const userQueueItem = await this.queueRepository.findOne({
+            where: { userId: queueUsers[i + 1].id },
+          });
+          nextUsers.push(
+            mapToUserInPeriod(queueUsers[i + 1], userQueueItem?.swap ?? null),
+          );
+          i++;
+        }
+        const currentPeriod: Period = {
+          start_time: startDate.toISOString(),
+          end_time: endDate.toISOString(),
+          nextUsers: nextUsers,
+        };
+        periods.push(currentPeriod);
+      }
+      return periods;
+    } catch (e) {
+      console.log(e);
+      return [];
+    }
+  }
 
-        activeUsers = await Promise.all(
-          lastEntries.map(async (user) => {
-            const myUser = await this.userRepository.findOne({
-              where: { id: user.userId },
-            });
-            return myUser;
-          }),
+  async getOneNextPeriod(fullName: string = ''): Promise<Period[][]> {
+    try {
+      const queueUsers = await this.userRepository.findAll({
+        where: { in_queue: true },
+        order: [
+          ['start_active_time', 'ASC'],
+          ['active', 'DESC'],
+        ],
+      });
+      const inputData = await this.inputDataRepository.findOne();
+      const periodsArray: Period[][] = [];
+      const firstPeriod = await this.getCurrentQueuePeriod();
+      const startDate = queueUsers[queueUsers.length - 1].start_active_time;
+      let startIndex = 0;
+      if (queueUsers.length % inputData.seats == 0) {
+        startDate.setMonth(startDate.getMonth() + 1);
+      } else {
+        startIndex = 1;
+        firstPeriod[firstPeriod.length - 1].nextUsers.push(
+          mapToUserInPeriod(queueUsers[0], null),
         );
       }
-
-      for (const user of activeUsers) {
-        const nextUser = {
-          firstName: user.firstName,
-          secondName: user.secondName,
-          email: user.email,
-          active: user.active,
-          id: user.id,
-          avatar: user.avatar
-        };
-        nextUsers.push(nextUser);
+      periodsArray.push(firstPeriod);
+      const nextPeriod: Period[] = [];
+      for (let i = startIndex; i < queueUsers.length; i++) {
+        const nextUsers: UserInPeriod[] = [];
+        const endDate = new Date();
+        endDate.setMonth(startDate.getMonth() + 1);
+        endDate.setDate(endDate.getDate() - 1);
+        nextUsers.push(mapToUserInPeriod(queueUsers[i], null));
+        while (
+          i < queueUsers.length - 1 &&
+          nextUsers.length % inputData.seats != 0
+        ) {
+          const currentUserQueueItem = await this.queueRepository.findOne({
+            where: { userId: queueUsers[i + 1].id },
+          });
+          nextUsers.push(
+            mapToUserInPeriod(
+              queueUsers[i + 1],
+              currentUserQueueItem?.swap ?? null,
+            ),
+          );
+          i++;
+        }
+        nextPeriod.push({
+          start_time: startDate.toISOString(),
+          end_time: endDate.toISOString(),
+          nextUsers: nextUsers,
+        });
+        startDate.setMonth(startDate.getMonth() + 1);
       }
-
-      const nextPeriod = {
-        start_time: nowDate.toISOString(),
-        end_time: nextDate.toISOString(),
-        nextUsers,
-      };
-      nextPeriods.push(nextPeriod);
-      nextQueue = await this.generateNewQueue(nextQueue);
-      nextDate.setDate(nextDate.getDate() + inputData.period);
-      nowDate.setDate(nowDate.getDate() + inputData.period);
-    }
-
-    return nextPeriods;
-  }
-
-  async filterNextPeriods(firstName, secondName): Promise<Period[]> {
-    const nextPeriods = await this.getAllNextPeriods();
-    const filteredData = await this.getPeriodsByUser(
-      firstName,
-      secondName,
-      nextPeriods,
-    );
-    return filteredData;
-  }
-
-  async generateNewQueue(usersInQueue) {
-    const seats = (await this.inputDataRepository.findOne()).seats;
-    let maxNumber = 0;
-    let usersToMove = [];
-
-    const usersCopy = usersInQueue.slice();
-
-    usersCopy.forEach((user) => {
-      if (user.number > maxNumber) {
-        maxNumber = user.number;
-      }
-    });
-
-    usersToMove = usersCopy.splice(0, seats);
-
-    const newQueue = [...usersCopy];
-
-    for (let i = 0; i < seats; i++) {
-      if (usersToMove[i]) {
-        const user = usersToMove[i];
-        console.log(user.userId);
-        const userId: number = user.userId;
-        const newUser = {
-          userId: userId,
-          number: maxNumber + i + 1,
-        };
-        newQueue.push(newUser);
-      }
-
-      return newQueue;
+      periodsArray.push(nextPeriod);
+      periodsArray[0] = this.filterPeriods(fullName, periodsArray[0]);
+      periodsArray[1] = this.filterPeriods(fullName, periodsArray[1]);
+      return periodsArray;
+    } catch (e) {
+      console.log(e);
+      return [];
     }
   }
 
-  getPeriodsByUser(firstName: string, secondName: string, periods) {
-    firstName = firstName.toLowerCase();
-    if (secondName) {
-      secondName = secondName.toLowerCase();
-    }
-
-    return periods
-      .filter((period) =>
-        period.nextUsers.some(
-          (user) =>
-            user.firstName.toLowerCase().includes(firstName) ||
-            user.secondName.toLowerCase().includes(secondName) ||
-            user.secondName.toLowerCase().includes(firstName),
-        ),
-      )
-      .map((period) => {
-        return {
-          ...period,
-          nextUsers: period.nextUsers.filter(
-            (user) =>
-              user.firstName.toLowerCase().includes(firstName) ||
-              user.secondName.toLowerCase().includes(secondName) ||
-              user.secondName.toLowerCase().includes(firstName),
-          ),
-        };
+  async getUserNextPeriods(dto: CreateQueueDTO): Promise<UserPeriodDto[]> {
+    try {
+      const userPeriodsArray: UserPeriodDto[] = [];
+      const inputData = await this.inputDataRepository.findOne();
+      const queueUsers = await this.userRepository.findAll({
+        where: { in_queue: true },
+        order: [
+          ['start_active_time', 'ASC'],
+          ['active', 'DESC'],
+        ],
       });
+      const currentUser = queueUsers.find((user) => user.id == dto.userId);
+      if (currentUser == null) return [];
+      userPeriodsArray.push({
+        start_time: currentUser.start_active_time.toISOString(),
+        end_time: currentUser.end_active_time.toISOString(),
+      });
+      const lastUserStartDate =
+        queueUsers[queueUsers.length - 1].start_active_time;
+      let globalUsersIndex = queueUsers.length;
+      if (queueUsers.length % inputData.seats == 0) {
+        lastUserStartDate.setMonth(lastUserStartDate.getMonth() + 1);
+      }
+      for (let j = 0; j < 4; j++) {
+        for (let i = 0; i < queueUsers.length; i++) {
+          if (queueUsers[i].id == dto.userId) {
+            const endTime = new Date(lastUserStartDate);
+            endTime.setMonth(endTime.getMonth() + 1);
+            endTime.setDate(endTime.getDate() - 1);
+            userPeriodsArray.push({
+              start_time: lastUserStartDate.toISOString(),
+              end_time: endTime.toISOString(),
+            });
+          }
+          globalUsersIndex++;
+          if (globalUsersIndex % inputData.seats == 0) {
+            lastUserStartDate.setMonth(lastUserStartDate.getMonth() + 1);
+          }
+        }
+      }
+      return userPeriodsArray;
+    } catch (e) {
+      console.log(e);
+      return [];
+    }
   }
 
-  async getQueue(): Promise<Queue[]> {
-    const queue = await this.queueRepository.findAll({
-      order: [['number', 'ASC']],
-    });
-    return queue;
+  async swapUsers(senderId: number, receiverId: number): Promise<boolean> {
+    try {
+      const senderInQueue: Queue = await this.queueRepository.findOne({
+        where: { userId: senderId },
+      });
+      const receiverInQueue: Queue = await this.queueRepository.findOne({
+        where: { userId: receiverId },
+      });
+      const senderNumber: number = senderInQueue.number;
+      senderInQueue.number = receiverInQueue.number;
+      senderInQueue.swap = receiverInQueue.userId;
+      receiverInQueue.number = senderNumber;
+      receiverInQueue.swap = senderInQueue.userId;
+      await senderInQueue.save();
+      await receiverInQueue.save();
+      return true;
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
+  filterPeriods(fullName: string, periods) {
+    try {
+      let firstName: string;
+      let secondName: string;
+      if (fullName.includes(' ')) {
+        firstName = fullName.split(' ')[0];
+        secondName = fullName.split(' ')[1];
+      } else {
+        firstName = fullName;
+        secondName = '';
+      }
+      const lowerFirstName = firstName.toLowerCase();
+      const lowerSecondName = secondName ? secondName.toLowerCase() : '';
+
+      return periods
+        .filter((period) =>
+          period.nextUsers.some((user) => {
+            const lowerUserFirstName = user.firstName.toLowerCase();
+            const lowerUserSecondName = user.secondName
+              ? user.secondName.toLowerCase()
+              : '';
+
+            // Проверяем совпадение хотя бы в одном из случаев: имя-имя, имя-фамилия, фамилия-имя, фамилия-фамилия
+            return (
+              (lowerUserFirstName.includes(lowerFirstName) &&
+                lowerUserSecondName.includes(lowerSecondName)) ||
+              (lowerUserFirstName.includes(lowerSecondName) &&
+                lowerUserSecondName.includes(lowerFirstName))
+            );
+          }),
+        )
+        .map((period) => {
+          return {
+            ...period,
+            nextUsers: period.nextUsers.filter((user) => {
+              const lowerUserFirstName = user.firstName.toLowerCase();
+              const lowerUserSecondName = user.secondName
+                ? user.secondName.toLowerCase()
+                : '';
+
+              // Повторяем те же проверки внутри map
+              return (
+                (lowerUserFirstName.includes(lowerFirstName) &&
+                  lowerUserSecondName.includes(lowerSecondName)) ||
+                (lowerUserFirstName.includes(lowerSecondName) &&
+                  lowerUserSecondName.includes(lowerFirstName))
+              );
+            }),
+          };
+        });
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
+  async getMaxNumber(): Promise<number> {
+    try {
+      const result = await this.queueRepository.findOne({
+        order: [['number', 'DESC']],
+        limit: 1,
+      });
+      return result ? result.number : null;
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
+  //Функция, которая будет запускаться при старте сервера
+  //и прокручивать очередь до нужного момента, если
+  //была пропущена cron таска
+  async adjustQueue() {
+    const currentDate = new Date();
+    let queueNotInCorrectState = true;
+    while (queueNotInCorrectState) {
+      const activeUsersPeriod = await this.changeActiveUsers();
+      const activeUsersPeriodDate = new Date(activeUsersPeriod);
+      if (
+        activeUsersPeriod == null ||
+        activeUsersPeriodDate.getTime() >= currentDate.getTime()
+      ) {
+        queueNotInCorrectState = false;
+      }
+    }
+  }
+
+  async onModuleInit() {
+    await this.adjustQueue();
   }
 }

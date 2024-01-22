@@ -5,6 +5,8 @@
 .env
 ../.env
 src/configs/nodemailer.ts
+/config/config.json
+/models
 
 # Logs
 logs

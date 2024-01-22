@@ -34,7 +34,7 @@ export class TokenService {
 
   async generateNewRefreshData(userData) {
     try {
-      const user = await this.userRepository.findByPk(userData.id)
+      const user = await this.userRepository.findByPk(userData.id);
       const TokenData = {
         email: user.email,
         id: user.id,
@@ -46,21 +46,20 @@ export class TokenService {
         changePassword: user.changePassword,
         avatar: user.avatar,
       };
-      console.log(TokenData)
-      const refresh = await this.generateRefreshToken(TokenData)
-      return refresh
-    }catch(e) {
-      console.log(e)
-      throw new BadRequestException()
+      console.log(TokenData);
+      const refresh = await this.generateRefreshToken(TokenData);
+      return refresh;
+    } catch (e) {
+      console.log(e);
+      throw new BadRequestException();
     }
-   
   }
 
   async generateRefreshToken(user) {
     const payLoad = { user };
     const refreshToken = await this.jwtService.sign(payLoad, {
       secret: process.env.SECRET_REFRESH_KEY,
-      expiresIn: '30d',
+      expiresIn: '30d'
     });
 
     return refreshToken;
@@ -101,7 +100,7 @@ export class TokenService {
       const userData = decode.user;
       const user: boolean = await this.checkUser(userData.id);
       const accessToken = await this.generateAccessToken(userData);
-      const NewRefresh = await this.generateNewRefreshData(userData)
+      const NewRefresh = await this.generateNewRefreshData(userData);
 
       return { access: accessToken, refresh: NewRefresh };
     } catch (e) {
@@ -113,13 +112,13 @@ export class TokenService {
   }
 
   async checkUser(id: number): Promise<boolean> {
-    try{
+    try {
       const user = await this.userRepository.findByPk(id);
       if (user) {
-        return true
-      } 
+        return true;
+      }
       throw new NotFoundException(HttpStatus.NOT_FOUND);
-    }catch(e) {
+    } catch (e) {
       throw new NotFoundException(HttpStatus.NOT_FOUND);
     }
   }

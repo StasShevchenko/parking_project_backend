@@ -24,33 +24,22 @@ import { Roles } from '../auth/has-roles.decorator';
 import { JWTAuthGuard } from '../auth/jwt-guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { MailKey } from '../mail_key/model/mail_key.model';
-import { PasswordForgotChangeDto, changePasswordFromProfileDto } from './dto/changePassword.dto';
+import { ChangeAvatarDto } from './dto/changeAvatar.dto';
+import {
+  PasswordForgotChangeDto,
+  changePasswordFromProfileDto,
+} from './dto/changePassword.dto';
 import { ForgotPasswordDto } from './dto/forgot_password.dto';
 import { MailKeyReviewDto } from './dto/mail_key_review.dto';
 import { ResponseUserDto } from './dto/response_user.dto';
 import { UpdateAllUserDataDto } from './dto/update.all_user_data';
 import { User } from './model/user.model';
 import { UserService } from './user.service';
-import { join } from 'path';
-import { ChangeAvatarDto } from './dto/changeAvatar.dto';
 
 @ApiTags('Users')
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
-
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Получение всех админов - только авторизованным' })
-  @ApiResponse({
-    status: 200,
-    type: ResponseUserDto,
-  })
-  @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  @Get('adminList')
-  adminList(): Promise<User[]> {
-    combinedLogger.info({ Message: 'Admin List' });
-    return this.userService.getAdminsList();
-  }
 
   @ApiBearerAuth()
   @ApiOperation({
@@ -63,7 +52,7 @@ export class UserController {
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
   @UseGuards(JWTAuthGuard)
   @Get(':id')
-  getUser(@Param('id') id: number): Promise<User> {
+  getUser(@Param('id') id: number) {
     return this.userService.getUserById(id);
   }
 
@@ -122,10 +111,12 @@ export class UserController {
   @ApiResponse({ status: 201, type: changePasswordFromProfileDto })
   @UseGuards(JWTAuthGuard)
   @Post('changePassword')
-  changePassword(@Body() dto: changePasswordFromProfileDto, @Request() req): Promise<Boolean> {
+  changePassword(
+    @Body() dto: changePasswordFromProfileDto,
+    @Request() req,
+  ): Promise<boolean> {
     return this.userService.changePasswordFromProfile(dto, req.user.email);
   }
-
 
   @ApiOperation({
     summary: 'Изменение пароля пользователя, если забыл - всем',
@@ -133,7 +124,7 @@ export class UserController {
   @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
   @ApiResponse({ status: 201, type: PasswordForgotChangeDto })
   @Post('forgotPasswordChange')
-  ForgotPasswordChange(@Body() dto: PasswordForgotChangeDto): Promise<Boolean> {
+  ForgotPasswordChange(@Body() dto: PasswordForgotChangeDto): Promise<boolean> {
     return this.userService.ForgotPasswordChange(dto);
   }
 
@@ -149,7 +140,7 @@ export class UserController {
   @Roles('is_superuser')
   @Get('getAdminRole/:id')
   getAdminRole(@Param('id') id: number): Promise<User> {
-    return this.userService.getAdminRole(id);
+    return this.userService.addAdminRole(id);
   }
 
   @ApiOperation({
@@ -178,37 +169,17 @@ export class UserController {
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
   @UseGuards(JWTAuthGuard)
   @Get('')
-  getUsersByRolesTest(
-    @Query('roles') roles: string,
-    @Query('fullName') fullName: string,
-  ) {
+  getUsers(@Query('roles') roles: string, @Query('fullName') fullName: string) {
     let rolesFilter = [];
-    let firstName;
-    let secondName;
+    //Возвращаем пустой массив если роли не были переданы
     if (roles) {
       const rolesString = roles.slice(1, -1);
       rolesFilter = rolesString.split(',').map((role) => role.trim());
-      if (roles.length <=3) {
-        console.log(roles[0])
+      if (roles.length <= 3) {
         return [];
       }
     }
-    if (fullName) {
-      [firstName, secondName] = fullName.split(' ');
-    }
-    if (!roles && !fullName) {
-      // Если нет параметров в запросе
-      return this.userService.getAllUsers();
-    }
-
-    if (!roles && fullName) {
-      return this.userService.getUsersByName(firstName, secondName);
-    }
-    return this.userService.getUsersByRolesTest(
-      rolesFilter,
-      firstName,
-      secondName,
-    );
+    return this.userService.getUsers(rolesFilter, fullName);
   }
 
   @ApiOperation({
@@ -217,7 +188,7 @@ export class UserController {
   @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
   @ApiResponse({ status: 201, type: Boolean })
   @Post('forgotPassword')
-  forgotPasswordMailKey(@Body() dto: ForgotPasswordDto): Promise<Boolean> {
+  forgotPasswordMailKey(@Body() dto: ForgotPasswordDto): Promise<boolean> {
     return this.userService.forgotPasswordMailKey(dto);
   }
 
@@ -227,10 +198,9 @@ export class UserController {
   @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
   @ApiResponse({ status: 201, type: MailKey })
   @Post('reviewKey')
-  MailKeyReview(@Body() dto: MailKeyReviewDto): Promise<String> {
+  MailKeyReview(@Body() dto: MailKeyReviewDto): Promise<string> {
     return this.userService.KeyReview(dto);
   }
-
 
   @ApiBearerAuth()
   @ApiOperation({
@@ -240,11 +210,7 @@ export class UserController {
   @ApiResponse({ status: 201, type: ChangeAvatarDto })
   @UseGuards(JWTAuthGuard)
   @Post('changeAvatar')
-  changeAvatar(@Body() dto: ChangeAvatarDto, @Request() req): Promise<Boolean> {
+  changeAvatar(@Body() dto: ChangeAvatarDto, @Request() req): Promise<boolean> {
     return this.userService.changeAvatar(dto, req.user.id);
   }
-
-  
-
-
 }

@@ -1,7 +1,7 @@
 import { Column, Default, HasMany, Model, Table } from 'sequelize-typescript';
-import { Notification } from 'src/modules/notifications/model/notifications.model';
+import { Notification } from '../../notifications/model/notifications.model';
 
-@Table
+@Table({timestamps: false})
 export class User extends Model {
   @Column
   firstName?: string;
@@ -41,7 +41,7 @@ export class User extends Model {
 
   @Default(null)
   @Column
-  avatar: String // Новое поле
+  avatar: string;
 
   @Default(false)
   @Column
