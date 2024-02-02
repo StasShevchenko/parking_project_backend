@@ -1,8 +1,9 @@
 import {BadRequestException, HttpStatus, Injectable, NotFoundException, UnauthorizedException,} from '@nestjs/common';
 import {JwtService} from '@nestjs/jwt';
-import {CompleteRefreshTokenDto} from './dto';
 import {InjectModel} from '@nestjs/sequelize';
 import {User} from '../user/model/user.model';
+import {TokensDto} from "./dto/tokens.dto";
+import * as argon from 'argon2';
 
 @Injectable()
 export class TokenService {
@@ -25,16 +26,6 @@ export class TokenService {
       secret: process.env.SECRET_REFRESH_KEY,
       expiresIn: '30d'
     });
-  }
-
-  async generateNewRefreshData(userData) {
-    try {
-      const user = await this.userRepository.findByPk(userData.id);
-      return await this.generateRefreshToken(user);
-    } catch (e) {
-      console.log(e);
-      throw new BadRequestException();
-    }
   }
 
   async verifyAccessToken(token: string): Promise<any> {
@@ -61,32 +52,27 @@ export class TokenService {
     }
   }
 
-  async refreshToken(refresh: string): Promise<CompleteRefreshTokenDto> {
+  async refreshToken(refresh: string): Promise<TokensDto> {
     try {
-      const decode = await this.verifyRefreshToken(refresh);
-      const userData = decode.user;
-      const user: boolean = await this.checkUser(userData.id);
-      const accessToken = await this.generateAccessToken(userData);
-      const NewRefresh = await this.generateNewRefreshData(userData);
-
-      return { access: accessToken, refresh: NewRefresh };
+      const userData = await this.verifyRefreshToken(refresh);
+      const user = await this.userRepository.findByPk(userData.id)
+      const isRefreshValid = await argon.verify(user.refreshToken, refresh)
+      if (isRefreshValid) {
+        const accessToken = await this.generateAccessToken(user);
+        const refreshToken = await this.generateRefreshToken(user);
+        user.refreshToken = await argon.hash(refreshToken)
+        await user.save()
+        return {accessToken, refreshToken}
+      } else{
+        user.refreshToken = null
+        await user.save()
+        throw new BadRequestException()
+      }
     } catch (e) {
       if (e.status == 404) {
         throw new NotFoundException(HttpStatus.NOT_FOUND);
       }
       throw new BadRequestException('Invalid token');
-    }
-  }
-
-  async checkUser(id: number): Promise<boolean> {
-    try {
-      const user = await this.userRepository.findByPk(id);
-      if (user) {
-        return true;
-      }
-      throw new NotFoundException(HttpStatus.NOT_FOUND);
-    } catch (e) {
-      throw new NotFoundException(HttpStatus.NOT_FOUND);
     }
   }
 

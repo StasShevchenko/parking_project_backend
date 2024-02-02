@@ -92,7 +92,7 @@ export class QueueService implements OnModuleInit {
       combinedLogger.info({ Message: 'Сдвиг очереди' });
       const inputData = await this.inputDataRepository.findOne();
       const queueUsers = await this.userRepository.findAll({
-        where: { in_queue: true },
+        where: { queueUser: true },
         order: [
           ['start_active_time', 'ASC'],
           ['active', 'DESC'],

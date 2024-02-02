@@ -3,7 +3,8 @@ import {TokenService} from '../token/token.service';
 import {CreateUserDto} from '../user/dto';
 import {UserService} from '../user/user.service';
 import {LoginUserDto} from './dto/loginUser.dto';
-import {LoginUserResponseDto} from "./dto/loginUserResponse.dto";
+import * as argon from 'argon2';
+import {TokensDto} from "../token/dto/tokens.dto";
 
 @Injectable()
 export class AuthService {
@@ -13,7 +14,7 @@ export class AuthService {
     ) {
     }
 
-    async registerUsers(dto: CreateUserDto): Promise<CreateUserDto> {
+    async registerUser(dto: CreateUserDto): Promise<CreateUserDto> {
         const existUser = await this.userService.findUserByEmail(dto.email);
         if (existUser) {
             throw new BadRequestException('USER EXIST');
@@ -21,7 +22,7 @@ export class AuthService {
         return await this.userService.createUser(dto);
     }
 
-    async loginUser(dto: LoginUserDto): Promise<LoginUserResponseDto> {
+    async loginUser(dto: LoginUserDto): Promise<TokensDto> {
         const user = await this.userService.findUserByEmail(dto.email);
         if (!user) {
             throw new BadRequestException({message: 'Wrong email'});
@@ -37,7 +38,10 @@ export class AuthService {
 
         const jwtAccess = await this.tokenService.generateAccessToken(user);
         const jwtRefresh = await this.tokenService.generateRefreshToken(user);
-        return {jwtAccess, jwtRefresh};
+        user.refreshToken = await argon.hash(jwtRefresh)
+        await user.save()
+
+        return {accessToken: jwtAccess, refreshToken: jwtRefresh};
     }
 
 }

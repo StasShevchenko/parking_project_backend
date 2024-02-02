@@ -48,6 +48,9 @@ export class User extends Model {
   @Column
   changedPassword: boolean;
 
+  @Column
+  refreshToken?: string;
+
   @HasMany(() => Notification)
   notifications: Notification[];
 }

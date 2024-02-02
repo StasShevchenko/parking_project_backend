@@ -5,8 +5,9 @@ import {
   ApiTags,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
-import { CompleteRefreshTokenDto, RefreshTokenDto } from './dto';
 import { TokenService } from './token.service';
+import {TokensDto} from "./dto/tokens.dto";
+import {RefreshTokenDto} from "./dto/refreshToken.dto";
 
 @ApiTags('Token')
 @Controller('token')
@@ -16,12 +17,11 @@ export class TokenController {
   @ApiOperation({ summary: 'Refresh Token' })
   @ApiResponse({
     status: 201,
-    type: CompleteRefreshTokenDto,
+    type: TokensDto,
   })
   @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
   @Post('refresh')
-  refreshToken(@Body() dto: RefreshTokenDto): Promise<CompleteRefreshTokenDto> {
-    console.log('Refresh in controller: ', dto);
+  refreshToken(@Body() dto: RefreshTokenDto): Promise<TokensDto> {
     return this.tokenService.refreshToken(dto.refresh);
   }
 }

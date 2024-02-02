@@ -12,7 +12,7 @@ import {AuthService} from './auth.service';
 import {LoginUserDto} from './dto/loginUser.dto';
 import {Roles} from './hasRoles.decorator';
 import {RolesGuard} from './roles.guard';
-import {LoginUserResponseDto} from "./dto/loginUserResponse.dto";
+import {TokensDto} from "../token/dto/tokens.dto";
 
 @ApiBearerAuth()
 @ApiTags('auth')
@@ -32,18 +32,18 @@ export class AuthController {
     @Roles('is_staff')
     @Post('register')
     register(@Body() dto: CreateUserDto): Promise<CreateUserDto> {
-        return this.authService.registerUsers(dto);
+        return this.authService.registerUser(dto);
     }
 
     @ApiOperation({summary: 'Авторизация пользователя - всем'})
     @ApiResponse({
         status: 201,
-        type: LoginUserResponseDto,
+        type: TokensDto,
     })
     @ApiUnprocessableEntityResponse({description: 'Bad Request'})
     @ApiForbiddenResponse({description: 'Unauthorized Request'})
     @Post('login')
-    login(@Body() dto: LoginUserDto): Promise<LoginUserResponseDto> {
+    login(@Body() dto: LoginUserDto): Promise<TokensDto> {
         return this.authService.loginUser(dto);
     }
 }
