@@ -17,7 +17,7 @@ import {
   ApiTags,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
-import { Roles } from '../auth/has-roles.decorator';
+import { Roles } from '../auth/hasRoles.decorator';
 import { JWTAuthGuard } from '../auth/jwt-guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { CreateQueueDTO } from './dto/create-queue.dto';

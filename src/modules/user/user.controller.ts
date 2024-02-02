@@ -20,7 +20,7 @@ import {
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import { combinedLogger } from 'src/utils/logger.config';
-import { Roles } from '../auth/has-roles.decorator';
+import { Roles } from '../auth/hasRoles.decorator';
 import { JWTAuthGuard } from '../auth/jwt-guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { MailKey } from '../mail_key/model/mail_key.model';
