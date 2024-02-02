@@ -100,7 +100,7 @@ export class UserService {
 
     async deleteUserById(id): Promise<number> {
         const user = await this.userRepository.findOne({where: {id}});
-        if (user.is_staff) {
+        if (user.isAdmin) {
             throw new BadRequestException('Пользователь является администратором');
         }
         const deleteUser = await this.userRepository.destroy({where: {id}});
@@ -153,7 +153,7 @@ export class UserService {
         }
         if (this.validatePassword(dto.newPassword)) {
             user.password = await this.hashPassword(dto.newPassword);
-            user.changePassword = true;
+            user.changedPassword = true;
             await user.save();
             return true;
         } else {
@@ -173,7 +173,7 @@ export class UserService {
         if (dto.newPassword == dto.repeat_newPassword) {
             if (this.validatePassword(dto.newPassword)) {
                 user.password = await this.hashPassword(dto.newPassword);
-                user.changePassword = true;
+                user.changedPassword = true;
                 await user.save();
                 return true;
             } else {
@@ -240,7 +240,7 @@ export class UserService {
     async addAdminRole(id: number): Promise<User> {
         try {
             const user = await this.userRepository.findByPk(id);
-            user.is_staff = true;
+            user.isAdmin = true;
             await user.save();
             return user;
         } catch (e) {
@@ -251,7 +251,7 @@ export class UserService {
     async deleteAdminRole(id: number): Promise<User> {
         try {
             const user = await this.userRepository.findByPk(id);
-            user.is_staff = false;
+            user.isAdmin = false;
             await user.save();
             return user;
         } catch (e) {

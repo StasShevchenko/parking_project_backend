@@ -94,12 +94,12 @@ export class TokenService {
     return {
       email: user.email,
       id: user.id,
-      is_staff: user.is_staff,
-      is_superuser: user.is_superuser,
-      in_queue: user.in_queue,
-      first_name: user.firstName,
-      second_name: user.secondName,
-      changePassword: user.changePassword,
+      isAdmin: user.isAdmin,
+      isSuperAdmin: user.isSuperAdmin,
+      queueUser: user.queueUser,
+      firstName: user.firstName,
+      secondName: user.secondName,
+      changedPassword: user.changedPassword,
       avatar: user.avatar,
     }
   }

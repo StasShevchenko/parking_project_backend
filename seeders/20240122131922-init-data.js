@@ -8,15 +8,15 @@ module.exports = {
       secondName: 'Иванов',
       email: 'admin@mail.ru',
       password: '12341234',
-      is_staff: true,
+      isAdmin: true,
       active: false,
-      is_superuser: true,
-      in_queue: false,
+      isSuperAdmin: true,
+      queueUser: false,
       start_active_time: null,
       end_active_time: null,
       last_active_period: null,
       avatar: null,
-      changePassword: false
+      changedPassword: false
     }])
     await queryInterface.bulkInsert('InputData', [{
       seats: 3,
