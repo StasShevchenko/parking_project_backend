@@ -64,8 +64,6 @@ export class TokenService {
         await user.save()
         return {accessToken, refreshToken}
       } else{
-        user.refreshToken = null
-        await user.save()
         throw new BadRequestException()
       }
     } catch (e) {

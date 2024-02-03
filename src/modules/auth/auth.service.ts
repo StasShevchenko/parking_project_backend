@@ -44,4 +44,11 @@ export class AuthService {
         return {accessToken: jwtAccess, refreshToken: jwtRefresh};
     }
 
+    async logoutUser(userId: number){
+        const user = await this.userService.findUserById(userId);
+        if (user) {
+            user.refreshToken = null
+            await user.save()
+        }
+    }
 }

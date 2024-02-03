@@ -1,4 +1,4 @@
-import {Body, Controller, Post, UseGuards} from '@nestjs/common';
+import {Body, Controller, Post, Req, UseGuards} from '@nestjs/common';
 import {
     ApiBearerAuth,
     ApiForbiddenResponse,
@@ -13,8 +13,9 @@ import {LoginUserDto} from './dto/loginUser.dto';
 import {Roles} from './hasRoles.decorator';
 import {RolesGuard} from './roles.guard';
 import {TokensDto} from "../token/dto/tokens.dto";
+import {JwtAuthGuard} from "./jwtAuth.guard";
+import {Public} from "./public.decorator";
 
-@ApiBearerAuth()
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
@@ -26,8 +27,10 @@ export class AuthController {
         status: 201,
         type: CreateUserDto,
     })
+    @ApiBearerAuth()
     @ApiUnprocessableEntityResponse({description: 'Bad Request'})
     @ApiForbiddenResponse({description: 'Unauthorized Request'})
+    @UseGuards(JwtAuthGuard)
     @UseGuards(RolesGuard)
     @Roles('is_staff')
     @Post('register')
@@ -42,8 +45,20 @@ export class AuthController {
     })
     @ApiUnprocessableEntityResponse({description: 'Bad Request'})
     @ApiForbiddenResponse({description: 'Unauthorized Request'})
+    @Public()
+    @Roles('role')
     @Post('login')
     login(@Body() dto: LoginUserDto): Promise<TokensDto> {
         return this.authService.loginUser(dto);
+    }
+
+
+    @ApiOperation({summary: 'Выход из личного кабинета'})
+    @Post('logout')
+    @UseGuards(JwtAuthGuard)
+    logout(
+        @Req() request
+    ){
+        return this.authService.logoutUser(request.user.id)
     }
 }

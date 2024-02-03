@@ -21,7 +21,6 @@ import {
 } from '@nestjs/swagger';
 import { combinedLogger } from 'src/utils/logger.config';
 import { Roles } from '../auth/hasRoles.decorator';
-import { JWTAuthGuard } from '../auth/jwt-guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { MailKey } from '../mail_key/model/mail_key.model';
 import { ChangeAvatarDto } from './dto/changeAvatar.dto';
@@ -35,6 +34,7 @@ import { ResponseUserDto } from './dto/response_user.dto';
 import { UpdateAllUserDataDto } from './dto/update.all_user_data';
 import { User } from './model/user.model';
 import { UserService } from './user.service';
+import {JwtAuthGuard} from "../auth/jwtAuth.guard";
 
 @ApiTags('Users')
 @Controller('user')
@@ -50,7 +50,7 @@ export class UserController {
     type: ResponseUserDto,
   })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  @UseGuards(JWTAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Get(':id')
   getUser(@Param('id') id: number) {
     return this.userService.getUserById(id);
@@ -94,7 +94,7 @@ export class UserController {
   })
   @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  @UseGuards(JWTAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Patch('update/:id')
   updateUser(
     @Param('id') id: number,
@@ -109,7 +109,7 @@ export class UserController {
   })
   @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
   @ApiResponse({ status: 201, type: changePasswordFromProfileDto })
-  @UseGuards(JWTAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Post('changePassword')
   changePassword(
     @Body() dto: changePasswordFromProfileDto,
@@ -167,7 +167,7 @@ export class UserController {
     type: ResponseUserDto,
   })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  @UseGuards(JWTAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Get('')
   getUsers(@Query('roles') roles: string, @Query('fullName') fullName: string) {
     let rolesFilter = [];
@@ -208,7 +208,7 @@ export class UserController {
   })
   @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
   @ApiResponse({ status: 201, type: ChangeAvatarDto })
-  @UseGuards(JWTAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Post('changeAvatar')
   changeAvatar(@Body() dto: ChangeAvatarDto, @Request() req): Promise<boolean> {
     return this.userService.changeAvatar(dto, req.user.id);
