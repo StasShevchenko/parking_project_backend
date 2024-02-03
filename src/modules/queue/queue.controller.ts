@@ -17,14 +17,14 @@ import {
   ApiTags,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
-import { Roles } from '../auth/has-roles.decorator';
-import { JWTAuthGuard } from '../auth/jwt-guard';
+import { Roles } from '../auth/hasRoles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { CreateQueueDTO } from './dto/create-queue.dto';
 import { allNextActivePeriod } from './dto/next_active_period.dto';
 import { Queue } from './model/queue.model';
 import { QueueService } from './queue.service';
 import { Period } from '../../interfaces/period.interface';
+import {JwtAuthGuard} from "../auth/jwtAuth.guard";
 
 @ApiBearerAuth()
 @ApiTags('Queue')
@@ -41,7 +41,7 @@ export class QueueController {
   })
   @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  @UseGuards(JWTAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Post('')
   create(@Body() dto: CreateQueueDTO): Promise<Queue> {
     return this.queueService.addUserToQueue(dto);
@@ -68,7 +68,7 @@ export class QueueController {
     type: allNextActivePeriod,
   })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  @UseGuards(JWTAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Get('getThisPeriod')
   getCurrentPeriod(@Query() query: { fullName: string }) {
     return this.queueService.getCurrentQueuePeriod(query.fullName);
@@ -99,7 +99,7 @@ export class QueueController {
   })
   @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  @UseGuards(JWTAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Delete('')
   deleteFromQueue(@Param('id') id: number) {
     return this.queueService.deleteFromQueue(id);
@@ -113,7 +113,7 @@ export class QueueController {
   })
   @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  @UseGuards(JWTAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Post('NextPeriodsById')
   getUserNextPeriods(@Body() dto: CreateQueueDTO) {
     return this.queueService.getUserNextPeriods(dto);

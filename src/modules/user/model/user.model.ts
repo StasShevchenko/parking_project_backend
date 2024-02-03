@@ -17,7 +17,7 @@ export class User extends Model {
 
   @Default(false)
   @Column
-  is_staff: boolean;
+  isAdmin: boolean;
 
   @Default(false)
   @Column
@@ -25,11 +25,12 @@ export class User extends Model {
 
   @Default(false)
   @Column
-  is_superuser: boolean;
+  isSuperAdmin: boolean;
 
   @Default(false)
   @Column
-  in_queue: boolean;
+  queueUser: boolean;
+
   @Column
   start_active_time: Date;
 
@@ -45,7 +46,10 @@ export class User extends Model {
 
   @Default(false)
   @Column
-  changePassword: boolean;
+  changedPassword: boolean;
+
+  @Column
+  refreshToken?: string;
 
   @HasMany(() => Notification)
   notifications: Notification[];

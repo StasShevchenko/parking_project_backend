@@ -34,7 +34,7 @@ export class QueueService implements OnModuleInit {
         where: { id: dto.userId },
       });
       // Если юзер только создан и еще не в очереди
-      if (!user.in_queue) {
+      if (!user.queueUser) {
         let isActive = false;
         if (queueUsers.length < inputData.seats) {
           isActive = true;
@@ -67,7 +67,7 @@ export class QueueService implements OnModuleInit {
           endDate = new Date(endDate.getTime() - userTimezoneOffset);
         }
 
-        user.in_queue = true;
+        user.queueUser = true;
         user.active = isActive;
         user.last_active_period = startDate;
         user.start_active_time = startDate;
@@ -92,7 +92,7 @@ export class QueueService implements OnModuleInit {
       combinedLogger.info({ Message: 'Сдвиг очереди' });
       const inputData = await this.inputDataRepository.findOne();
       const queueUsers = await this.userRepository.findAll({
-        where: { in_queue: true },
+        where: { queueUser: true },
         order: [
           ['start_active_time', 'ASC'],
           ['active', 'DESC'],
@@ -183,7 +183,7 @@ export class QueueService implements OnModuleInit {
       const user = await this.userRepository.findOne({ where: { id: userId } });
       const inputData = await this.inputDataRepository.findOne();
       const userIndex = queueUsers.findIndex((it) => it.id == user.id);
-      user.in_queue = false;
+      user.queueUser = false;
       user.active = false;
       user.last_active_period = null;
       user.start_active_time = null;

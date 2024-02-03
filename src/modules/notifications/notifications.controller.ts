@@ -17,7 +17,7 @@ import {
 import { CreateNotificationDto } from './dto/create_notification.dto';
 import { Notification } from './model/notifications.model';
 import { NotificationsService } from './notifications.service';
-import { JWTAuthGuard } from '../auth/jwt-guard';
+import {JwtAuthGuard} from "../auth/jwtAuth.guard";
 
 @Controller('notifications')
 export class NotificationsController {
@@ -32,7 +32,7 @@ export class NotificationsController {
     status: 200,
   })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  @UseGuards(JWTAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Get(':id')
   getAllByUserId(@Param('id') id: number) {
     return this.notificationService.getById(id);
@@ -60,7 +60,7 @@ export class NotificationsController {
     description: 'Response: 1',
   })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  @UseGuards(JWTAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Delete(':id')
   deleteNotificationById(@Param('id') id: number): Promise<number> {
     return this.notificationService.deteleById(id);
@@ -74,7 +74,7 @@ export class NotificationsController {
     status: 200,
   })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  @UseGuards(JWTAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Get('read/:id')
   readNotification(@Param('id') id: number): Promise<Notification> {
     return this.notificationService.readNotification(id);

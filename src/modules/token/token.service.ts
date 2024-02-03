@@ -1,77 +1,38 @@
-import {
-  BadRequestException,
-  HttpException,
-  HttpStatus,
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
-import { CompleteRefreshTokenDto } from './dto';
-import { UserService } from '../user/user.service';
-import { NotFoundError } from 'rxjs';
-import { InjectModel } from '@nestjs/sequelize';
-import { User } from '../user/model/user.model';
+import {BadRequestException, HttpStatus, Injectable, NotFoundException, UnauthorizedException,} from '@nestjs/common';
+import {JwtService} from '@nestjs/jwt';
+import {InjectModel} from '@nestjs/sequelize';
+import {User} from '../user/model/user.model';
+import {TokensDto} from "./dto/tokens.dto";
+import * as argon from 'argon2';
 
 @Injectable()
 export class TokenService {
   @InjectModel(User) private readonly userRepository: typeof User;
   constructor(
     private readonly jwtService: JwtService,
-    private readonly configService: ConfigService,
   ) {}
 
-  async generateAccessToken(user) {
-    const payLoad = { user };
-    const accessToken = this.jwtService.sign(payLoad, {
+  async generateAccessToken(user: User) {
+    const payLoad = this.getUserJwtPayload(user);
+    return this.jwtService.sign(payLoad, {
       secret: process.env.SECRET_KEY,
       expiresIn: '1h',
     });
-
-    return accessToken;
   }
 
-  async generateNewRefreshData(userData) {
-    try {
-      const user = await this.userRepository.findByPk(userData.id);
-      const TokenData = {
-        email: user.email,
-        id: user.id,
-        is_staff: user.is_staff,
-        is_superuser: user.is_superuser,
-        in_queue: user.in_queue,
-        first_name: user.firstName,
-        second_name: user.secondName,
-        changePassword: user.changePassword,
-        avatar: user.avatar,
-      };
-      console.log(TokenData);
-      const refresh = await this.generateRefreshToken(TokenData);
-      return refresh;
-    } catch (e) {
-      console.log(e);
-      throw new BadRequestException();
-    }
-  }
-
-  async generateRefreshToken(user) {
-    const payLoad = { user };
-    const refreshToken = await this.jwtService.sign(payLoad, {
+  async generateRefreshToken(user: User) {
+    const payLoad = this.getUserJwtPayload(user)
+    return this.jwtService.sign(payLoad, {
       secret: process.env.SECRET_REFRESH_KEY,
       expiresIn: '30d'
     });
-
-    return refreshToken;
   }
 
   async verifyAccessToken(token: string): Promise<any> {
     try {
-      const decoded = this.jwtService.verify(token, {
+      return this.jwtService.verify(token, {
         secret: process.env.SECRET_KEY,
       });
-      console.log(decoded);
-      return decoded;
     } catch (error) {
       console.log(error);
       throw new BadRequestException('Invalid token');
@@ -80,13 +41,10 @@ export class TokenService {
 
   async verifyRefreshToken(token: string): Promise<any> {
     try {
-      const decoded = this.jwtService.verify(token, {
+      return this.jwtService.verify(token, {
         secret: process.env.SECRET_REFRESH_KEY,
       });
-
-      return decoded;
     } catch (error) {
-      console.log(error);
       throw new UnauthorizedException({
         message: 'Invalid token',
         status: 401,
@@ -94,15 +52,20 @@ export class TokenService {
     }
   }
 
-  async refreshToken(refresh: string): Promise<CompleteRefreshTokenDto> {
+  async refreshToken(refresh: string): Promise<TokensDto> {
     try {
-      const decode = await this.verifyRefreshToken(refresh);
-      const userData = decode.user;
-      const user: boolean = await this.checkUser(userData.id);
-      const accessToken = await this.generateAccessToken(userData);
-      const NewRefresh = await this.generateNewRefreshData(userData);
-
-      return { access: accessToken, refresh: NewRefresh };
+      const userData = await this.verifyRefreshToken(refresh);
+      const user = await this.userRepository.findByPk(userData.id)
+      const isRefreshValid = await argon.verify(user.refreshToken, refresh)
+      if (isRefreshValid) {
+        const accessToken = await this.generateAccessToken(user);
+        const refreshToken = await this.generateRefreshToken(user);
+        user.refreshToken = await argon.hash(refreshToken)
+        await user.save()
+        return {accessToken, refreshToken}
+      } else{
+        throw new BadRequestException()
+      }
     } catch (e) {
       if (e.status == 404) {
         throw new NotFoundException(HttpStatus.NOT_FOUND);
@@ -111,15 +74,17 @@ export class TokenService {
     }
   }
 
-  async checkUser(id: number): Promise<boolean> {
-    try {
-      const user = await this.userRepository.findByPk(id);
-      if (user) {
-        return true;
-      }
-      throw new NotFoundException(HttpStatus.NOT_FOUND);
-    } catch (e) {
-      throw new NotFoundException(HttpStatus.NOT_FOUND);
+  private getUserJwtPayload(user: User){
+    return {
+      email: user.email,
+      id: user.id,
+      isAdmin: user.isAdmin,
+      isSuperAdmin: user.isSuperAdmin,
+      queueUser: user.queueUser,
+      firstName: user.firstName,
+      secondName: user.secondName,
+      changedPassword: user.changedPassword,
+      avatar: user.avatar,
     }
   }
 }
