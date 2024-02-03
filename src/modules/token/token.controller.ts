@@ -8,6 +8,7 @@ import {
 import { TokenService } from './token.service';
 import {TokensDto} from "./dto/tokens.dto";
 import {RefreshTokenDto} from "./dto/refreshToken.dto";
+import {Public} from "../auth/public.decorator";
 
 @ApiTags('Token')
 @Controller('token')
@@ -20,6 +21,7 @@ export class TokenController {
     type: TokensDto,
   })
   @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
+  @Public()
   @Post('refresh')
   refreshToken(@Body() dto: RefreshTokenDto): Promise<TokensDto> {
     return this.tokenService.refreshToken(dto.refresh);
