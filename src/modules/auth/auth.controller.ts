@@ -46,7 +46,6 @@ export class AuthController {
     @ApiUnprocessableEntityResponse({description: 'Bad Request'})
     @ApiForbiddenResponse({description: 'Unauthorized Request'})
     @Public()
-    @Roles('role')
     @Post('login')
     login(@Body() dto: LoginUserDto): Promise<TokensDto> {
         return this.authService.loginUser(dto);
