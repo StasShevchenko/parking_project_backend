@@ -1,15 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Patch,
-  Post,
-  Query,
-  Request,
-  UseGuards,
-} from '@nestjs/common';
+import {Body, Controller, Delete, Get, Param, Patch, Post, Query, Request, UseGuards,} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiForbiddenResponse,
@@ -19,21 +8,17 @@ import {
   ApiTags,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
-import { combinedLogger } from 'src/utils/logger.config';
-import { Roles } from '../auth/hasRoles.decorator';
-import { RolesGuard } from '../auth/roles.guard';
-import { MailKey } from '../mail_key/model/mail_key.model';
-import { ChangeAvatarDto } from './dto/changeAvatar.dto';
-import {
-  PasswordForgotChangeDto,
-  changePasswordFromProfileDto,
-} from './dto/changePassword.dto';
-import { ForgotPasswordDto } from './dto/forgot_password.dto';
-import { MailKeyReviewDto } from './dto/mail_key_review.dto';
-import { ResponseUserDto } from './dto/response_user.dto';
-import { UpdateAllUserDataDto } from './dto/update.all_user_data';
-import { User } from './model/user.model';
-import { UserService } from './user.service';
+import {Roles} from '../auth/hasRoles.decorator';
+import {RolesGuard} from '../auth/roles.guard';
+import {MailKey} from '../mail_key/model/mail_key.model';
+import {ChangeAvatarDto} from './dto/changeAvatar.dto';
+import {changePasswordFromProfileDto, PasswordForgotChangeDto,} from './dto/changePassword.dto';
+import {ForgotPasswordDto} from './dto/forgot_password.dto';
+import {MailKeyReviewDto} from './dto/mail_key_review.dto';
+import {ResponseUserDto} from './dto/response_user.dto';
+import {UpdateAllUserDataDto} from './dto/update.all_user_data';
+import {User} from './model/user.model';
+import {UserService} from './user.service';
 import {JwtAuthGuard} from "../auth/jwtAuth.guard";
 
 @ApiTags('Users')
@@ -174,8 +159,7 @@ export class UserController {
   ) {
     let rolesFilter = [];
     if (roles) {
-      const rolesString = roles.slice(1, -1);
-      rolesFilter = rolesString.split(',').map((role) => role.trim());
+      rolesFilter = roles.split(',').map((role) => role.trim());
     }
     return this.userService.getUsers(rolesFilter, fullName);
   }
