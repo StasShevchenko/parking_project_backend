@@ -186,15 +186,14 @@ export class UserService {
 
     async getUsers(roles: string[], fullName: string) {
         const rolesFilter = [];
-        console.log(roles);
         if (roles.includes('user')) {
-            rolesFilter.push({in_queue: true});
+            rolesFilter.push({queueUser: true});
         }
         if (roles.includes('admin')) {
-            rolesFilter.push({is_staff: true});
+            rolesFilter.push({isAdmin: true});
         }
         if (roles.includes('super_admin')) {
-            rolesFilter.push({is_superuser: true});
+            rolesFilter.push({isSuperAdmin: true});
         }
         let firstName: string;
         let secondName: string;
@@ -233,7 +232,7 @@ export class UserService {
                     },
                 ],
             },
-            attributes: {exclude: ['password', 'createdAt', 'updatedAt']},
+            attributes: {exclude: ['password', 'refreshToken']},
         });
     }
 

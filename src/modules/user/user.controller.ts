@@ -167,17 +167,15 @@ export class UserController {
     type: ResponseUserDto,
   })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  @UseGuards(JwtAuthGuard)
   @Get('')
-  getUsers(@Query('roles') roles: string, @Query('fullName') fullName: string) {
+  getUsers(
+      @Query('roles') roles: string,
+      @Query('fullName') fullName: string = ''
+  ) {
     let rolesFilter = [];
-    //Возвращаем пустой массив если роли не были переданы
     if (roles) {
       const rolesString = roles.slice(1, -1);
       rolesFilter = rolesString.split(',').map((role) => role.trim());
-      if (roles.length <= 3) {
-        return [];
-      }
     }
     return this.userService.getUsers(rolesFilter, fullName);
   }
