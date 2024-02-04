@@ -4,10 +4,10 @@ import { Notification } from '../../notifications/model/notifications.model';
 @Table({timestamps: false})
 export class User extends Model {
   @Column
-  firstName?: string;
+  firstName: string;
 
   @Column
-  secondName?: string;
+  secondName: string;
 
   @Column
   email: string;
@@ -32,13 +32,13 @@ export class User extends Model {
   queueUser: boolean;
 
   @Column
-  start_active_time: Date;
+  startActiveTime: Date;
 
   @Column
-  end_active_time: Date;
+  endActiveTime: Date;
 
   @Column
-  last_active_period: Date;
+  lastActivePeriod: Date;
 
   @Default(null)
   @Column

@@ -7,7 +7,7 @@ import {AvatarService} from '../avatar/avatar.service';
 import {MailService} from '../mail/mail.service';
 import {MailKeyService} from '../mail_key/mail_key.service';
 import {QueueService} from '../queue/queue.service';
-import {CreateUserDto} from './dto';
+import {CreateUserDto} from './dto/createUser.dto';
 import {ChangeAvatarDto} from './dto/changeAvatar.dto';
 import {
     changePasswordFromProfileDto,
@@ -57,11 +57,11 @@ export class UserService {
             firstName: dto.firstName,
             secondName: dto.secondName,
             email: dto.email,
-            is_staff: dto.is_staff,
+            is_staff: dto.isAdmin,
             password: password,
             avatar: avatar,
         });
-        if (dto.in_queue) {
+        if (dto.queueUser) {
             const user = await this.findUserByEmail(dto.email);
             await this.queueService.addUserToQueue({
                     userId: user.id

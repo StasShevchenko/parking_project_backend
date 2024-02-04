@@ -1,16 +1,16 @@
 import { User } from '../../model/user.model';
-import { CreateUserDto } from '../../dto';
+import { CreateUserDto } from '../../dto/createUser.dto';
 
 export function mapUserToCreateUserDto({
   firstName,
   secondName,
   email,
-  is_staff,
+  isAdmin,
 }): CreateUserDto {
   return {
     firstName,
     secondName,
     email,
-    is_staff,
+    isAdmin,
   };
 }

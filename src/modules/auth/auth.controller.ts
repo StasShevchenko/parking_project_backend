@@ -7,7 +7,7 @@ import {
     ApiTags,
     ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
-import {CreateUserDto} from '../user/dto';
+import {CreateUserDto} from '../user/dto/createUser.dto';
 import {AuthService} from './auth.service';
 import {LoginUserDto} from './dto/loginUser.dto';
 import {Roles} from './hasRoles.decorator';

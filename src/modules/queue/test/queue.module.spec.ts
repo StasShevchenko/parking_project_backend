@@ -95,7 +95,7 @@ describe('Queue module testing', () => {
             firstName: 'Egorka',
             secondName: 'Goremikov',
             email: 'egorka@mail.ru',
-            in_queue: true,
+            queueUser: true,
         });
         const queueController = queueModule.get(QueueController);
         const finalResult = await queueController.getCurrentPeriod({

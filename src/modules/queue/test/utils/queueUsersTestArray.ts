@@ -1,4 +1,4 @@
-import {CreateUserDto} from "../../../user/dto";
+import {CreateUserDto} from "../../../user/dto/createUser.dto";
 
 // 6 юзеров на 3 места
 export const evenQueueUsersTestArray: CreateUserDto[] = [
@@ -6,43 +6,43 @@ export const evenQueueUsersTestArray: CreateUserDto[] = [
         firstName: 'Egorka1',
         secondName: 'Goremikov',
         email: 'egorka@mail.ru',
-        is_staff: false,
-        in_queue: true,
+        isAdmin: false,
+        queueUser: true,
     },
     {
         firstName: 'Stas2',
         secondName: 'Shevchenko',
         email: 'stas@mail.ru',
-        is_staff: true,
-        in_queue: true
+        isAdmin: true,
+        queueUser: true
     },
     {
         firstName: 'Denis3',
         secondName: 'Krylov',
         email: 'den@mail.ru',
-        is_staff: true,
-        in_queue: true
+        isAdmin: true,
+        queueUser: true
     },
     {
         firstName: 'Gery4',
         secondName: 'Mambo',
         email: 'gery@mail.ru',
-        is_staff: false,
-        in_queue: true
+        isAdmin: false,
+        queueUser: true
     },
     {
         firstName: 'Denis5',
         secondName: 'Egorov',
         email: 'bc@mail.ru',
-        is_staff: false,
-        in_queue: true
+        isAdmin: false,
+        queueUser: true
     },
     {
         firstName: 'Maxim6',
         secondName: 'Ivahnenko',
         email: 'maxim@mail.ru',
-        is_staff: false,
-        in_queue: true
+        isAdmin: false,
+        queueUser: true
     }
 ]
 
@@ -52,36 +52,36 @@ export const oddQueueUsersTestArray: CreateUserDto[] = [
         firstName: 'Egorka1',
         secondName: 'Goremikov',
         email: 'egorka@mail.ru',
-        is_staff: false,
-        in_queue: true,
+        isAdmin: false,
+        queueUser: true,
     },
     {
         firstName: 'Stas2',
         secondName: 'Shevchenko',
         email: 'stas@mail.ru',
-        is_staff: true,
-        in_queue: true
+        isAdmin: true,
+        queueUser: true
     },
     {
         firstName: 'Denis3',
         secondName: 'Krylov',
         email: 'den@mail.ru',
-        is_staff: true,
-        in_queue: true
+        isAdmin: true,
+        queueUser: true
     },
     {
         firstName: 'Gery4',
         secondName: 'Mambo',
         email: 'gery@mail.ru',
-        is_staff: false,
-        in_queue: true
+        isAdmin: false,
+        queueUser: true
     },
     {
         firstName: 'Denis5',
         secondName: 'Egorov',
         email: 'bc@mail.ru',
-        is_staff: false,
-        in_queue: true
+        isAdmin: false,
+        queueUser: true
     },
 ]
 
@@ -90,64 +90,64 @@ export const extendedEvenQueueUsersTestArray: CreateUserDto[] = [
         firstName: 'Egorka1',
         secondName: 'Goremikov',
         email: 'egorka@mail.ru',
-        is_staff: false,
-        in_queue: true,
+        isAdmin: false,
+        queueUser: true,
     },
     {
         firstName: 'Stas2',
         secondName: 'Shevchenko',
         email: 'stas@mail.ru',
-        is_staff: true,
-        in_queue: true
+        isAdmin: true,
+        queueUser: true
     },
     {
         firstName: 'Denis3',
         secondName: 'Krylov',
         email: 'den@mail.ru',
-        is_staff: true,
-        in_queue: true
+        isAdmin: true,
+        queueUser: true
     },
     {
         firstName: 'Gery4',
         secondName: 'Mambo',
         email: 'gery@mail.ru',
-        is_staff: false,
-        in_queue: true
+        isAdmin: false,
+        queueUser: true
     },
     {
         firstName: 'Denis5',
         secondName: 'Egorov',
         email: 'bc@mail.ru',
-        is_staff: false,
-        in_queue: true
+        isAdmin: false,
+        queueUser: true
     },
     {
         firstName: 'Maxim6',
         secondName: 'Ivahnenko',
         email: 'maxim@mail.ru',
-        is_staff: false,
-        in_queue: true
+        isAdmin: false,
+        queueUser: true
     },
     {
         firstName: 'Maxim7',
         secondName: 'Ivahnenko',
         email: 'ex@mail.ru',
-        is_staff: false,
-        in_queue: true
+        isAdmin: false,
+        queueUser: true
     },
     {
         firstName: 'Jeka8',
         secondName: 'Cheremihov',
         email: 'cher@mail.ru',
-        is_staff: false,
-        in_queue: true
+        isAdmin: false,
+        queueUser: true
     },
     {
         firstName: 'Vova9',
         secondName: 'Ivahnenko',
         email: 'vova@mail.ru',
-        is_staff: false,
-        in_queue: true
+        isAdmin: false,
+        queueUser: true
     },
 ]
 
@@ -156,56 +156,56 @@ export const extendedOddQueueUsersTestArray: CreateUserDto[] = [
         firstName: 'Egorka1',
         secondName: 'Goremikov',
         email: 'egorka@mail.ru',
-        is_staff: false,
-        in_queue: true,
+        isAdmin: false,
+        queueUser: true,
     },
     {
         firstName: 'Stas2',
         secondName: 'Shevchenko',
         email: 'stas@mail.ru',
-        is_staff: true,
-        in_queue: true
+        isAdmin: true,
+        queueUser: true
     },
     {
         firstName: 'Denis3',
         secondName: 'Krylov',
         email: 'den@mail.ru',
-        is_staff: true,
-        in_queue: true
+        isAdmin: true,
+        queueUser: true
     },
     {
         firstName: 'Gery4',
         secondName: 'Mambo',
         email: 'gery@mail.ru',
-        is_staff: false,
-        in_queue: true
+        isAdmin: false,
+        queueUser: true
     },
     {
         firstName: 'Denis5',
         secondName: 'Egorov',
         email: 'bc@mail.ru',
-        is_staff: false,
-        in_queue: true
+        isAdmin: false,
+        queueUser: true
     },
     {
         firstName: 'Maxim6',
         secondName: 'Ivahnenko',
         email: 'maxim@mail.ru',
-        is_staff: false,
-        in_queue: true
+        isAdmin: false,
+        queueUser: true
     },
     {
         firstName: 'Maxim7',
         secondName: 'Ivahnenko',
         email: 'ex@mail.ru',
-        is_staff: false,
-        in_queue: true
+        isAdmin: false,
+        queueUser: true
     },
     {
         firstName: 'Jeka8',
         secondName: 'Cheremihov',
         email: 'cher@mail.ru',
-        is_staff: false,
-        in_queue: true
+        isAdmin: false,
+        queueUser: true
     },
 ]
