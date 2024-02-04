@@ -26,8 +26,8 @@ export class QueueService implements OnModuleInit {
     try {
       const inputData = await this.inputDataRepository.findOne();
       const queueUsers = await this.userRepository.findAll({
-        where: { in_queue: true },
-        order: [['start_active_time', 'ASC']],
+        where: { queueUser: true },
+        order: [['startActiveTime', 'ASC']],
       });
       // Получаем юзера из бд по userId из dto
       const user = await this.userRepository.findOne({
@@ -94,7 +94,7 @@ export class QueueService implements OnModuleInit {
       const queueUsers = await this.userRepository.findAll({
         where: { queueUser: true },
         order: [
-          ['start_active_time', 'ASC'],
+          ['startActiveTime', 'ASC'],
           ['active', 'DESC'],
         ],
       });
@@ -176,7 +176,7 @@ export class QueueService implements OnModuleInit {
       let queueUsers = await this.userRepository.findAll({
         where: { in_queue: true },
         order: [
-          ['start_active_time', 'ASC'],
+          ['startActiveTime', 'ASC'],
           ['active', 'DESC'],
         ],
       });
@@ -236,7 +236,7 @@ export class QueueService implements OnModuleInit {
       }
       const queueUsers = await this.userRepository.findAll({
         where: [
-          { in_queue: true },
+          { queueUser: true },
           {
             [Op.or]: [
               {
@@ -261,7 +261,7 @@ export class QueueService implements OnModuleInit {
           },
         ],
         order: [
-          ['start_active_time', 'ASC'],
+          ['startActiveTime', 'ASC'],
           ['active', 'DESC'],
           ['id', 'ASC'],
         ],
@@ -308,7 +308,7 @@ export class QueueService implements OnModuleInit {
       const queueUsers = await this.userRepository.findAll({
         where: { in_queue: true },
         order: [
-          ['start_active_time', 'ASC'],
+          ['startActiveTime', 'ASC'],
           ['active', 'DESC'],
         ],
       });
@@ -372,7 +372,7 @@ export class QueueService implements OnModuleInit {
       const queueUsers = await this.userRepository.findAll({
         where: { in_queue: true },
         order: [
-          ['start_active_time', 'ASC'],
+          ['startActiveTime', 'ASC'],
           ['active', 'DESC'],
         ],
       });
