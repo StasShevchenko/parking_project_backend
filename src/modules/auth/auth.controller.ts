@@ -10,11 +10,11 @@ import {
 import {CreateUserDto} from '../user/dto/createUser.dto';
 import {AuthService} from './auth.service';
 import {LoginUserDto} from './dto/loginUser.dto';
-import {Roles} from './hasRoles.decorator';
-import {RolesGuard} from './roles.guard';
+import {JwtAuthGuard} from "./guards/jwtAuth.guard";
+import {RolesGuard} from "./guards/roles.guard";
+import {Roles} from "./decorators/hasRoles.decorator";
 import {TokensDto} from "../token/dto/tokens.dto";
-import {JwtAuthGuard} from "./jwtAuth.guard";
-import {Public} from "./public.decorator";
+import {Public} from "./decorators/public.decorator";
 
 @ApiTags('auth')
 @Controller('auth')
@@ -32,7 +32,7 @@ export class AuthController {
     @ApiForbiddenResponse({description: 'Unauthorized Request'})
     @UseGuards(JwtAuthGuard)
     @UseGuards(RolesGuard)
-    @Roles('is_staff')
+    @Roles('isAdmin')
     @Post('register')
     register(@Body() dto: CreateUserDto): Promise<CreateUserDto> {
         return this.authService.registerUser(dto);

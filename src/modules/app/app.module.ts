@@ -46,6 +46,7 @@ import {join} from 'path';
                 database: configService.get('POSTGRES_DATABASE'),
                 synchronize: true,
                 autoLoadModels: true,
+                logging: false,
                 models: [User, Queue, InputData, Notification, MailKey, Swap],
             }),
         }),

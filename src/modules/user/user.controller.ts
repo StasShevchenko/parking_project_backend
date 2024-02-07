@@ -8,8 +8,6 @@ import {
   ApiTags,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
-import {Roles} from '../auth/hasRoles.decorator';
-import {RolesGuard} from '../auth/roles.guard';
 import {MailKey} from '../mail_key/model/mail_key.model';
 import {ChangeAvatarDto} from './dto/changeAvatar.dto';
 import {changePasswordFromProfileDto, PasswordForgotChangeDto,} from './dto/changePassword.dto';
@@ -19,7 +17,9 @@ import {ResponseUserDto} from './dto/response_user.dto';
 import {UpdateAllUserDataDto} from './dto/update.all_user_data';
 import {User} from './model/user.model';
 import {UserService} from './user.service';
-import {JwtAuthGuard} from "../auth/jwtAuth.guard";
+import {RolesGuard} from "../auth/guards/roles.guard";
+import {Roles} from "../auth/decorators/hasRoles.decorator";
+import {JwtAuthGuard} from "../auth/guards/jwtAuth.guard";
 
 @ApiTags('Users')
 @Controller('user')
@@ -50,7 +50,7 @@ export class UserController {
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
   @Delete(':id')
   @UseGuards(RolesGuard)
-  @Roles('is_staff')
+  @Roles('isAdmin')
   deleteUser(@Param('id') id: number): Promise<number> {
     return this.userService.deleteUserById(id);
   }
@@ -64,7 +64,7 @@ export class UserController {
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
   @Delete('admin/:id')
   @UseGuards(RolesGuard)
-  @Roles('is_superuser')
+  @Roles('isSuperAdmin')
   deleteAdmin(@Param('id') id: number): Promise<number> {
     return this.userService.deleteAdminById(id);
   }
@@ -122,7 +122,7 @@ export class UserController {
   })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
   @UseGuards(RolesGuard)
-  @Roles('is_superuser')
+  @Roles('isSuperAdmin')
   @Get('getAdminRole/:id')
   getAdminRole(@Param('id') id: number): Promise<User> {
     return this.userService.addAdminRole(id);
@@ -137,7 +137,7 @@ export class UserController {
   })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
   @UseGuards(RolesGuard)
-  @Roles('is_superuser')
+  @Roles('isSuperAdmin')
   @Get('deleteAdminRole/:id')
   deleteAdminRole(@Param('id') id: number): Promise<User> {
     return this.userService.deleteAdminRole(id);

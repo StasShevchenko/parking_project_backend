@@ -18,7 +18,7 @@ export class TokenService {
         const payLoad = this.getUserJwtPayload(user);
         return this.jwtService.sign(payLoad, {
             secret: process.env.SECRET_KEY,
-            expiresIn: '1h',
+            expiresIn: '5s',
         });
     }
 
@@ -49,6 +49,7 @@ export class TokenService {
             const user = await this.userRepository.findByPk(userData.id)
             const isRefreshValid = await argon.verify(user.refreshToken, refresh)
             if (isRefreshValid) {
+                console.log('Token update!')
                 const accessToken = await this.generateAccessToken(user);
                 const refreshToken = await this.generateRefreshToken(user);
                 user.refreshToken = await argon.hash(refreshToken)
