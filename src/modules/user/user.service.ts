@@ -72,12 +72,6 @@ export class UserService {
         return dto;
     }
 
-    async getAllUsers(): Promise<User[]> {
-        return await this.userRepository.findAll({
-            attributes: {exclude: ['password', 'createdAt', 'updatedAt']},
-        });
-    }
-
     async getUserById(id: number) {
         try {
             return await this.userRepository.findOne({
