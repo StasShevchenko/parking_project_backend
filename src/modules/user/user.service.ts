@@ -102,7 +102,7 @@ export class UserService {
         return deleteUser;
     }
 
-    async deleteAdminById(id): Promise<number> {
+    async deleteAdminById(id: number): Promise<number> {
         try {
             await this.queueService.deleteFromQueue(id);
             return await this.userRepository.destroy({where: {id}});

@@ -19,6 +19,7 @@ import {User} from './model/user.model';
 import {UserService} from './user.service';
 import {RolesGuard} from "../auth/guards/roles.guard";
 import {Roles} from "../auth/decorators/hasRoles.decorator";
+import {ToggleAdminRoleDto} from "./dto/toggleAdminRole.dto";
 
 @ApiTags('Users')
 @Controller('user')
@@ -119,9 +120,9 @@ export class UserController {
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
   @UseGuards(RolesGuard)
   @Roles('isSuperAdmin')
-  @Get('getAdminRole/:id')
-  getAdminRole(@Param('id') id: number): Promise<User> {
-    return this.userService.addAdminRole(id);
+  @Post('getAdminRole/:id')
+  addAdminRole(@Body() dto: ToggleAdminRoleDto): Promise<User> {
+    return this.userService.addAdminRole(dto.adminId);
   }
 
   @ApiOperation({
@@ -134,9 +135,9 @@ export class UserController {
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
   @UseGuards(RolesGuard)
   @Roles('isSuperAdmin')
-  @Get('deleteAdminRole/:id')
-  deleteAdminRole(@Param('id') id: number): Promise<User> {
-    return this.userService.deleteAdminRole(id);
+  @Post('deleteAdminRole/:id')
+  deleteAdminRole(@Body() dto: ToggleAdminRoleDto): Promise<User> {
+    return this.userService.deleteAdminRole(dto.adminId);
   }
 
   @ApiOperation({
