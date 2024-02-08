@@ -120,7 +120,7 @@ export class UserController {
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
   @UseGuards(RolesGuard)
   @Roles('isSuperAdmin')
-  @Post('getAdminRole/:id')
+  @Post('addAdminRole')
   addAdminRole(@Body() dto: ToggleAdminRoleDto): Promise<User> {
     return this.userService.addAdminRole(dto.adminId);
   }
@@ -135,7 +135,7 @@ export class UserController {
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
   @UseGuards(RolesGuard)
   @Roles('isSuperAdmin')
-  @Post('deleteAdminRole/:id')
+  @Post('deleteAdminRole')
   deleteAdminRole(@Body() dto: ToggleAdminRoleDto): Promise<User> {
     return this.userService.deleteAdminRole(dto.adminId);
   }
