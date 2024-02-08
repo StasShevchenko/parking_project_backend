@@ -122,7 +122,7 @@ export class UserController {
   @Roles('isSuperAdmin')
   @Post('addAdminRole')
   addAdminRole(@Body() dto: ToggleAdminRoleDto): Promise<User> {
-    return this.userService.addAdminRole(dto.adminId);
+    return this.userService.addAdminRole(dto.userId);
   }
 
   @ApiOperation({
@@ -137,7 +137,7 @@ export class UserController {
   @Roles('isSuperAdmin')
   @Post('deleteAdminRole')
   deleteAdminRole(@Body() dto: ToggleAdminRoleDto): Promise<User> {
-    return this.userService.deleteAdminRole(dto.adminId);
+    return this.userService.deleteAdminRole(dto.userId);
   }
 
   @ApiOperation({
