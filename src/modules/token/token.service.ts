@@ -18,7 +18,7 @@ export class TokenService {
         const payLoad = this.getUserJwtPayload(user);
         return this.jwtService.sign(payLoad, {
             secret: process.env.SECRET_KEY,
-            expiresIn: '5s',
+            expiresIn: '1h',
         });
     }
 

@@ -57,7 +57,7 @@ export class UserService {
             firstName: dto.firstName,
             secondName: dto.secondName,
             email: dto.email,
-            is_staff: dto.isAdmin,
+            isAdmin: dto.isAdmin,
             password: password,
             avatar: avatar,
         });
@@ -76,7 +76,7 @@ export class UserService {
         try {
             return await this.userRepository.findOne({
                 where: {id},
-                attributes: {exclude: ['password', 'createdAt', 'updatedAt']},
+                attributes: {exclude: ['password', 'refreshToken']},
             });
         } catch (e) {
             console.log(e);
@@ -92,7 +92,7 @@ export class UserService {
         return dto;
     }
 
-    async deleteUserById(id): Promise<number> {
+    async deleteUserById(id: number): Promise<number> {
         const user = await this.userRepository.findOne({where: {id}});
         if (user.isAdmin) {
             throw new BadRequestException('Пользователь является администратором');

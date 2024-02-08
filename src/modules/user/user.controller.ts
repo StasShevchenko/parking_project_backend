@@ -19,7 +19,6 @@ import {User} from './model/user.model';
 import {UserService} from './user.service';
 import {RolesGuard} from "../auth/guards/roles.guard";
 import {Roles} from "../auth/decorators/hasRoles.decorator";
-import {JwtAuthGuard} from "../auth/guards/jwtAuth.guard";
 
 @ApiTags('Users')
 @Controller('user')
@@ -35,7 +34,6 @@ export class UserController {
     type: ResponseUserDto,
   })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  @UseGuards(JwtAuthGuard)
   @Get(':id')
   getUser(@Param('id') id: number) {
     return this.userService.getUserById(id);
@@ -79,7 +77,6 @@ export class UserController {
   })
   @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  @UseGuards(JwtAuthGuard)
   @Patch('update/:id')
   updateUser(
     @Param('id') id: number,
@@ -94,7 +91,6 @@ export class UserController {
   })
   @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
   @ApiResponse({ status: 201, type: changePasswordFromProfileDto })
-  @UseGuards(JwtAuthGuard)
   @Post('changePassword')
   changePassword(
     @Body() dto: changePasswordFromProfileDto,
@@ -190,7 +186,6 @@ export class UserController {
   })
   @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
   @ApiResponse({ status: 201, type: ChangeAvatarDto })
-  @UseGuards(JwtAuthGuard)
   @Post('changeAvatar')
   changeAvatar(@Body() dto: ChangeAvatarDto, @Request() req): Promise<boolean> {
     return this.userService.changeAvatar(dto, req.user.id);
