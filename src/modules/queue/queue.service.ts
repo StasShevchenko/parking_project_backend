@@ -306,7 +306,7 @@ export class QueueService implements OnModuleInit {
   async getOneNextPeriod(fullName: string = ''): Promise<Period[][]> {
     try {
       const queueUsers = await this.userRepository.findAll({
-        where: { in_queue: true },
+        where: { queueUser: true },
         order: [
           ['startActiveTime', 'ASC'],
           ['active', 'DESC'],
@@ -370,7 +370,7 @@ export class QueueService implements OnModuleInit {
       const userPeriodsArray: UserPeriodDto[] = [];
       const inputData = await this.inputDataRepository.findOne();
       const queueUsers = await this.userRepository.findAll({
-        where: { in_queue: true },
+        where: { queueUser: true },
         order: [
           ['startActiveTime', 'ASC'],
           ['active', 'DESC'],
