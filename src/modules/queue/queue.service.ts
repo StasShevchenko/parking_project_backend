@@ -174,7 +174,7 @@ export class QueueService implements OnModuleInit {
   async deleteFromQueue(userId: number) {
     try {
       let queueUsers = await this.userRepository.findAll({
-        where: { in_queue: true },
+        where: { queueUser: true },
         order: [
           ['startActiveTime', 'ASC'],
           ['active', 'DESC'],

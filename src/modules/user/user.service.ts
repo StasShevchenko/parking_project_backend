@@ -73,14 +73,14 @@ export class UserService {
     }
 
     async getUserById(id: number) {
-        try {
-            return await this.userRepository.findOne({
-                where: {id},
-                attributes: {exclude: ['password', 'refreshToken']},
-            });
-        } catch (e) {
-            console.log(e);
-            throw new BadRequestException();
+        const user = await this.userRepository.findOne({
+            where: {id},
+            attributes: {exclude: ['password', 'refreshToken']},
+        });
+        if (user == null) {
+            throw new BadRequestException()
+        } else {
+            return user
         }
     }
 
@@ -97,8 +97,10 @@ export class UserService {
         if (user.isAdmin) {
             throw new BadRequestException('Пользователь является администратором');
         }
+        if (user.queueUser) {
+            await this.queueService.deleteFromQueue(id);
+        }
         const deleteUser = await this.userRepository.destroy({where: {id}});
-        await this.queueService.deleteFromQueue(id);
         return deleteUser;
     }
 
