@@ -10,7 +10,7 @@ import {
 } from '@nestjs/swagger';
 import {MailKey} from '../mail_key/model/mail_key.model';
 import {ChangeAvatarDto} from './dto/changeAvatar.dto';
-import {changePasswordFromProfileDto, PasswordForgotChangeDto,} from './dto/changePassword.dto';
+import {ChangePasswordDto, PasswordForgotChangeDto,} from './dto/changePassword.dto';
 import {ForgotPasswordDto} from './dto/forgot_password.dto';
 import {MailKeyReviewDto} from './dto/mail_key_review.dto';
 import {ResponseUserDto} from './dto/response_user.dto';
@@ -91,10 +91,10 @@ export class UserController {
     summary: 'Изменение пароля пользователя из профиля- только авторизованным',
   })
   @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
-  @ApiResponse({ status: 201, type: changePasswordFromProfileDto })
+  @ApiResponse({ status: 201, type: ChangePasswordDto })
   @Post('changePassword')
   changePassword(
-    @Body() dto: changePasswordFromProfileDto,
+    @Body() dto: ChangePasswordDto,
     @Request() req,
   ): Promise<boolean> {
     return this.userService.changePasswordFromProfile(dto, req.user.email);

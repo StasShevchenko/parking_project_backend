@@ -10,7 +10,7 @@ import {QueueService} from '../queue/queue.service';
 import {CreateUserDto} from './dto/createUser.dto';
 import {ChangeAvatarDto} from './dto/changeAvatar.dto';
 import {
-    changePasswordFromProfileDto,
+    ChangePasswordDto,
     PasswordForgotChangeDto,
 } from './dto/changePassword.dto';
 import {ForgotPasswordDto} from './dto/forgot_password.dto';
@@ -134,7 +134,7 @@ export class UserService {
     }
 
     async changePasswordFromProfile(
-        dto: changePasswordFromProfileDto,
+        dto: ChangePasswordDto,
         email: string,
     ): Promise<boolean> {
         const user = await this.userRepository.findOne({
@@ -144,8 +144,11 @@ export class UserService {
             dto.oldPassword,
             user.password,
         );
-        if (!compareOldPassword || dto.newPassword != dto.repeat_newPassword) {
-            throw new BadRequestException('Wrong Data');
+        if (!compareOldPassword) {
+            throw new BadRequestException('Wrong password')
+        }
+        if (dto.newPassword != dto.repeatNewPassword) {
+            throw new BadRequestException('Passwords should match');
         }
         if (this.validatePassword(dto.newPassword)) {
             user.password = await this.hashPassword(dto.newPassword);
@@ -153,7 +156,7 @@ export class UserService {
             await user.save();
             return true;
         } else {
-            throw new BadRequestException({message: 'Простой пароль'});
+            throw new BadRequestException({message: 'Weak password'});
         }
     }
 
