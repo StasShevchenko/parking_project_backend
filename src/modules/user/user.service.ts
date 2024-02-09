@@ -282,8 +282,6 @@ export class UserService {
             const user: User = await this.userRepository.findByPk(userId);
             user.avatar = dto.avatarName;
             await user.save();
-            console.log(user);
-            console.log(dto);
             return true;
         } catch (e) {
             console.log(e);

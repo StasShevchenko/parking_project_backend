@@ -2,5 +2,5 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class ChangeAvatarDto {
   @ApiProperty()
-  avatarName: string;
+  avatarName: string | null;
 }

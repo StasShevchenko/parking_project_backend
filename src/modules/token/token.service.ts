@@ -49,7 +49,6 @@ export class TokenService {
             const user = await this.userRepository.findByPk(userData.id)
             const isRefreshValid = await argon.verify(user.refreshToken, refresh)
             if (isRefreshValid) {
-                console.log('Token update!')
                 const accessToken = await this.generateAccessToken(user);
                 const refreshToken = await this.generateRefreshToken(user);
                 user.refreshToken = await argon.hash(refreshToken)
