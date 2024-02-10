@@ -12,6 +12,7 @@ import {
   UserInPeriod,
 } from '../../interfaces/user.interface';
 import { Op } from 'sequelize';
+import {resetDate} from "./utils/resetDate";
 export * from 'src/interfaces/period.interface';
 @Injectable()
 export class QueueService implements OnModuleInit {
@@ -39,8 +40,8 @@ export class QueueService implements OnModuleInit {
         if (queueUsers.length < inputData.seats) {
           isActive = true;
         }
-        let startDate = new Date();
-        let endDate = new Date();
+        let startDate = resetDate(new Date());
+        let endDate = resetDate(new Date());
         //Если в очереди еще нет юзеров, то выставляем срок на месяц
         //от начала текущего месяца
         if (queueUsers.length == 0) {
@@ -99,7 +100,7 @@ export class QueueService implements OnModuleInit {
         ],
       });
       if (queueUsers.length <= inputData.seats) return null;
-      const currentDate = new Date();
+      const currentDate = resetDate(new Date());
       if (queueUsers[0].startActiveTime.getMonth() >= currentDate.getMonth())
         return null;
       const moveCount = inputData.seats;
@@ -329,7 +330,7 @@ export class QueueService implements OnModuleInit {
       const nextPeriod: Period[] = [];
       for (let i = startIndex; i < queueUsers.length; i++) {
         const nextUsers: UserInPeriod[] = [];
-        const endDate = new Date();
+        const endDate = resetDate(new Date());
         endDate.setMonth(startDate.getMonth() + 1);
         endDate.setDate(endDate.getDate() - 1);
         nextUsers.push(mapToUserInPeriod(queueUsers[i], null));
@@ -504,7 +505,7 @@ export class QueueService implements OnModuleInit {
   //и прокручивать очередь до нужного момента, если
   //была пропущена cron таска
   async adjustQueue() {
-    const currentDate = new Date();
+    const currentDate = resetDate(new Date());
     let queueNotInCorrectState = true;
     while (queueNotInCorrectState) {
       const activeUsersPeriod = await this.changeActiveUsers();
