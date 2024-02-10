@@ -1,6 +1,6 @@
 import {BadRequestException, Injectable} from '@nestjs/common';
 import {TokenService} from '../token/token.service';
-import {CreateUserDto} from '../user/dto';
+import {CreateUserDto} from '../user/dto/createUser.dto';
 import {UserService} from '../user/user.service';
 import {LoginUserDto} from './dto/loginUser.dto';
 import * as argon from 'argon2';

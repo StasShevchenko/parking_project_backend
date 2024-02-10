@@ -16,9 +16,9 @@ export class CreateUserDto {
 
   @IsBoolean()
   @ApiProperty()
-  is_staff?: boolean;
+  isAdmin?: boolean;
 
   @ApiProperty()
   @IsBoolean()
-  in_queue?: boolean | null;
+  queueUser?: boolean | null;
 }

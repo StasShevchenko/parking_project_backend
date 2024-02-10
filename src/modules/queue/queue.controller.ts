@@ -17,14 +17,14 @@ import {
   ApiTags,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
-import { Roles } from '../auth/hasRoles.decorator';
-import { RolesGuard } from '../auth/roles.guard';
 import { CreateQueueDTO } from './dto/create-queue.dto';
 import { allNextActivePeriod } from './dto/next_active_period.dto';
 import { Queue } from './model/queue.model';
 import { QueueService } from './queue.service';
 import { Period } from '../../interfaces/period.interface';
-import {JwtAuthGuard} from "../auth/jwtAuth.guard";
+import {JwtAuthGuard} from "../auth/guards/jwtAuth.guard";
+import {RolesGuard} from "../auth/guards/roles.guard";
+import {Roles} from "../auth/decorators/hasRoles.decorator";
 
 @ApiBearerAuth()
 @ApiTags('Queue')
@@ -54,7 +54,7 @@ export class QueueController {
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
   @Get('check')
   @UseGuards(RolesGuard)
-  @Roles('is_staff')
+  @Roles('isAdmin')
   CheckUserActivation() {
     return this.queueService.changeActiveUsers();
   }
@@ -84,7 +84,7 @@ export class QueueController {
   })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
   @UseGuards(RolesGuard)
-  @Roles('is_staff')
+  @Roles('isAdmin')
   @Get('getOneNextPeriod')
   getNextPeriod(@Query() query: { fullName: string }): Promise<Period[][]> {
     return this.queueService.getOneNextPeriod(query.fullName);

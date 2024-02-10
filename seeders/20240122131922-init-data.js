@@ -12,9 +12,9 @@ module.exports = {
       active: false,
       isSuperAdmin: true,
       queueUser: false,
-      start_active_time: null,
-      end_active_time: null,
-      last_active_period: null,
+      startActiveTime: null,
+      endActiveTime: null,
+      lastActivePeriod: null,
       avatar: null,
       changedPassword: false
     }])

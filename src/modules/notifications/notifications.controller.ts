@@ -17,7 +17,7 @@ import {
 import { CreateNotificationDto } from './dto/create_notification.dto';
 import { Notification } from './model/notifications.model';
 import { NotificationsService } from './notifications.service';
-import {JwtAuthGuard} from "../auth/jwtAuth.guard";
+import {JwtAuthGuard} from "../auth/guards/jwtAuth.guard";
 
 @Controller('notifications')
 export class NotificationsController {

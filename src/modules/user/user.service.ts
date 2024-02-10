@@ -7,10 +7,10 @@ import {AvatarService} from '../avatar/avatar.service';
 import {MailService} from '../mail/mail.service';
 import {MailKeyService} from '../mail_key/mail_key.service';
 import {QueueService} from '../queue/queue.service';
-import {CreateUserDto} from './dto';
+import {CreateUserDto} from './dto/createUser.dto';
 import {ChangeAvatarDto} from './dto/changeAvatar.dto';
 import {
-    changePasswordFromProfileDto,
+    ChangePasswordDto,
     PasswordForgotChangeDto,
 } from './dto/changePassword.dto';
 import {ForgotPasswordDto} from './dto/forgot_password.dto';
@@ -57,11 +57,11 @@ export class UserService {
             firstName: dto.firstName,
             secondName: dto.secondName,
             email: dto.email,
-            is_staff: dto.is_staff,
+            isAdmin: dto.isAdmin,
             password: password,
             avatar: avatar,
         });
-        if (dto.in_queue) {
+        if (dto.queueUser) {
             const user = await this.findUserByEmail(dto.email);
             await this.queueService.addUserToQueue({
                     userId: user.id
@@ -72,21 +72,15 @@ export class UserService {
         return dto;
     }
 
-    async getAllUsers(): Promise<User[]> {
-        return await this.userRepository.findAll({
-            attributes: {exclude: ['password', 'createdAt', 'updatedAt']},
-        });
-    }
-
     async getUserById(id: number) {
-        try {
-            return await this.userRepository.findOne({
-                where: {id},
-                attributes: {exclude: ['password', 'createdAt', 'updatedAt']},
-            });
-        } catch (e) {
-            console.log(e);
-            throw new BadRequestException();
+        const user = await this.userRepository.findOne({
+            where: {id},
+            attributes: {exclude: ['password', 'refreshToken']},
+        });
+        if (user == null) {
+            throw new BadRequestException()
+        } else {
+            return user
         }
     }
 
@@ -98,17 +92,19 @@ export class UserService {
         return dto;
     }
 
-    async deleteUserById(id): Promise<number> {
+    async deleteUserById(id: number): Promise<number> {
         const user = await this.userRepository.findOne({where: {id}});
         if (user.isAdmin) {
             throw new BadRequestException('Пользователь является администратором');
         }
+        if (user.queueUser) {
+            await this.queueService.deleteFromQueue(id);
+        }
         const deleteUser = await this.userRepository.destroy({where: {id}});
-        await this.queueService.deleteFromQueue(id);
         return deleteUser;
     }
 
-    async deleteAdminById(id): Promise<number> {
+    async deleteAdminById(id: number): Promise<number> {
         try {
             await this.queueService.deleteFromQueue(id);
             return await this.userRepository.destroy({where: {id}});
@@ -138,7 +134,7 @@ export class UserService {
     }
 
     async changePasswordFromProfile(
-        dto: changePasswordFromProfileDto,
+        dto: ChangePasswordDto,
         email: string,
     ): Promise<boolean> {
         const user = await this.userRepository.findOne({
@@ -148,8 +144,11 @@ export class UserService {
             dto.oldPassword,
             user.password,
         );
-        if (!compareOldPassword || dto.newPassword != dto.repeat_newPassword) {
-            throw new BadRequestException('Wrong Data');
+        if (!compareOldPassword) {
+            throw new BadRequestException('Wrong password')
+        }
+        if (dto.newPassword != dto.repeatNewPassword) {
+            throw new BadRequestException('Passwords should match');
         }
         if (this.validatePassword(dto.newPassword)) {
             user.password = await this.hashPassword(dto.newPassword);
@@ -157,7 +156,7 @@ export class UserService {
             await user.save();
             return true;
         } else {
-            throw new BadRequestException({message: 'Простой пароль'});
+            throw new BadRequestException({message: 'Weak password'});
         }
     }
 
@@ -186,15 +185,14 @@ export class UserService {
 
     async getUsers(roles: string[], fullName: string) {
         const rolesFilter = [];
-        console.log(roles);
         if (roles.includes('user')) {
-            rolesFilter.push({in_queue: true});
+            rolesFilter.push({queueUser: true});
         }
         if (roles.includes('admin')) {
-            rolesFilter.push({is_staff: true});
+            rolesFilter.push({isAdmin: true});
         }
         if (roles.includes('super_admin')) {
-            rolesFilter.push({is_superuser: true});
+            rolesFilter.push({isSuperAdmin: true});
         }
         let firstName: string;
         let secondName: string;
@@ -233,7 +231,7 @@ export class UserService {
                     },
                 ],
             },
-            attributes: {exclude: ['password', 'createdAt', 'updatedAt']},
+            attributes: {exclude: ['password', 'refreshToken']},
         });
     }
 
@@ -284,8 +282,6 @@ export class UserService {
             const user: User = await this.userRepository.findByPk(userId);
             user.avatar = dto.avatarName;
             await user.save();
-            console.log(user);
-            console.log(dto);
             return true;
         } catch (e) {
             console.log(e);

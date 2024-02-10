@@ -26,8 +26,8 @@ export class QueueService implements OnModuleInit {
     try {
       const inputData = await this.inputDataRepository.findOne();
       const queueUsers = await this.userRepository.findAll({
-        where: { in_queue: true },
-        order: [['start_active_time', 'ASC']],
+        where: { queueUser: true },
+        order: [['startActiveTime', 'ASC']],
       });
       // Получаем юзера из бд по userId из dto
       const user = await this.userRepository.findOne({
@@ -53,12 +53,12 @@ export class QueueService implements OnModuleInit {
         //месяце еще остались места и сроки как у последнего юзера в очереди
         else if (queueUsers.length % inputData.seats != 0) {
           const lastUser = queueUsers[queueUsers.length - 1];
-          startDate = lastUser.start_active_time;
-          endDate = lastUser.end_active_time;
+          startDate = lastUser.startActiveTime;
+          endDate = lastUser.endActiveTime;
         } else {
           // В этом месяце нет мест, значит сроки рассчитываем на след месяц
           const lastUserStartDate =
-            queueUsers[queueUsers.length - 1].start_active_time;
+            queueUsers[queueUsers.length - 1].startActiveTime;
           startDate.setMonth(lastUserStartDate.getMonth() + 1);
           endDate.setMonth(startDate.getMonth() + 1);
           endDate.setDate(endDate.getDate() - 1);
@@ -69,9 +69,9 @@ export class QueueService implements OnModuleInit {
 
         user.queueUser = true;
         user.active = isActive;
-        user.last_active_period = startDate;
-        user.start_active_time = startDate;
-        user.end_active_time = endDate;
+        user.lastActivePeriod = startDate;
+        user.startActiveTime = startDate;
+        user.endActiveTime = endDate;
         await user.save();
         return await this.queueRepository.create({
           userId: dto.userId,
@@ -94,13 +94,13 @@ export class QueueService implements OnModuleInit {
       const queueUsers = await this.userRepository.findAll({
         where: { queueUser: true },
         order: [
-          ['start_active_time', 'ASC'],
+          ['startActiveTime', 'ASC'],
           ['active', 'DESC'],
         ],
       });
       if (queueUsers.length <= inputData.seats) return null;
       const currentDate = new Date();
-      if (queueUsers[0].start_active_time.getMonth() >= currentDate.getMonth())
+      if (queueUsers[0].startActiveTime.getMonth() >= currentDate.getMonth())
         return null;
       const moveCount = inputData.seats;
       //Продвигаем очередь вперед на нужное число мест
@@ -143,20 +143,20 @@ export class QueueService implements OnModuleInit {
       }
       for (let i = 0; i < queueUsers.length; i++) {
         if (i > inputData.seats - 1 - (queueUsers.length % inputData.seats)) {
-          const lastStartDate = new Date(queueUsers[i - 1].start_active_time);
+          const lastStartDate = new Date(queueUsers[i - 1].startActiveTime);
           if (i % inputData.seats == 0) {
             lastStartDate.setMonth(lastStartDate.getMonth() + 1);
           }
-          queueUsers[i].start_active_time = lastStartDate;
-          const endTime = new Date(queueUsers[i].start_active_time);
+          queueUsers[i].startActiveTime = lastStartDate;
+          const endTime = new Date(queueUsers[i].startActiveTime);
           endTime.setMonth(endTime.getMonth() + 1);
           endTime.setDate(endTime.getDate() - 1);
-          queueUsers[i].end_active_time = endTime;
-          queueUsers[i].last_active_period = endTime;
+          queueUsers[i].endActiveTime = endTime;
+          queueUsers[i].lastActivePeriod = endTime;
           await queueUsers[i].save();
         }
       }
-      return queueUsers[0].start_active_time;
+      return queueUsers[0].startActiveTime;
     } catch (e) {
       console.log(e);
       return null;
@@ -174,9 +174,9 @@ export class QueueService implements OnModuleInit {
   async deleteFromQueue(userId: number) {
     try {
       let queueUsers = await this.userRepository.findAll({
-        where: { in_queue: true },
+        where: { queueUser: true },
         order: [
-          ['start_active_time', 'ASC'],
+          ['startActiveTime', 'ASC'],
           ['active', 'DESC'],
         ],
       });
@@ -185,9 +185,9 @@ export class QueueService implements OnModuleInit {
       const userIndex = queueUsers.findIndex((it) => it.id == user.id);
       user.queueUser = false;
       user.active = false;
-      user.last_active_period = null;
-      user.start_active_time = null;
-      user.end_active_time = null;
+      user.lastActivePeriod = null;
+      user.startActiveTime = null;
+      user.endActiveTime = null;
       await user.save();
       await this.queueRepository.destroy({ where: { userId: userId } });
       queueUsers = queueUsers.filter((it) => it.email !== user.email);
@@ -198,7 +198,7 @@ export class QueueService implements OnModuleInit {
             queueUsers[i].active = true;
           }
           if (i > 0) {
-            const lastStartDate = new Date(queueUsers[i - 1].start_active_time);
+            const lastStartDate = new Date(queueUsers[i - 1].startActiveTime);
             if (i % inputData.seats == 0) {
               lastStartDate.setMonth(lastStartDate.getMonth() + 1);
             }
@@ -207,12 +207,12 @@ export class QueueService implements OnModuleInit {
             });
             queueItem.number = i + 1;
             await queueItem.save();
-            queueUsers[i].start_active_time = lastStartDate;
-            const endTime = new Date(queueUsers[i].start_active_time);
+            queueUsers[i].startActiveTime = lastStartDate;
+            const endTime = new Date(queueUsers[i].startActiveTime);
             endTime.setMonth(endTime.getMonth() + 1);
             endTime.setDate(endTime.getDate() - 1);
-            queueUsers[i].end_active_time = endTime;
-            queueUsers[i].last_active_period = endTime;
+            queueUsers[i].endActiveTime = endTime;
+            queueUsers[i].lastActivePeriod = endTime;
           }
           await queueUsers[i].save();
         }
@@ -236,7 +236,7 @@ export class QueueService implements OnModuleInit {
       }
       const queueUsers = await this.userRepository.findAll({
         where: [
-          { in_queue: true },
+          { queueUser: true },
           {
             [Op.or]: [
               {
@@ -261,15 +261,15 @@ export class QueueService implements OnModuleInit {
           },
         ],
         order: [
-          ['start_active_time', 'ASC'],
+          ['startActiveTime', 'ASC'],
           ['active', 'DESC'],
           ['id', 'ASC'],
         ],
       });
       const periods: Period[] = [];
       for (let i = 0; i < queueUsers.length; i++) {
-        const startDate = queueUsers[i].start_active_time;
-        const endDate = queueUsers[i].end_active_time;
+        const startDate = queueUsers[i].startActiveTime;
+        const endDate = queueUsers[i].endActiveTime;
         const nextUsers: UserInPeriod[] = [];
         const userQueueItem = await this.queueRepository.findOne({
           where: { userId: queueUsers[i].id },
@@ -279,7 +279,7 @@ export class QueueService implements OnModuleInit {
         );
         while (
           i < queueUsers.length - 1 &&
-          queueUsers[i + 1].start_active_time.getTime() == startDate.getTime()
+          queueUsers[i + 1].startActiveTime.getTime() == startDate.getTime()
         ) {
           const userQueueItem = await this.queueRepository.findOne({
             where: { userId: queueUsers[i + 1].id },
@@ -306,16 +306,16 @@ export class QueueService implements OnModuleInit {
   async getOneNextPeriod(fullName: string = ''): Promise<Period[][]> {
     try {
       const queueUsers = await this.userRepository.findAll({
-        where: { in_queue: true },
+        where: { queueUser: true },
         order: [
-          ['start_active_time', 'ASC'],
+          ['startActiveTime', 'ASC'],
           ['active', 'DESC'],
         ],
       });
       const inputData = await this.inputDataRepository.findOne();
       const periodsArray: Period[][] = [];
       const firstPeriod = await this.getCurrentQueuePeriod();
-      const startDate = queueUsers[queueUsers.length - 1].start_active_time;
+      const startDate = queueUsers[queueUsers.length - 1].startActiveTime;
       let startIndex = 0;
       if (queueUsers.length % inputData.seats == 0) {
         startDate.setMonth(startDate.getMonth() + 1);
@@ -370,20 +370,20 @@ export class QueueService implements OnModuleInit {
       const userPeriodsArray: UserPeriodDto[] = [];
       const inputData = await this.inputDataRepository.findOne();
       const queueUsers = await this.userRepository.findAll({
-        where: { in_queue: true },
+        where: { queueUser: true },
         order: [
-          ['start_active_time', 'ASC'],
+          ['startActiveTime', 'ASC'],
           ['active', 'DESC'],
         ],
       });
       const currentUser = queueUsers.find((user) => user.id == dto.userId);
       if (currentUser == null) return [];
       userPeriodsArray.push({
-        start_time: currentUser.start_active_time.toISOString(),
-        end_time: currentUser.end_active_time.toISOString(),
+        start_time: currentUser.startActiveTime.toISOString(),
+        end_time: currentUser.endActiveTime.toISOString(),
       });
       const lastUserStartDate =
-        queueUsers[queueUsers.length - 1].start_active_time;
+        queueUsers[queueUsers.length - 1].startActiveTime;
       let globalUsersIndex = queueUsers.length;
       if (queueUsers.length % inputData.seats == 0) {
         lastUserStartDate.setMonth(lastUserStartDate.getMonth() + 1);

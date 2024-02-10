@@ -58,9 +58,6 @@ export class TokenService {
                 throw new BadRequestException()
             }
         } catch (e) {
-            if (e.status == 404) {
-                throw new NotFoundException(HttpStatus.NOT_FOUND);
-            }
             throw new BadRequestException('Invalid token');
         }
     }

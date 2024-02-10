@@ -1,0 +1,1 @@
+export type Role = 'queueUser' | 'isAdmin' | 'isSuperAdmin'

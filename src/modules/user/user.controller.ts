@@ -1,15 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Patch,
-  Post,
-  Query,
-  Request,
-  UseGuards,
-} from '@nestjs/common';
+import {Body, Controller, Delete, Get, Param, Patch, Post, Query, Request, UseGuards,} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiForbiddenResponse,
@@ -19,22 +8,18 @@ import {
   ApiTags,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
-import { combinedLogger } from 'src/utils/logger.config';
-import { Roles } from '../auth/hasRoles.decorator';
-import { RolesGuard } from '../auth/roles.guard';
-import { MailKey } from '../mail_key/model/mail_key.model';
-import { ChangeAvatarDto } from './dto/changeAvatar.dto';
-import {
-  PasswordForgotChangeDto,
-  changePasswordFromProfileDto,
-} from './dto/changePassword.dto';
-import { ForgotPasswordDto } from './dto/forgot_password.dto';
-import { MailKeyReviewDto } from './dto/mail_key_review.dto';
-import { ResponseUserDto } from './dto/response_user.dto';
-import { UpdateAllUserDataDto } from './dto/update.all_user_data';
-import { User } from './model/user.model';
-import { UserService } from './user.service';
-import {JwtAuthGuard} from "../auth/jwtAuth.guard";
+import {MailKey} from '../mail_key/model/mail_key.model';
+import {ChangeAvatarDto} from './dto/changeAvatar.dto';
+import {ChangePasswordDto, PasswordForgotChangeDto,} from './dto/changePassword.dto';
+import {ForgotPasswordDto} from './dto/forgot_password.dto';
+import {MailKeyReviewDto} from './dto/mail_key_review.dto';
+import {ResponseUserDto} from './dto/response_user.dto';
+import {UpdateAllUserDataDto} from './dto/update.all_user_data';
+import {User} from './model/user.model';
+import {UserService} from './user.service';
+import {RolesGuard} from "../auth/guards/roles.guard";
+import {Roles} from "../auth/decorators/hasRoles.decorator";
+import {ToggleAdminRoleDto} from "./dto/toggleAdminRole.dto";
 
 @ApiTags('Users')
 @Controller('user')
@@ -50,7 +35,6 @@ export class UserController {
     type: ResponseUserDto,
   })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  @UseGuards(JwtAuthGuard)
   @Get(':id')
   getUser(@Param('id') id: number) {
     return this.userService.getUserById(id);
@@ -65,7 +49,7 @@ export class UserController {
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
   @Delete(':id')
   @UseGuards(RolesGuard)
-  @Roles('is_staff')
+  @Roles('isAdmin')
   deleteUser(@Param('id') id: number): Promise<number> {
     return this.userService.deleteUserById(id);
   }
@@ -79,7 +63,7 @@ export class UserController {
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
   @Delete('admin/:id')
   @UseGuards(RolesGuard)
-  @Roles('is_superuser')
+  @Roles('isSuperAdmin')
   deleteAdmin(@Param('id') id: number): Promise<number> {
     return this.userService.deleteAdminById(id);
   }
@@ -94,7 +78,6 @@ export class UserController {
   })
   @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  @UseGuards(JwtAuthGuard)
   @Patch('update/:id')
   updateUser(
     @Param('id') id: number,
@@ -108,11 +91,10 @@ export class UserController {
     summary: 'Изменение пароля пользователя из профиля- только авторизованным',
   })
   @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
-  @ApiResponse({ status: 201, type: changePasswordFromProfileDto })
-  @UseGuards(JwtAuthGuard)
+  @ApiResponse({ status: 201, type: ChangePasswordDto })
   @Post('changePassword')
   changePassword(
-    @Body() dto: changePasswordFromProfileDto,
+    @Body() dto: ChangePasswordDto,
     @Request() req,
   ): Promise<boolean> {
     return this.userService.changePasswordFromProfile(dto, req.user.email);
@@ -137,10 +119,10 @@ export class UserController {
   })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
   @UseGuards(RolesGuard)
-  @Roles('is_superuser')
-  @Get('getAdminRole/:id')
-  getAdminRole(@Param('id') id: number): Promise<User> {
-    return this.userService.addAdminRole(id);
+  @Roles('isSuperAdmin')
+  @Post('addAdminRole')
+  addAdminRole(@Body() dto: ToggleAdminRoleDto): Promise<User> {
+    return this.userService.addAdminRole(dto.userId);
   }
 
   @ApiOperation({
@@ -152,10 +134,10 @@ export class UserController {
   })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
   @UseGuards(RolesGuard)
-  @Roles('is_superuser')
-  @Get('deleteAdminRole/:id')
-  deleteAdminRole(@Param('id') id: number): Promise<User> {
-    return this.userService.deleteAdminRole(id);
+  @Roles('isSuperAdmin')
+  @Post('deleteAdminRole')
+  deleteAdminRole(@Body() dto: ToggleAdminRoleDto): Promise<User> {
+    return this.userService.deleteAdminRole(dto.userId);
   }
 
   @ApiOperation({
@@ -167,17 +149,14 @@ export class UserController {
     type: ResponseUserDto,
   })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  @UseGuards(JwtAuthGuard)
   @Get('')
-  getUsers(@Query('roles') roles: string, @Query('fullName') fullName: string) {
+  getUsers(
+      @Query('roles') roles: string,
+      @Query('fullName') fullName: string = ''
+  ) {
     let rolesFilter = [];
-    //Возвращаем пустой массив если роли не были переданы
     if (roles) {
-      const rolesString = roles.slice(1, -1);
-      rolesFilter = rolesString.split(',').map((role) => role.trim());
-      if (roles.length <= 3) {
-        return [];
-      }
+      rolesFilter = roles.split(',').map((role) => role.trim());
     }
     return this.userService.getUsers(rolesFilter, fullName);
   }
@@ -208,7 +187,6 @@ export class UserController {
   })
   @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
   @ApiResponse({ status: 201, type: ChangeAvatarDto })
-  @UseGuards(JwtAuthGuard)
   @Post('changeAvatar')
   changeAvatar(@Body() dto: ChangeAvatarDto, @Request() req): Promise<boolean> {
     return this.userService.changeAvatar(dto, req.user.id);
