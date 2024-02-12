@@ -74,6 +74,7 @@ export class TokenService {
                 secondName: user.secondName,
                 changedPassword: user.changedPassword,
                 avatar: user.avatar,
+                active: user.active
             }
         }
     }

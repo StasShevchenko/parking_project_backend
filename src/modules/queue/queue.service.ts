@@ -224,7 +224,7 @@ export class QueueService implements OnModuleInit {
     }
   }
 
-  async getCurrentQueuePeriod(fullName: string = ''): Promise<Period[]> {
+  async getCurrentQueuePeriod(fullName: string = ''): Promise<Period[][]> {
     try {
       let firstName: string;
       let secondName: string;
@@ -291,13 +291,15 @@ export class QueueService implements OnModuleInit {
           i++;
         }
         const currentPeriod: Period = {
-          start_time: startDate.toISOString(),
-          end_time: endDate.toISOString(),
+          startTime: startDate.toISOString(),
+          endTime: endDate.toISOString(),
           nextUsers: nextUsers,
         };
         periods.push(currentPeriod);
       }
-      return periods;
+      const periodsArray: Period[][] = [];
+      periodsArray.push(periods)
+      return periodsArray;
     } catch (e) {
       console.log(e);
       return [];
@@ -313,18 +315,25 @@ export class QueueService implements OnModuleInit {
           ['active', 'DESC'],
         ],
       });
+      if(queueUsers.length === 0) return []
       const inputData = await this.inputDataRepository.findOne();
       const periodsArray: Period[][] = [];
-      const firstPeriod = await this.getCurrentQueuePeriod();
+      const firstPeriod = (await this.getCurrentQueuePeriod())[0];
+      if(queueUsers.length < inputData.seats){
+        periodsArray.push(firstPeriod)
+        return periodsArray
+      }
       const startDate = queueUsers[queueUsers.length - 1].startActiveTime;
       let startIndex = 0;
       if (queueUsers.length % inputData.seats == 0) {
         startDate.setMonth(startDate.getMonth() + 1);
       } else {
-        startIndex = 1;
-        firstPeriod[firstPeriod.length - 1].nextUsers.push(
-          mapToUserInPeriod(queueUsers[0], null),
-        );
+        startIndex = 0;
+        for (startIndex = 0; startIndex < (inputData.seats - queueUsers.length % inputData.seats); startIndex++) {
+          firstPeriod[firstPeriod.length - 1].nextUsers.push(
+              mapToUserInPeriod(queueUsers[startIndex], null),
+          );
+        }
       }
       periodsArray.push(firstPeriod);
       const nextPeriod: Period[] = [];
@@ -350,8 +359,8 @@ export class QueueService implements OnModuleInit {
           i++;
         }
         nextPeriod.push({
-          start_time: startDate.toISOString(),
-          end_time: endDate.toISOString(),
+          startTime: startDate.toISOString(),
+          endTime: endDate.toISOString(),
           nextUsers: nextUsers,
         });
         startDate.setMonth(startDate.getMonth() + 1);
@@ -380,8 +389,8 @@ export class QueueService implements OnModuleInit {
       const currentUser = queueUsers.find((user) => user.id == dto.userId);
       if (currentUser == null) return [];
       userPeriodsArray.push({
-        start_time: currentUser.startActiveTime.toISOString(),
-        end_time: currentUser.endActiveTime.toISOString(),
+        startTime: currentUser.startActiveTime.toISOString(),
+        endTime: currentUser.endActiveTime.toISOString(),
       });
       const lastUserStartDate =
         queueUsers[queueUsers.length - 1].startActiveTime;
@@ -396,8 +405,8 @@ export class QueueService implements OnModuleInit {
             endTime.setMonth(endTime.getMonth() + 1);
             endTime.setDate(endTime.getDate() - 1);
             userPeriodsArray.push({
-              start_time: lastUserStartDate.toISOString(),
-              end_time: endTime.toISOString(),
+              startTime: lastUserStartDate.toISOString(),
+              endTime: endTime.toISOString(),
             });
           }
           globalUsersIndex++;
