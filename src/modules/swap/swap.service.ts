@@ -58,6 +58,10 @@ export class SwapService {
           isActive: swap.active,
           result: swap.result,
           sent: swap.sent,
+          swapInfo: {
+            from: swap.from,
+            to: swap.to
+          },
           sender: {
             id: swap.sender,
             fullName: swap.senderFullName,
@@ -78,6 +82,10 @@ export class SwapService {
           isActive: swap.active,
           result: swap.result,
           sent: swap.sent,
+          swapInfo: {
+            from: swap.from,
+            to: swap.to
+          },
           sender: {
             id: swap.sender,
             fullName: swap.senderFullName,

@@ -14,12 +14,22 @@ export class SwapResponseDto{
     sent: Date
 
     @ApiProperty()
+    swapInfo: SwapInfo
+
+    @ApiProperty()
     sender: SwapUserInfo
 
     @ApiProperty()
     receiver: SwapUserInfo
 }
 
+class SwapInfo{
+    @ApiProperty()
+    from: Date
+
+    @ApiProperty()
+    to: Date
+}
 class SwapUserInfo{
 
     @ApiProperty()
