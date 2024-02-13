@@ -1,7 +1,8 @@
 import { Column, Default, Model, Table } from 'sequelize-typescript';
+import {InferAttributes, InferCreationAttributes} from "sequelize";
 
 @Table({timestamps: false})
-export class Swap extends Model {
+export class Swap extends Model<InferAttributes<Swap>, InferCreationAttributes<Swap>> {
   @Default(false)
   @Column
   active: boolean;

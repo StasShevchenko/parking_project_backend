@@ -25,16 +25,16 @@ export class SwapService {
       const from = sender.startActiveTime;
       const to = receiver.startActiveTime;
       return await this.swapRepository.create({
-        is_active: true,
+        active: true,
         sent: sent,
         from: from,
         to: to,
         sender: dto.senderId,
-        sender_fullName: `${sender.firstName} ${sender.secondName}`,
-        sender_email: sender.email,
+        senderFullName: `${sender.firstName} ${sender.secondName}`,
+        senderEmail: sender.email,
         receiver: receiver.id,
-        receiver_fullName: `${receiver.firstName} ${receiver.secondName}`,
-        receiver_email: receiver.email,
+        receiverFullName: `${receiver.firstName} ${receiver.secondName}`,
+        receiverEmail: receiver.email,
       });
     } catch (e) {
       console.log(e);
