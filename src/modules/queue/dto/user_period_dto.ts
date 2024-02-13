@@ -1,4 +1,4 @@
 interface UserPeriodDto{
-    start_time: string,
-    end_time: string
+    startTime: string,
+    endTime: string
 }

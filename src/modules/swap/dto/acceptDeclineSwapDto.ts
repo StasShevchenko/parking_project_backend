@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class AcceptDeclineSwap {
+export class AcceptDeclineSwapDto {
   @ApiProperty()
   userId: number;
 

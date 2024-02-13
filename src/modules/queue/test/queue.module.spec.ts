@@ -172,7 +172,7 @@ describe('Queue module testing', () => {
         const finalResult = await queueController.getNextPeriod({
             fullName: '',
         });
-        const monthNumber = new Date(finalResult[1][1].start_time).getMonth() + 1
+        const monthNumber = new Date(finalResult[1][1].startTime).getMonth() + 1
         expect(monthNumber).toBe(4)
     })
 
@@ -205,7 +205,7 @@ describe('Queue module testing', () => {
         const finalResult = await queueController.getUserNextPeriods({
             userId: userId
         })
-        const monthNumber = new Date(finalResult[3].start_time).getMonth() + 1
+        const monthNumber = new Date(finalResult[3].startTime).getMonth() + 1
         expect(monthNumber).toEqual(6)
     })
 
@@ -223,7 +223,7 @@ describe('Queue module testing', () => {
             userId: userId
         })
         console.log(finalResult)
-        const monthNumber = new Date(finalResult[3].start_time).getMonth() + 1
+        const monthNumber = new Date(finalResult[3].startTime).getMonth() + 1
         expect(monthNumber).toEqual(7)
     })
 
@@ -315,7 +315,7 @@ describe('Queue module testing', () => {
         const periods = await queueController.getCurrentPeriod({
             fullName: ""
         })
-        const dateString = periods[0].start_time
+        const dateString = periods[0].startTime
         const date = new Date(dateString)
         jest.setSystemTime(new Date(2024, 0))
         expect(date.getMonth()).toBe(2)
