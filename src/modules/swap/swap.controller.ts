@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import {Body, Controller, Get, Param, Post} from '@nestjs/common';
 import {
   ApiForbiddenResponse,
   ApiOperation,
@@ -11,6 +11,7 @@ import { GetAllSwapByUserId } from './dto/get_swap_by_userId.dto';
 import { Swap } from './model/swap.model';
 import { SwapService } from './swap.service';
 import {CreateSwapRequestDto} from "./dto/createSwapRequest.dto";
+import {SwapResponseDto} from "./dto/swapResponse.dto";
 
 @ApiTags('Swap')
 @Controller('swap')
@@ -39,9 +40,9 @@ export class SwapController {
   })
   @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  @Post('getById')
-  GetAllSwapByUserId(@Body() dto: GetAllSwapByUserId): Promise<Swap[]> {
-    return this.swapService.GetAllSwapByUserId(dto);
+  @Get('/:id')
+  getSwapRequestsByUserId(@Param() id: number): Promise<SwapResponseDto[]> {
+    return this.swapService.getSwapRequestsByUserId(id);
   }
 
   @ApiOperation({

@@ -148,6 +148,7 @@ export class UserController {
     status: 200,
     type: ResponseUserDto,
   })
+
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
   @Get('')
   getUsers(

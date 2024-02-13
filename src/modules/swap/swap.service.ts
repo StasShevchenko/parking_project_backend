@@ -7,6 +7,7 @@ import { GetAllSwapByUserId } from './dto/get_swap_by_userId.dto';
 import { Swap } from './model/swap.model';
 import {CreateSwapRequestDto} from "./dto/createSwapRequest.dto";
 import {getZeroTimezoneDate} from "../../utils/getZeroTimezoneDate";
+import {SwapResponseDto} from "./dto/swapResponse.dto";
 
 @Injectable()
 export class SwapService {
@@ -41,26 +42,22 @@ export class SwapService {
     }
   }
 
-  async GetAllSwapByUserId(dto: GetAllSwapByUserId) {
+  async getSwapRequestsByUserId(userId: number): Promise<SwapResponseDto[]> {
     try {
-      const UserSenderSwap: Swap[] = await this.swapRepository.findAll({
-        where: { sender: dto.userId },
+      const userAsSenderSwapRequests: Swap[] = await this.swapRepository.findAll({
+        where: { sender: userId },
       });
-      const UserReceiverSwap: Swap[] = await this.swapRepository.findAll({
-        where: { receiver: dto.userId },
+      const userAsReceiverSwapRequests: Swap[] = await this.swapRepository.findAll({
+        where: { receiver: userId },
       });
-      const response = [];
+      const response: SwapResponseDto[] = [];
       // Запросы на обмен, которые отправил наш пользователь
-      for (var swap of UserSenderSwap) {
-        const SwapData = {
+      for (let swap of userAsSenderSwapRequests) {
+        const swapItem: SwapResponseDto = {
           id: swap.id,
-          is_active: swap.active,
+          isActive: swap.active,
           result: swap.result,
           sent: swap.sent,
-          swap: {
-            from: swap.from,
-            to: swap.to,
-          },
           sender: {
             id: swap.sender,
             fullName: swap.senderFullName,
@@ -72,19 +69,15 @@ export class SwapService {
             email: swap.receiverEmail,
           },
         };
-        response.push(SwapData);
+        response.push(swapItem);
       }
       // Запросы на обмен, которые пришли нашему пользователю
-      for (var swap of UserReceiverSwap) {
-        const SwapData = {
+      for (let swap of userAsReceiverSwapRequests) {
+        const swapItem: SwapResponseDto = {
           id: swap.id,
-          is_active: swap.active,
+          isActive: swap.active,
           result: swap.result,
           sent: swap.sent,
-          swap: {
-            from: swap.from,
-            to: swap.to,
-          },
           sender: {
             id: swap.sender,
             fullName: swap.senderFullName,
@@ -96,7 +89,7 @@ export class SwapService {
             email: swap.receiverEmail,
           },
         };
-        response.push(SwapData);
+        response.push(swapItem);
       }
       return response;
     } catch (e) {
