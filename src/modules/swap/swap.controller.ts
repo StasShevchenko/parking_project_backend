@@ -41,7 +41,7 @@ export class SwapController {
   @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
   @Get('/:id')
-  getSwapRequestsByUserId(@Param() id: number): Promise<SwapResponseDto[]> {
+  getSwapRequestsByUserId(@Param('id') id: number): Promise<SwapResponseDto[]> {
     return this.swapService.getSwapRequestsByUserId(id);
   }
 
