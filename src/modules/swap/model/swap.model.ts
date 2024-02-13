@@ -1,10 +1,10 @@
 import { Column, Default, Model, Table } from 'sequelize-typescript';
 
-@Table
+@Table({timestamps: false})
 export class Swap extends Model {
   @Default(false)
   @Column
-  is_active: boolean;
+  active: boolean;
 
   @Column
   result?: boolean;
@@ -22,16 +22,16 @@ export class Swap extends Model {
   sender: number;
 
   @Column
-  sender_fullName: string;
+  senderFullName: string;
   @Column
-  sender_email: string;
+  senderEmail: string;
 
   @Column
   receiver: number;
 
   @Column
-  receiver_fullName: string;
+  receiverFullName: string;
 
   @Column
-  receiver_email: string;
+  receiverEmail: string;
 }

@@ -8,9 +8,10 @@ export interface UserInPeriod {
   active: boolean,
   avatar: string
   swap?: number
+  fromNextPeriod?: boolean
 }
 
-export function mapToUserInPeriod(user: User, swap: number): UserInPeriod{
+export function mapToUserInPeriod(user: User, swap: number, fromNextPeriod?: boolean): UserInPeriod{
   return {
     id: user.id,
     firstName: user.firstName,
@@ -18,6 +19,7 @@ export function mapToUserInPeriod(user: User, swap: number): UserInPeriod{
     email: user.email,
     active: user.active,
     avatar: user.avatar,
-    swap: swap
+    swap: swap,
+    fromNextPeriod: fromNextPeriod
   }
 }

@@ -2,9 +2,11 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { QueueService } from 'src/modules/queue/queue.service';
 import { UserService } from 'src/modules/user/user.service';
-import { AcceptDeclineSwap } from './dto/accept_decline_swap.dto';
+import { AcceptDeclineSwapDto } from './dto/acceptDeclineSwapDto';
 import { GetAllSwapByUserId } from './dto/get_swap_by_userId.dto';
 import { Swap } from './model/swap.model';
+import {CreateSwapRequestDto} from "./dto/createSwapRequest.dto";
+import {getZeroTimezoneDate} from "../../utils/getZeroTimezoneDate";
 
 @Injectable()
 export class SwapService {
@@ -14,22 +16,24 @@ export class SwapService {
     private readonly userService: UserService,
   ) {}
 
-  async CreateNewSwap(dto): Promise<Swap> {
+  async createNewSwapRequest(dto: CreateSwapRequestDto): Promise<Swap> {
     try {
-      const sent = new Date(dto.sent);
-      const from = new Date(dto.swap.from);
-      const to = new Date(dto.swap.to);
+      const sent = getZeroTimezoneDate(new Date());
+      const sender = await this.userService.findUserById(dto.senderId)
+      const receiver = await this.userService.findUserById(dto.receiverId)
+      const from = sender.startActiveTime;
+      const to = receiver.startActiveTime;
       return await this.swapRepository.create({
         is_active: true,
         sent: sent,
         from: from,
         to: to,
-        sender: dto.sender.id,
-        sender_fullName: dto.sender.fullName,
-        sender_email: dto.sender.email,
-        receiver: dto.receiver.id,
-        receiver_fullName: dto.receiver.fullName,
-        receiver_email: dto.receiver.email,
+        sender: dto.senderId,
+        sender_fullName: `${sender.firstName} ${sender.secondName}`,
+        sender_email: sender.email,
+        receiver: receiver.id,
+        receiver_fullName: `${receiver.firstName} ${receiver.secondName}`,
+        receiver_email: receiver.email,
       });
     } catch (e) {
       console.log(e);
@@ -50,7 +54,7 @@ export class SwapService {
       for (var swap of UserSenderSwap) {
         const SwapData = {
           id: swap.id,
-          is_active: swap.is_active,
+          is_active: swap.active,
           result: swap.result,
           sent: swap.sent,
           swap: {
@@ -59,13 +63,13 @@ export class SwapService {
           },
           sender: {
             id: swap.sender,
-            fullName: swap.sender_fullName,
-            email: swap.sender_email,
+            fullName: swap.senderFullName,
+            email: swap.senderEmail,
           },
           receiver: {
             id: swap.receiver,
-            fullName: swap.receiver_fullName,
-            email: swap.receiver_email,
+            fullName: swap.receiverFullName,
+            email: swap.receiverEmail,
           },
         };
         response.push(SwapData);
@@ -74,7 +78,7 @@ export class SwapService {
       for (var swap of UserReceiverSwap) {
         const SwapData = {
           id: swap.id,
-          is_active: swap.is_active,
+          is_active: swap.active,
           result: swap.result,
           sent: swap.sent,
           swap: {
@@ -83,13 +87,13 @@ export class SwapService {
           },
           sender: {
             id: swap.sender,
-            fullName: swap.sender_fullName,
-            email: swap.sender_email,
+            fullName: swap.senderFullName,
+            email: swap.senderEmail,
           },
           receiver: {
             id: swap.receiver,
-            fullName: swap.receiver_fullName,
-            email: swap.receiver_email,
+            fullName: swap.receiverFullName,
+            email: swap.receiverEmail,
           },
         };
         response.push(SwapData);
@@ -101,13 +105,13 @@ export class SwapService {
     }
   }
 
-  async AcceptSwap(dto: AcceptDeclineSwap) {
+  async AcceptSwap(dto: AcceptDeclineSwapDto) {
     try {
       const swap = await this.swapRepository.findByPk(dto.id);
       const senderUser = await this.userService.findUserById(swap.sender);
       const receiverUser = await this.userService.findUserById(swap.receiver);
       // Если соглашается получатель запроса и запрос еще не обработан
-      if (swap.receiver == dto.userId && swap.is_active == true) {
+      if (swap.receiver == dto.userId && swap.active == true) {
         // Если оба юзера неактивны, то меняемся
         if (senderUser.active || receiverUser.active) {
           throw new BadRequestException({
@@ -115,7 +119,7 @@ export class SwapService {
           });
         } else {
           await this.queueService.swapUsers(swap.receiver, swap.sender);
-          swap.is_active = false;
+          swap.active = false;
           swap.result = true;
           await swap.save();
           return true;
@@ -129,12 +133,12 @@ export class SwapService {
     }
   }
 
-  async DeclineSwap(dto: AcceptDeclineSwap): Promise<boolean> {
+  async DeclineSwap(dto: AcceptDeclineSwapDto): Promise<boolean> {
     try {
       const swap = await this.swapRepository.findByPk(dto.id);
       // Если соглашается получатель запроса и запрос еще не обработан
-      if (swap.receiver == dto.userId && swap.is_active == true) {
-        swap.is_active = false;
+      if (swap.receiver == dto.userId && swap.active == true) {
+        swap.active = false;
         swap.result = false;
         await swap.save();
         return true;
