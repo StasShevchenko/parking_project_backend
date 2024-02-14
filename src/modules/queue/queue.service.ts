@@ -13,6 +13,7 @@ import {
 } from '../../interfaces/user.interface';
 import {Op} from 'sequelize';
 import {resetDate} from "../../utils/resetDate";
+import {Sequelize} from "sequelize-typescript";
 
 export * from 'src/interfaces/period.interface';
 
@@ -31,7 +32,12 @@ export class QueueService implements OnModuleInit {
             const inputData = await this.inputDataRepository.findOne();
             const queueUsers = await this.userRepository.findAll({
                 where: {queueUser: true},
-                order: [['startActiveTime', 'ASC']],
+                include: {
+                    model: Queue
+                },
+                order: [
+                    [Sequelize.col('queue.number'), 'ASC'],
+                ],
             });
             // Получаем юзера из бд по userId из dto
             const user = await this.userRepository.findOne({
@@ -91,9 +97,11 @@ export class QueueService implements OnModuleInit {
             const inputData = await this.inputDataRepository.findOne();
             const queueUsers = await this.userRepository.findAll({
                 where: {queueUser: true},
+                include: {
+                    model: Queue
+                },
                 order: [
-                    ['startActiveTime', 'ASC'],
-                    ['active', 'DESC'],
+                    [Sequelize.col('queue.number'), 'ASC'],
                 ],
             });
             if (queueUsers.length <= inputData.seats) return null;
@@ -173,9 +181,11 @@ export class QueueService implements OnModuleInit {
         try {
             let queueUsers = await this.userRepository.findAll({
                 where: {queueUser: true},
+                include: {
+                    model: Queue
+                },
                 order: [
-                    ['startActiveTime', 'ASC'],
-                    ['active', 'DESC'],
+                    [Sequelize.col('queue.number'), 'ASC'],
                 ],
             });
             const user = await this.userRepository.findOne({where: {id: userId}});
@@ -233,6 +243,9 @@ export class QueueService implements OnModuleInit {
                 secondName = '';
             }
             const queueUsers = await this.userRepository.findAll({
+                include: {
+                    model: Queue
+                },
                 where: [
                     {queueUser: true},
                     {
@@ -259,9 +272,7 @@ export class QueueService implements OnModuleInit {
                     },
                 ],
                 order: [
-                    ['startActiveTime', 'ASC'],
-                    ['active', 'DESC'],
-                    ['id', 'ASC'],
+                    [Sequelize.col('queue.number'), 'ASC'],
                 ],
             });
             const periods: Period[] = [];
@@ -307,9 +318,11 @@ export class QueueService implements OnModuleInit {
         try {
             const queueUsers = await this.userRepository.findAll({
                 where: {queueUser: true},
+                include: {
+                    model: Queue
+                },
                 order: [
-                    ['startActiveTime', 'ASC'],
-                    ['active', 'DESC'],
+                    [Sequelize.col('queue.number'), 'ASC'],
                 ],
             });
             if (queueUsers.length === 0) return []
@@ -380,9 +393,11 @@ export class QueueService implements OnModuleInit {
             const inputData = await this.inputDataRepository.findOne();
             const queueUsers = await this.userRepository.findAll({
                 where: {queueUser: true},
+                include: {
+                    model: Queue
+                },
                 order: [
-                    ['startActiveTime', 'ASC'],
-                    ['active', 'DESC'],
+                    [Sequelize.col('queue.number'), 'ASC'],
                 ],
             });
             const currentUser = queueUsers.find((user) => user.id == dto.userId);

@@ -1,5 +1,14 @@
 'use strict';
-const {resetDate} = require("../src/utils/resetDate");
+const getZeroTimezoneDate = (date) => {
+    const timezoneOffset = date.getTimezoneOffset() * 60000
+    return new Date(date.getTime() - timezoneOffset)
+}
+const resetDate = (date) => {
+    date.setHours(0, 0, 0, 0)
+    date.setDate(1)
+    date = getZeroTimezoneDate(date)
+    return date
+}
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
     //sequelize db:seed --seed my_seeder_file.js
@@ -7,15 +16,21 @@ module.exports = {
         //8 юзеров на очередь в 3 места
         //займут 3 периода, значит нужно 3 даты
         const firstPeriodStartDate = resetDate(new Date())
-        const firstPeriodEndDate = new Date(firstPeriodStartDate.getDate() - 1)
+        const firstPeriodEndDate = resetDate(new Date())
+        firstPeriodEndDate.setMonth(firstPeriodStartDate.getMonth() + 1)
+        firstPeriodEndDate.setDate(firstPeriodStartDate.getDate() - 1)
 
         const secondPeriodStartDate = new Date(firstPeriodStartDate)
         secondPeriodStartDate.setMonth(secondPeriodStartDate.getMonth() + 1)
-        const secondPeriodEndDate = new Date(secondPeriodStartDate.getDate() - 1)
+        const secondPeriodEndDate = new Date(firstPeriodStartDate)
+        secondPeriodEndDate.setMonth(secondPeriodStartDate.getMonth() + 1)
+        secondPeriodEndDate.setDate(secondPeriodStartDate.getDate() - 1)
 
         const thirdPeriodStartDate = new Date(firstPeriodStartDate)
         thirdPeriodStartDate.setMonth(thirdPeriodStartDate.getMonth() + 2)
-        const thirdPeriodEndDate = new Date(secondPeriodStartDate.getDate() - 1)
+        const thirdPeriodEndDate = new Date(thirdPeriodStartDate)
+        thirdPeriodEndDate.setMonth(thirdPeriodStartDate.getMonth() + 1)
+        thirdPeriodEndDate.setDate(thirdPeriodEndDate.getDate() - 1)
 
         await queryInterface.bulkInsert('Users', [
             //1 юзер
@@ -77,7 +92,7 @@ module.exports = {
                 isAdmin: true,
                 active: false,
                 isSuperAdmin: true,
-                queueUser: false,
+                queueUser: true,
                 startActiveTime: secondPeriodStartDate,
                 endActiveTime: secondPeriodEndDate,
                 lastActivePeriod: secondPeriodEndDate,
@@ -163,32 +178,32 @@ module.exports = {
                 number: 1
             },
             {
-                userId: 1,
-                number: 1
+                userId: 2,
+                number: 2
             },
             {
-                userId: 1,
-                number: 1
+                userId: 3,
+                number: 3
             },
             {
-                userId: 1,
-                number: 1
+                userId: 4,
+                number: 4
             },
             {
-                userId: 1,
-                number: 1
+                userId: 5,
+                number: 5
             },
             {
-                userId: 1,
-                number: 1
+                userId: 6,
+                number: 6
             },
             {
-                userId: 1,
-                number: 1
+                userId: 7,
+                number: 7
             },
             {
-                userId: 1,
-                number: 1
+                userId: 8,
+                number: 8
             }
         ])
     },
