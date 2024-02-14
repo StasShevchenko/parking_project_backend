@@ -21,6 +21,7 @@ import {TokenModule} from '../token/token.module';
 import {User} from '../user/model/user.model';
 import {UserModule} from '../user/user.module';
 import {join} from 'path';
+import {use} from "passport";
 
 @Module({
     imports: [
@@ -47,6 +48,9 @@ import {join} from 'path';
                 synchronize: true,
                 autoLoadModels: true,
                 logging: false,
+                dialectOptions: {
+                    useUTC: false
+                },
                 models: [User, Queue, InputData, Notification, MailKey, Swap],
             }),
         }),

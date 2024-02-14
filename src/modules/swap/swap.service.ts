@@ -2,8 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { QueueService } from 'src/modules/queue/queue.service';
 import { UserService } from 'src/modules/user/user.service';
-import { AcceptDeclineSwapDto } from './dto/acceptDeclineSwapDto';
-import { GetAllSwapByUserId } from './dto/get_swap_by_userId.dto';
+import { AcceptDeclineSwapDto } from './dto/acceptDeclineSwap.dto';
 import { Swap } from './model/swap.model';
 import {CreateSwapRequestDto} from "./dto/createSwapRequest.dto";
 import {getZeroTimezoneDate} from "../../utils/getZeroTimezoneDate";
@@ -106,20 +105,20 @@ export class SwapService {
     }
   }
 
-  async AcceptSwap(dto: AcceptDeclineSwapDto) {
+  async acceptSwap(dto: AcceptDeclineSwapDto) {
     try {
-      const swap = await this.swapRepository.findByPk(dto.id);
-      const senderUser = await this.userService.findUserById(swap.sender);
-      const receiverUser = await this.userService.findUserById(swap.receiver);
+      const swap = await this.swapRepository.findByPk(dto.swapId);
+      const sender = await this.userService.findUserById(swap.sender);
+      const receiver = await this.userService.findUserById(swap.receiver);
       // Если соглашается получатель запроса и запрос еще не обработан
-      if (swap.receiver == dto.userId && swap.active == true) {
+      if (swap.receiver === dto.userId && swap.active == true) {
         // Если оба юзера неактивны, то меняемся
-        if (senderUser.active || receiverUser.active) {
+        if (sender.active || receiver.active) {
           throw new BadRequestException({
-            message: 'Один из пользователей активен',
+            message: 'Active users cannot swap',
           });
         } else {
-          await this.queueService.swapUsers(swap.receiver, swap.sender);
+          await this.queueService.swapUsers(swap.receiver, swap.sender, swap.id);
           swap.active = false;
           swap.result = true;
           await swap.save();
@@ -134,11 +133,11 @@ export class SwapService {
     }
   }
 
-  async DeclineSwap(dto: AcceptDeclineSwapDto): Promise<boolean> {
+  async declineSwap(dto: AcceptDeclineSwapDto): Promise<boolean> {
     try {
-      const swap = await this.swapRepository.findByPk(dto.id);
+      const swap = await this.swapRepository.findByPk(dto.swapId);
       // Если соглашается получатель запроса и запрос еще не обработан
-      if (swap.receiver == dto.userId && swap.active == true) {
+      if (swap.receiver == dto.userId && swap.active === true) {
         swap.active = false;
         swap.result = false;
         await swap.save();

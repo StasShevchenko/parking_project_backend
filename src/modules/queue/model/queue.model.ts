@@ -1,6 +1,6 @@
 import { Column, Model, Table } from 'sequelize-typescript';
 
-@Table
+@Table({timestamps: false})
 export class Queue extends Model {
   @Column
   userId: number;
@@ -9,11 +9,5 @@ export class Queue extends Model {
   number: number;
 
   @Column
-  start_period_time: Date;
-
-  @Column
-  end_period_time: Date;
-
-  @Column
-  swap: number;
+  swap?: number;
 }

@@ -5,7 +5,7 @@ export class AcceptDeclineSwapDto {
   userId: number;
 
   @ApiProperty()
-  id: number;
+  swapId: number;
 
   @ApiProperty()
   accept: boolean;

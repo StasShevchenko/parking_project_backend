@@ -6,8 +6,7 @@ import {
   ApiTags,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
-import { AcceptDeclineSwapDto } from './dto/acceptDeclineSwapDto';
-import { GetAllSwapByUserId } from './dto/get_swap_by_userId.dto';
+import { AcceptDeclineSwapDto } from './dto/acceptDeclineSwap.dto';
 import { Swap } from './model/swap.model';
 import { SwapService } from './swap.service';
 import {CreateSwapRequestDto} from "./dto/createSwapRequest.dto";
@@ -53,10 +52,10 @@ export class SwapController {
   })
   @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  @Post('swapResponse')
-  SwapResponse(@Body() dto: AcceptDeclineSwapDto): Promise<boolean> {
+  @Post('processSwapRequest')
+  processSwapRequest(@Body() dto: AcceptDeclineSwapDto): Promise<boolean> {
     return dto.accept
-      ? this.swapService.AcceptSwap(dto)
-      : this.swapService.DeclineSwap(dto);
+      ? this.swapService.acceptSwap(dto)
+      : this.swapService.declineSwap(dto);
   }
 }

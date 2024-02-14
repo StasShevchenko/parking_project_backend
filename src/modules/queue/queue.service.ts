@@ -12,7 +12,7 @@ import {
     UserInPeriod,
 } from '../../interfaces/user.interface';
 import {Op} from 'sequelize';
-import {resetDate} from "./utils/resetDate";
+import {resetDate} from "../../utils/resetDate";
 
 export * from 'src/interfaces/period.interface';
 
@@ -50,9 +50,6 @@ export class QueueService implements OnModuleInit {
                 if (queueUsers.length == 0) {
                     endDate.setMonth(startDate.getMonth() + 1);
                     endDate.setDate(endDate.getDate() - 1);
-                    const userTimezoneOffset = startDate.getTimezoneOffset() * 60000;
-                    startDate = new Date(startDate.getTime() - userTimezoneOffset);
-                    endDate = new Date(endDate.getTime() - userTimezoneOffset);
                 } // Если не делится на число мест, то значит в этом
                 //месяце еще остались места и сроки как у последнего юзера в очереди
                 else if (queueUsers.length % inputData.seats != 0) {
@@ -66,9 +63,6 @@ export class QueueService implements OnModuleInit {
                     startDate.setMonth(lastUserStartDate.getMonth() + 1);
                     endDate.setMonth(startDate.getMonth() + 1);
                     endDate.setDate(endDate.getDate() - 1);
-                    const userTimezoneOffset = startDate.getTimezoneOffset() * 60000;
-                    startDate = new Date(startDate.getTime() - userTimezoneOffset);
-                    endDate = new Date(endDate.getTime() - userTimezoneOffset);
                 }
 
                 user.queueUser = true;
@@ -427,7 +421,7 @@ export class QueueService implements OnModuleInit {
         }
     }
 
-    async swapUsers(senderId: number, receiverId: number): Promise<boolean> {
+    async swapUsers(senderId: number, receiverId: number, swapId: number): Promise<boolean> {
         try {
             const senderInQueue: Queue = await this.queueRepository.findOne({
                 where: {userId: senderId},
@@ -437,9 +431,9 @@ export class QueueService implements OnModuleInit {
             });
             const senderNumber: number = senderInQueue.number;
             senderInQueue.number = receiverInQueue.number;
-            senderInQueue.swap = receiverInQueue.userId;
+            senderInQueue.swap = swapId;
             receiverInQueue.number = senderNumber;
-            receiverInQueue.swap = senderInQueue.userId;
+            receiverInQueue.swap = swapId;
             await senderInQueue.save();
             await receiverInQueue.save();
             return true;
