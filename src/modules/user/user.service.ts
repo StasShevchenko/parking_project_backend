@@ -17,6 +17,8 @@ import {ForgotPasswordDto} from './dto/forgot_password.dto';
 import {MailKeyReviewDto} from './dto/mail_key_review.dto';
 import {UpdateAllUserDataDto} from './dto/update.all_user_data';
 import {User} from './model/user.model';
+import {Queue} from "../queue/model/queue.model";
+import {Swap} from "../swap/model/swap.model";
 
 @Injectable()
 export class UserService {
@@ -76,10 +78,20 @@ export class UserService {
         const user = await this.userRepository.findOne({
             where: {id},
             attributes: {exclude: ['password', 'refreshToken']},
+            include: [
+                {
+                    model: Queue,
+                    include: [{
+                        model: Swap
+                    }]
+                }
+            ]
         });
         if (user == null) {
             throw new BadRequestException()
         } else {
+            user.startActiveTime = this.queueService.getUserStartDate(user)
+            user.endActiveTime = this.queueService.getUserEndDate(user)
             return user
         }
     }
