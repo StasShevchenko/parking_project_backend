@@ -15,14 +15,14 @@ export class ChangePasswordDto {
   repeatNewPassword: string;
 }
 
-export class PasswordForgotChangeDto {
+export class ForgotChangePasswordDto {
   @ApiProperty()
   @IsString()
   newPassword: string;
 
   @ApiProperty()
   @IsString()
-  repeat_newPassword: string;
+  repeatNewPassword: string;
 
   @ApiProperty()
   @IsString()
