@@ -513,7 +513,7 @@ export class QueueService implements OnModuleInit {
 
     getUserStartDate(user: User): Date{
         let startDate
-        if (user.queue.swap) {
+        if (user.queue?.swap) {
             if (user.queue.swap.receiver === user.id) {
                 startDate = user.queue.swap.from
             } else if (user.queue.swap.sender === user.id) {
