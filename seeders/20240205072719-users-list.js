@@ -175,35 +175,43 @@ module.exports = {
         await queryInterface.bulkInsert('Queues', [
             {
                 userId: 1,
-                number: 1
+                number: 1,
+                swapNumber: 1
             },
             {
                 userId: 2,
-                number: 2
+                number: 2,
+                swapNumber: 2
             },
             {
                 userId: 3,
-                number: 3
+                number: 3,
+                swapNumber: 3
             },
             {
                 userId: 4,
-                number: 4
+                number: 4,
+                swapNumber: 4
             },
             {
                 userId: 5,
-                number: 5
+                number: 5,
+                swapNumber: 5
             },
             {
                 userId: 6,
-                number: 6
+                number: 6,
+                swapNumber: 6
             },
             {
                 userId: 7,
-                number: 7
+                number: 7,
+                swapNumber: 7
             },
             {
                 userId: 8,
-                number: 8
+                number: 8,
+                swapNumber: 8
             }
         ])
     },

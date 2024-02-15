@@ -14,6 +14,7 @@ import {
 import {Op} from 'sequelize';
 import {resetDate} from "../../utils/resetDate";
 import {Sequelize} from "sequelize-typescript";
+import {Swap} from "../swap/model/swap.model";
 
 export * from 'src/interfaces/period.interface';
 
@@ -80,8 +81,7 @@ export class QueueService implements OnModuleInit {
                 return await this.queueRepository.create({
                     userId: dto.userId,
                     number: (await this.getMaxNumber()) + 1,
-                    start_period_time: startDate,
-                    end_period_time: endDate,
+                    swapNumber: (await this.getMaxNumber()) + 1
                 });
             }
         } catch (e) {
@@ -139,7 +139,7 @@ export class QueueService implements OnModuleInit {
                         //Делаем новых юзеров активными
                         if (i < inputData.seats) {
                             queueUsers[moveCount - i].active = true;
-                            userQueueEntry.swap = null;
+                            userQueueEntry.swapId = null;
                             await userQueueEntry.save();
                             await queueUsers[moveCount - i].save();
                         }
@@ -243,9 +243,13 @@ export class QueueService implements OnModuleInit {
                 secondName = '';
             }
             const queueUsers = await this.userRepository.findAll({
-                include: {
-                    model: Queue
-                },
+                include:[ {
+                    model: Queue,
+                    include: [{
+                        model: Swap,
+                        required: false
+                    }]
+                }],
                 where: [
                     {queueUser: true},
                     {
@@ -272,29 +276,23 @@ export class QueueService implements OnModuleInit {
                     },
                 ],
                 order: [
-                    [Sequelize.col('queue.number'), 'ASC'],
+                    [Sequelize.col('queue.swapNumber'), 'ASC'],
                 ],
             });
             const periods: Period[] = [];
             for (let i = 0; i < queueUsers.length; i++) {
-                const startDate = queueUsers[i].startActiveTime;
-                const endDate = queueUsers[i].endActiveTime;
+                const startDate = this.getUserStartDate(queueUsers[i]);
+                const endDate = this.getUserEndDate(queueUsers[i]);
                 const nextUsers: UserInPeriod[] = [];
-                const userQueueItem = await this.queueRepository.findOne({
-                    where: {userId: queueUsers[i].id},
-                });
                 nextUsers.push(
-                    mapToUserInPeriod(queueUsers[i], userQueueItem?.swap ?? null),
+                    mapToUserInPeriod(queueUsers[i], queueUsers[i].queue.swapId ?? null),
                 );
                 while (
                     i < queueUsers.length - 1 &&
-                    queueUsers[i + 1].startActiveTime.getTime() == startDate.getTime()
+                    this.getUserStartDate(queueUsers[i + 1]).getTime() == startDate.getTime()
                     ) {
-                    const userQueueItem = await this.queueRepository.findOne({
-                        where: {userId: queueUsers[i + 1].id},
-                    });
                     nextUsers.push(
-                        mapToUserInPeriod(queueUsers[i + 1], userQueueItem?.swap ?? null),
+                        mapToUserInPeriod(queueUsers[i + 1], queueUsers[i + 1].queue.swapId ?? null),
                     );
                     i++;
                 }
@@ -322,7 +320,7 @@ export class QueueService implements OnModuleInit {
                     model: Queue
                 },
                 order: [
-                    [Sequelize.col('queue.number'), 'ASC'],
+                    [Sequelize.col('queue.swapNumber'), 'ASC'],
                 ],
             });
             if (queueUsers.length === 0) return []
@@ -364,7 +362,7 @@ export class QueueService implements OnModuleInit {
                     nextUsers.push(
                         mapToUserInPeriod(
                             queueUsers[i + 1],
-                            currentUserQueueItem?.swap ?? null,
+                            currentUserQueueItem?.swapId ?? null,
                             true,
                         ),
                     );
@@ -445,10 +443,10 @@ export class QueueService implements OnModuleInit {
                 where: {userId: receiverId},
             });
             const senderNumber: number = senderInQueue.number;
-            senderInQueue.number = receiverInQueue.number;
-            senderInQueue.swap = swapId;
-            receiverInQueue.number = senderNumber;
-            receiverInQueue.swap = swapId;
+            senderInQueue.swapNumber = receiverInQueue.number;
+            senderInQueue.swapId = swapId;
+            receiverInQueue.swapNumber = senderNumber;
+            receiverInQueue.swapId = swapId;
             await senderInQueue.save();
             await receiverInQueue.save();
             return true;
@@ -510,6 +508,28 @@ export class QueueService implements OnModuleInit {
         } catch (e) {
             console.log(e);
         }
+    }
+
+    getUserStartDate(user: User): Date{
+        let startDate
+        if (user.queue.swap) {
+            if (user.queue.swap.receiver === user.id) {
+                startDate = user.queue.swap.from
+            } else if (user.queue.swap.sender === user.id) {
+                startDate = user.queue.swap.to
+            }
+        } else{
+            startDate = user.startActiveTime
+        }
+        return startDate
+    }
+
+    getUserEndDate(user: User): Date{
+        const startDate = this.getUserStartDate(user)
+        const endDate = new Date(startDate)
+        endDate.setMonth(endDate.getMonth() + 1)
+        endDate.setDate(endDate.getDate() - 1)
+        return endDate
     }
 
     async getMaxNumber(): Promise<number> {
