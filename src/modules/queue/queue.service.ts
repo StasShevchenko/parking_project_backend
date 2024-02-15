@@ -320,7 +320,7 @@ export class QueueService implements OnModuleInit {
                     model: Queue
                 },
                 order: [
-                    [Sequelize.col('queue.swapNumber'), 'ASC'],
+                    [Sequelize.col('queue.number'), 'ASC'],
                 ],
             });
             if (queueUsers.length === 0) return []
