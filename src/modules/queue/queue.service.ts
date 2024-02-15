@@ -189,6 +189,7 @@ export class QueueService implements OnModuleInit {
                 ],
             });
             const user = await this.userRepository.findOne({where: {id: userId}});
+            if(!user.queueUser) return
             const inputData = await this.inputDataRepository.findOne();
             const userIndex = queueUsers.findIndex((it) => it.id == user.id);
             user.queueUser = false;
