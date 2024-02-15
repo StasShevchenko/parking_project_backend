@@ -343,6 +343,7 @@ export class QueueService implements OnModuleInit {
                         mapToUserInPeriod(queueUsers[startIndex], null, true),
                     );
                 }
+                startDate.setMonth(startDate.getMonth() + 1);
             }
             periodsArray.push(firstPeriod);
             const nextPeriod: Period[] = [];
