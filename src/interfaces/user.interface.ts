@@ -1,4 +1,5 @@
 import {User} from "../modules/user/model/user.model";
+import {Swap} from "../modules/swap/model/swap.model";
 
 export interface UserInPeriod {
   id: number;
@@ -8,6 +9,7 @@ export interface UserInPeriod {
   active: boolean,
   avatar: string
   swap?: number
+  swapInfo?: Swap
   fromNextPeriod?: boolean
 }
 
@@ -20,6 +22,7 @@ export function mapToUserInPeriod(user: User, swap: number, fromNextPeriod?: boo
     active: user.active,
     avatar: user.avatar,
     swap: swap,
+    swapInfo: user.queue.swap,
     fromNextPeriod: fromNextPeriod
   }
 }

@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import {Body, Controller, Get, Param, Post} from '@nestjs/common';
 import {
   ApiForbiddenResponse,
   ApiOperation,
@@ -6,11 +6,11 @@ import {
   ApiTags,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
-import { AcceptDeclineSwapDto } from './dto/acceptDeclineSwapDto';
-import { GetAllSwapByUserId } from './dto/get_swap_by_userId.dto';
+import { AcceptDeclineSwapDto } from './dto/acceptDeclineSwap.dto';
 import { Swap } from './model/swap.model';
 import { SwapService } from './swap.service';
 import {CreateSwapRequestDto} from "./dto/createSwapRequest.dto";
+import {SwapResponseDto} from "./dto/swapResponse.dto";
 
 @ApiTags('Swap')
 @Controller('swap')
@@ -39,9 +39,9 @@ export class SwapController {
   })
   @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  @Post('getById')
-  GetAllSwapByUserId(@Body() dto: GetAllSwapByUserId): Promise<Swap[]> {
-    return this.swapService.GetAllSwapByUserId(dto);
+  @Get('/:id')
+  getSwapRequestsByUserId(@Param('id') id: number): Promise<SwapResponseDto[]> {
+    return this.swapService.getSwapRequestsByUserId(id);
   }
 
   @ApiOperation({
@@ -52,10 +52,10 @@ export class SwapController {
   })
   @ApiUnprocessableEntityResponse({ description: 'Bad Request' })
   @ApiForbiddenResponse({ description: 'Unauthorized Request' })
-  @Post('swapResponse')
-  SwapResponse(@Body() dto: AcceptDeclineSwapDto): Promise<boolean> {
+  @Post('processSwapRequest')
+  processSwapRequest(@Body() dto: AcceptDeclineSwapDto): Promise<boolean> {
     return dto.accept
-      ? this.swapService.AcceptSwap(dto)
-      : this.swapService.DeclineSwap(dto);
+      ? this.swapService.acceptSwap(dto)
+      : this.swapService.declineSwap(dto);
   }
 }

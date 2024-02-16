@@ -13,14 +13,13 @@ import {AuthModule} from '../auth/auth.module';
 import {InputDataModule} from '../input-data/input-data.module';
 import {InputData} from '../input-data/model/input-data.model';
 import {MailModule} from '../mail/mail.module';
-import {MailKeyModule} from '../mail_key/mail_key.module';
-import {MailKey} from '../mail_key/model/mail_key.model';
 import {Notification} from '../notifications/model/notifications.model';
 import {NotificationsModule} from '../notifications/notifications.module';
 import {TokenModule} from '../token/token.module';
 import {User} from '../user/model/user.model';
 import {UserModule} from '../user/user.module';
 import {join} from 'path';
+import {use} from "passport";
 
 @Module({
     imports: [
@@ -47,7 +46,10 @@ import {join} from 'path';
                 synchronize: true,
                 autoLoadModels: true,
                 logging: false,
-                models: [User, Queue, InputData, Notification, MailKey, Swap],
+                dialectOptions: {
+                    useUTC: false
+                },
+                models: [User, Queue, InputData, Notification, Swap],
             }),
         }),
         UserModule,
@@ -57,7 +59,6 @@ import {join} from 'path';
         InputDataModule,
         NotificationsModule,
         MailModule,
-        MailKeyModule,
         AvatarModule,
         SwapModule,
     ],

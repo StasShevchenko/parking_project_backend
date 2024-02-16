@@ -5,18 +5,16 @@ import {Op} from 'sequelize';
 import * as uuid from 'uuid';
 import {AvatarService} from '../avatar/avatar.service';
 import {MailService} from '../mail/mail.service';
-import {MailKeyService} from '../mail_key/mail_key.service';
 import {QueueService} from '../queue/queue.service';
 import {CreateUserDto} from './dto/createUser.dto';
 import {ChangeAvatarDto} from './dto/changeAvatar.dto';
-import {
-    ChangePasswordDto,
-    PasswordForgotChangeDto,
-} from './dto/changePassword.dto';
-import {ForgotPasswordDto} from './dto/forgot_password.dto';
-import {MailKeyReviewDto} from './dto/mail_key_review.dto';
+import {ChangePasswordDto, ForgotChangePasswordDto,} from './dto/changePassword.dto';
+import {ForgotPasswordDto} from './dto/forgotPassword.dto';
 import {UpdateAllUserDataDto} from './dto/update.all_user_data';
 import {User} from './model/user.model';
+import {Queue} from "../queue/model/queue.model";
+import {Swap} from "../swap/model/swap.model";
+import {KeyService} from "./key.service";
 
 @Injectable()
 export class UserService {
@@ -24,7 +22,7 @@ export class UserService {
         @InjectModel(User) private readonly userRepository: typeof User,
         private readonly queueService: QueueService,
         private readonly mailService: MailService,
-        private readonly mailKeyService: MailKeyService,
+        private readonly keyService: KeyService,
         private readonly avatarService: AvatarService,
     ) {
     }
@@ -76,10 +74,20 @@ export class UserService {
         const user = await this.userRepository.findOne({
             where: {id},
             attributes: {exclude: ['password', 'refreshToken']},
+            include: [
+                {
+                    model: Queue,
+                    include: [{
+                        model: Swap
+                    }]
+                }
+            ]
         });
         if (user == null) {
             throw new BadRequestException()
         } else {
+            user.startActiveTime = this.queueService.getUserStartDate(user)
+            user.endActiveTime = this.queueService.getUserEndDate(user)
             return user
         }
     }
@@ -160,26 +168,26 @@ export class UserService {
         }
     }
 
-    async ForgotPasswordChange(dto: PasswordForgotChangeDto): Promise<boolean> {
-        const mailKey = await this.KeyReview({key: dto.key});
+    async forgotPasswordChange(dto: ForgotChangePasswordDto): Promise<boolean> {
+        const key =  this.keyService.reviewKey(dto.key)
         const user = await this.userRepository.findOne({
-            where: {email: mailKey},
+            where: {email: key.email},
         });
         if (!user) {
-            throw new BadRequestException({message: 'USER EXIST'});
+            throw new BadRequestException({message: 'User not found'});
         }
-        await this.mailKeyService.deleteByKey(dto.key);
-        if (dto.newPassword == dto.repeat_newPassword) {
+        if (dto.newPassword == dto.repeatNewPassword) {
             if (this.validatePassword(dto.newPassword)) {
                 user.password = await this.hashPassword(dto.newPassword);
                 user.changedPassword = true;
                 await user.save();
+                this.keyService.deleteKey(dto.key);
                 return true;
             } else {
-                throw new BadRequestException({message: 'Простой пароль'});
+                throw new BadRequestException({message: 'Weak password'});
             }
         } else {
-            throw new BadRequestException({message: 'USER EXIST'});
+            throw new BadRequestException({message: 'Passwords should match'});
         }
     }
 
@@ -260,21 +268,9 @@ export class UserService {
     async forgotPasswordMailKey(dto: ForgotPasswordDto): Promise<boolean> {
         const user = await this.findUserByEmail(dto.email);
         if (user) {
-            await this.mailKeyService.generateMailKey(user);
+            await this.keyService.generateMailKey(user);
             return true;
         } else throw new BadRequestException({status: 401});
-    }
-
-    async KeyReview(dto: MailKeyReviewDto): Promise<string> {
-        try {
-            const DBkey = await this.mailKeyService.reviewKey(dto.key);
-            if (DBkey) {
-                return DBkey.email;
-            }
-        } catch (e) {
-            console.log(e);
-            throw new BadRequestException();
-        }
     }
 
     async changeAvatar(dto: ChangeAvatarDto, userId: number): Promise<boolean> {

@@ -28,7 +28,7 @@ export class MailService {
     mailer(message);
   }
 
-  async changePassword(key: number, user: User) {
+  async sendChangeKey(key: number, user: User) {
     console.log(`---------------`);
     const message = {
       from: 'Команда Parking Project <denistestfortp@mail.ru>',

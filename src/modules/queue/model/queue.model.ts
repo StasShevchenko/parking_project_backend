@@ -1,19 +1,28 @@
-import { Column, Model, Table } from 'sequelize-typescript';
+import {BelongsTo, Column, ForeignKey, HasOne, Model, Table} from 'sequelize-typescript';
+import {User} from "../../user/model/user.model";
+import {Swap} from "../../swap/model/swap.model";
+import {InferAttributes, InferCreationAttributes} from "sequelize";
 
-@Table
-export class Queue extends Model {
-  @Column
-  userId: number;
+@Table({timestamps: false})
+export class Queue extends Model<InferAttributes<Queue>, InferCreationAttributes<Queue>> {
 
-  @Column
-  number: number;
+    @ForeignKey(() => User)
+    @Column
+    userId: number;
 
-  @Column
-  start_period_time: Date;
+    @Column
+    number: number;
 
-  @Column
-  end_period_time: Date;
+    @Column
+    swapNumber: number;
 
-  @Column
-  swap: number;
+    @ForeignKey(() => Swap)
+    @Column
+    swapId?: number;
+
+    @BelongsTo(() => Swap)
+    swap?: Swap
+
+    @BelongsTo(() => User)
+    user?: User
 }

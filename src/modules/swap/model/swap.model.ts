@@ -1,7 +1,9 @@
-import { Column, Default, Model, Table } from 'sequelize-typescript';
+import {BelongsTo, Column, Default, HasOne, Model, Table} from 'sequelize-typescript';
+import {InferAttributes, InferCreationAttributes} from "sequelize";
+import {Queue} from "../../queue/model/queue.model";
 
 @Table({timestamps: false})
-export class Swap extends Model {
+export class Swap extends Model<InferAttributes<Swap>, InferCreationAttributes<Swap>> {
   @Default(false)
   @Column
   active: boolean;
@@ -34,4 +36,7 @@ export class Swap extends Model {
 
   @Column
   receiverEmail: string;
+
+  @HasOne(() => Queue)
+  queue?: Queue
 }

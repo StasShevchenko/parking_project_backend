@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class GetAllSwapByUserId {
+export class ReviewMailKeyDto {
   @ApiProperty()
-  userId: number;
+  key: number;
 }
