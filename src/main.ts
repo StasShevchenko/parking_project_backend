@@ -6,7 +6,6 @@ import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
-    logger: false
   });
 
   app.useGlobalFilters(new AllExceptionsFilter()); // Регистрируйте глобально AllExceptionsFilter

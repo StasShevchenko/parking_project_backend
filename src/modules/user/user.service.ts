@@ -15,6 +15,7 @@ import {User} from './model/user.model';
 import {Queue} from "../queue/model/queue.model";
 import {Swap} from "../swap/model/swap.model";
 import {KeyService} from "./key.service";
+import {Token} from "./model/token.model";
 
 @Injectable()
 export class UserService {
@@ -28,11 +29,18 @@ export class UserService {
     }
 
     async findUserByEmail(email: string) {
-        return await this.userRepository.findOne({where: {email}});
+        return await this.userRepository.findOne({
+            where: {email},
+            include: [
+                {model: Token}
+            ]
+        });
     }
 
     async findUserById(id: number) {
-        return await this.userRepository.findByPk(id);
+        return await this.userRepository.findByPk(id, {
+            include: [{model: Token}]
+        });
     }
 
     uniqueKey() {
@@ -169,7 +177,7 @@ export class UserService {
     }
 
     async forgotPasswordChange(dto: ForgotChangePasswordDto): Promise<boolean> {
-        const key =  this.keyService.reviewKey(dto.key)
+        const key = this.keyService.reviewKey(dto.key)
         const user = await this.userRepository.findOne({
             where: {email: key.email},
         });

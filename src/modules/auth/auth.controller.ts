@@ -1,4 +1,4 @@
-import {Body, Controller, Post, Req, UseGuards} from '@nestjs/common';
+import {Body, Controller, Post, Req, Res, UseGuards} from '@nestjs/common';
 import {
     ApiBearerAuth,
     ApiForbiddenResponse,
@@ -15,6 +15,7 @@ import {RolesGuard} from "./guards/roles.guard";
 import {Roles} from "./decorators/hasRoles.decorator";
 import {TokensDto} from "../token/dto/tokens.dto";
 import {Public} from "./decorators/public.decorator";
+import {Request, Response} from "express";
 
 @ApiTags('auth')
 @Controller('auth')
@@ -47,8 +48,11 @@ export class AuthController {
     @ApiForbiddenResponse({description: 'Unauthorized Request'})
     @Public()
     @Post('login')
-    login(@Body() dto: LoginUserDto): Promise<TokensDto> {
-        return this.authService.loginUser(dto);
+    login(@Body() dto: LoginUserDto,
+          @Req() request: Request,
+          @Res({passthrough: true}) response: Response
+    ): Promise<TokensDto> {
+        return this.authService.loginUser(dto, request, response);
     }
 
 
@@ -56,8 +60,8 @@ export class AuthController {
     @Post('logout')
     @UseGuards(JwtAuthGuard)
     logout(
-        @Req() request
-    ){
-        return this.authService.logoutUser(request.user.id)
+        @Req() request: Request
+    ) {
+        return this.authService.logoutUser(request)
     }
 }

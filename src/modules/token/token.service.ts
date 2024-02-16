@@ -4,10 +4,16 @@ import {InjectModel} from '@nestjs/sequelize';
 import {User} from '../user/model/user.model';
 import {TokensDto} from "./dto/tokens.dto";
 import * as argon from 'argon2';
+import {Token} from "../user/model/token.model";
+import {ModelStatic} from "sequelize-typescript";
+import {CreationAttributes, ModelAttributes} from "sequelize";
+import {Request, Response} from "express";
+import {CookiesKeys} from "../../utils/cookiesKeys";
 
 @Injectable()
 export class TokenService {
     @InjectModel(User) private readonly userRepository: typeof User;
+    @InjectModel(Token) private readonly tokenRepository: typeof Token;
 
     constructor(
         private readonly jwtService: JwtService,
@@ -18,8 +24,18 @@ export class TokenService {
         const payLoad = this.getUserJwtPayload(user);
         return this.jwtService.sign(payLoad, {
             secret: process.env.SECRET_KEY,
-            expiresIn: '1h',
+            expiresIn: '5s',
         });
+    }
+
+    async deleteTokenById(tokenId: number) {
+        await this.tokenRepository.destroy({
+            where: {id: tokenId}
+        })
+    }
+
+    async createToken(token: CreationAttributes<Token>) {
+        return await this.tokenRepository.create(token)
     }
 
     async generateRefreshToken(user: User) {
@@ -43,17 +59,30 @@ export class TokenService {
         }
     }
 
-    async refreshToken(refresh: string): Promise<TokensDto> {
+    async refreshToken(request: Request, response: Response): Promise<TokensDto> {
         try {
+            const refresh = request.cookies?.[CookiesKeys.RefreshToken]
+            const refreshTokenKey = request.cookies?.[CookiesKeys.RefreshTokenKey]
+
             const userData = (await this.verifyRefreshToken(refresh)).user;
-            const user = await this.userRepository.findByPk(userData.id)
-            const isRefreshValid = await argon.verify(user.refreshToken, refresh)
+            const user = await this.userRepository.findByPk(userData.id, {include: {model: Token}})
+
+            const refreshToken = user.tokens.find((token) => token.id === parseInt(refreshTokenKey))
+
+            const isRefreshValid = await argon.verify(refreshToken.token, refresh)
             if (isRefreshValid) {
                 const accessToken = await this.generateAccessToken(user);
-                const refreshToken = await this.generateRefreshToken(user);
-                user.refreshToken = await argon.hash(refreshToken)
-                await user.save()
-                return {accessToken, refreshToken}
+                const newRefreshToken = await this.generateRefreshToken(user);
+                const expiresDate = new Date();
+                expiresDate.setMonth(expiresDate.getMonth() + 1);
+                response.cookie(CookiesKeys.RefreshToken, newRefreshToken, {
+                    httpOnly: true,
+                    sameSite: true,
+                    expires: expiresDate
+                });
+                refreshToken.token = await argon.hash(newRefreshToken)
+                await refreshToken.save()
+                return {accessToken}
             } else {
                 throw new BadRequestException()
             }
