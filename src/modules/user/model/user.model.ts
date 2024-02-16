@@ -1,6 +1,7 @@
 import {Column, Default, HasMany, HasOne, Model, Table} from 'sequelize-typescript';
 import {Notification} from '../../notifications/model/notifications.model';
 import {Queue} from "../../queue/model/queue.model";
+import {Token} from "./token.model";
 
 @Table({timestamps: false})
 export class User extends Model {
@@ -49,11 +50,11 @@ export class User extends Model {
     @Column
     changedPassword: boolean;
 
-    @Column
-    refreshToken?: string;
-
     @HasMany(() => Notification)
     notifications: Notification[];
+
+    @HasMany(() => Token)
+    tokens: Token[];
 
     @HasOne(() => Queue)
     queue: Queue
