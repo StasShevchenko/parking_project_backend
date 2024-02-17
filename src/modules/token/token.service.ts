@@ -24,7 +24,7 @@ export class TokenService {
         const payLoad = this.getUserJwtPayload(user);
         return this.jwtService.sign(payLoad, {
             secret: process.env.SECRET_KEY,
-            expiresIn: '5m',
+            expiresIn: '5s',
         });
     }
 
@@ -75,9 +75,11 @@ export class TokenService {
                 const newRefreshToken = await this.generateRefreshToken(user);
                 const expiresDate = new Date();
                 expiresDate.setMonth(expiresDate.getMonth() + 1);
+                const env = process.env.NODE_ENV
                 response.cookie(CookiesKeys.RefreshToken, newRefreshToken, {
                     httpOnly: true,
-                    sameSite: true,
+                    sameSite: env === "development",
+                    secure: env !== "development",
                     expires: expiresDate
                 });
                 refreshToken.token = await argon.hash(newRefreshToken)

@@ -7,6 +7,7 @@ import * as argon from 'argon2';
 import {TokensDto} from "../token/dto/tokens.dto";
 import {Request, Response} from "express";
 import {CookiesKeys} from "../../utils/cookiesKeys";
+import * as process from "process";
 
 @Injectable()
 export class AuthService {
@@ -55,15 +56,17 @@ export class AuthService {
             });
             const expiresDate = new Date();
             expiresDate.setMonth(expiresDate.getMonth() + 1);
-
+            const env = process.env.NODE_ENV
             response.cookie(CookiesKeys.RefreshTokenKey, refreshToken.id, {
                 httpOnly: true,
-                sameSite: true,
+                sameSite: env === "development",
+                secure: env !== "development",
                 expires: expiresDate
             });
             response.cookie(CookiesKeys.RefreshToken, jwtRefresh, {
                 httpOnly: true,
-                sameSite: true,
+                sameSite: env === "development",
+                secure: env !== "development",
                 expires: expiresDate
             });
 

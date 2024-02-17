@@ -22,11 +22,13 @@ import {join} from 'path';
 import {use} from "passport";
 import {Token} from "../user/model/token.model";
 
+const ENV = process.env.NODE_ENV
 @Module({
     imports: [
         ConfigModule.forRoot({
             isGlobal: true,
             load: [],
+            envFilePath: `.env.${ENV}`
         }),
         ServeStaticModule.forRoot({
             serveStaticOptions: {index: false},
