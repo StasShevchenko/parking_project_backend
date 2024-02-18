@@ -1,4 +1,4 @@
-import {BelongsTo, Column, Default, HasOne, Model, Table} from 'sequelize-typescript';
+import {Column, Default, HasOne, Model, Table} from 'sequelize-typescript';
 import {InferAttributes, InferCreationAttributes} from "sequelize";
 import {Queue} from "../../queue/model/queue.model";
 
