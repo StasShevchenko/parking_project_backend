@@ -5,6 +5,9 @@ import {UserService} from '../user/user.service';
 import {LoginUserDto} from './dto/loginUser.dto';
 import * as argon from 'argon2';
 import {TokensDto} from "../token/dto/tokens.dto";
+import {Request, Response} from "express";
+import {CookiesKeys} from "../../utils/cookiesKeys";
+import * as process from "process";
 
 @Injectable()
 export class AuthService {
@@ -22,33 +25,70 @@ export class AuthService {
         return await this.userService.createUser(dto);
     }
 
-    async loginUser(dto: LoginUserDto): Promise<TokensDto> {
-        const user = await this.userService.findUserByEmail(dto.email);
-        if (!user) {
-            throw new BadRequestException({message: 'Wrong email'});
-        }
-        const validatePassword = await this.userService.comparePassword(
-            dto.password,
-            user.password,
-        );
+    async loginUser(dto: LoginUserDto,
+                    request: Request,
+                    response: Response): Promise<TokensDto> {
+            const user = await this.userService.findUserByEmail(dto.email);
+            if (!user) {
+                throw new BadRequestException({message: 'Wrong email'});
+            }
+            const existingRefreshTokenKey = request.cookies?.[CookiesKeys.RefreshTokenKey];
+            if (existingRefreshTokenKey) {
+                await this.tokenService.deleteTokenById(parseInt(existingRefreshTokenKey))
+            }
+            const validatePassword = await this.userService.comparePassword(
+                dto.password,
+                user.password,
+            );
 
-        if (!validatePassword && dto.password != user.password) {
-            throw new BadRequestException('Wrong Data');
-        }
+            if (!validatePassword && dto.password != user.password) {
+                throw new BadRequestException('Wrong Data');
+            }
 
-        const jwtAccess = await this.tokenService.generateAccessToken(user);
-        const jwtRefresh = await this.tokenService.generateRefreshToken(user);
-        user.refreshToken = await argon.hash(jwtRefresh)
-        await user.save()
+            const jwtAccess = await this.tokenService.generateAccessToken(user);
+            const jwtRefresh = await this.tokenService.generateRefreshToken(user);
+            const hashedToken = await argon.hash(jwtRefresh);
 
-        return {accessToken: jwtAccess, refreshToken: jwtRefresh};
+            const refreshToken = await this.tokenService.createToken({
+                token: hashedToken,
+                userId: user.id
+            });
+            const expiresDate = new Date();
+            expiresDate.setMonth(expiresDate.getMonth() + 1);
+            const env = process.env.NODE_ENV
+            response.cookie(CookiesKeys.RefreshTokenKey, refreshToken.id, {
+                httpOnly: true,
+                sameSite: env === "development",
+                secure: env !== "development",
+                expires: expiresDate
+            });
+            response.cookie(CookiesKeys.RefreshToken, jwtRefresh, {
+                httpOnly: true,
+                sameSite: env === "development",
+                secure: env !== "development",
+                expires: expiresDate
+            });
+            await user.save();
+            return {accessToken: jwtAccess};
     }
 
-    async logoutUser(userId: number){
-        const user = await this.userService.findUserById(userId);
-        if (user) {
-            user.refreshToken = null
-            await user.save()
-        }
+    async logoutUser(request: Request, response: Response) {
+        const refreshTokenKey = request.cookies?.[CookiesKeys.RefreshTokenKey]
+        const expiresDate = new Date();
+        expiresDate.setMonth(expiresDate.getMonth() + 1);
+        const env = process.env.NODE_ENV
+        response.cookie(CookiesKeys.RefreshTokenKey, '', {
+            httpOnly: true,
+            sameSite: env === "development",
+            secure: env !== "development",
+            expires: expiresDate
+        });
+        response.cookie(CookiesKeys.RefreshToken, '', {
+            httpOnly: true,
+            sameSite: env === "development",
+            secure: env !== "development",
+            expires: expiresDate
+        });
+        await this.tokenService.deleteTokenById(parseInt(refreshTokenKey))
     }
 }
