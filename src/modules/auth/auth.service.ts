@@ -28,7 +28,6 @@ export class AuthService {
     async loginUser(dto: LoginUserDto,
                     request: Request,
                     response: Response): Promise<TokensDto> {
-        try {
             const user = await this.userService.findUserByEmail(dto.email);
             if (!user) {
                 throw new BadRequestException({message: 'Wrong email'});
@@ -69,17 +68,27 @@ export class AuthService {
                 secure: env !== "development",
                 expires: expiresDate
             });
-
             await user.save();
-
             return {accessToken: jwtAccess};
-        } catch (e){
-            console.log(e)
-        }
     }
 
-    async logoutUser(request: Request) {
+    async logoutUser(request: Request, response: Response) {
         const refreshTokenKey = request.cookies?.[CookiesKeys.RefreshTokenKey]
+        const expiresDate = new Date();
+        expiresDate.setMonth(expiresDate.getMonth() + 1);
+        const env = process.env.NODE_ENV
+        response.cookie(CookiesKeys.RefreshTokenKey, '', {
+            httpOnly: true,
+            sameSite: env === "development",
+            secure: env !== "development",
+            expires: expiresDate
+        });
+        response.cookie(CookiesKeys.RefreshToken, '', {
+            httpOnly: true,
+            sameSite: env === "development",
+            secure: env !== "development",
+            expires: expiresDate
+        });
         await this.tokenService.deleteTokenById(parseInt(refreshTokenKey))
     }
 }
