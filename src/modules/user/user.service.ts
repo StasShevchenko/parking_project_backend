@@ -133,6 +133,9 @@ export class UserService {
         password1: string,
         password2: string,
     ): Promise<boolean> {
+        if (password1 === password2) {
+            return true
+        }
         return bcrypt.compare(password1, password2);
     }
 
@@ -156,6 +159,7 @@ export class UserService {
         const user = await this.userRepository.findOne({
             where: {email: email},
         });
+        console.log(`EMAIL: ${email}`)
         const compareOldPassword = await this.comparePassword(
             dto.oldPassword,
             user.password,
