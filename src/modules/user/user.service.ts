@@ -159,7 +159,6 @@ export class UserService {
         const user = await this.userRepository.findOne({
             where: {email: email},
         });
-        console.log(`EMAIL: ${email}`)
         const compareOldPassword = await this.comparePassword(
             dto.oldPassword,
             user.password,
