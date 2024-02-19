@@ -58,13 +58,13 @@ export class AuthService {
             const env = process.env.NODE_ENV
             response.cookie(CookiesKeys.RefreshTokenKey, refreshToken.id, {
                 httpOnly: true,
-                sameSite: env === "development",
+                sameSite: env === "development" ? true : 'none',
                 secure: env !== "development",
                 expires: expiresDate
             });
             response.cookie(CookiesKeys.RefreshToken, jwtRefresh, {
                 httpOnly: true,
-                sameSite: env === "development",
+                sameSite: env === "development" ? true : 'none',
                 secure: env !== "development",
                 expires: expiresDate
             });
@@ -79,13 +79,13 @@ export class AuthService {
         const env = process.env.NODE_ENV
         response.cookie(CookiesKeys.RefreshTokenKey, '', {
             httpOnly: true,
-            sameSite: env === "development",
+            sameSite: env === "development" ? true : 'none',
             secure: env !== "development",
             expires: expiresDate
         });
         response.cookie(CookiesKeys.RefreshToken, '', {
             httpOnly: true,
-            sameSite: env === "development",
+            sameSite: env === "development" ? true : 'none',
             secure: env !== "development",
             expires: expiresDate
         });

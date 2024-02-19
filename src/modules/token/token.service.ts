@@ -79,7 +79,7 @@ export class TokenService {
                 const env = process.env.NODE_ENV
                 response.cookie(CookiesKeys.RefreshToken, newRefreshToken, {
                     httpOnly: true,
-                    sameSite: env === "development",
+                    sameSite: env === "development" ? true : 'none',
                     secure: env !== "development",
                     expires: expiresDate
                 });
