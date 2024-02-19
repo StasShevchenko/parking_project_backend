@@ -62,6 +62,7 @@ export class TokenService {
     async refreshToken(request: Request, response: Response): Promise<TokensDto> {
         try {
             const refresh = request.cookies?.[CookiesKeys.RefreshToken]
+            console.log(`Someone trying to refresh: ${new Date()} ${refresh}`)
             const refreshTokenKey = request.cookies?.[CookiesKeys.RefreshTokenKey]
 
             const userData = (await this.verifyRefreshToken(refresh)).user;

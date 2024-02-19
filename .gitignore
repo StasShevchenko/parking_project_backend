@@ -5,7 +5,6 @@
 .env.development
 .env.production
 ../.env
-src/configs/nodemailer.ts
 /config/config.json
 /models
 
