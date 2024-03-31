@@ -1,7 +1,7 @@
 import {BadRequestException, Injectable, OnModuleInit} from '@nestjs/common';
 import {Cron, CronExpression} from '@nestjs/schedule';
 import {InjectModel} from '@nestjs/sequelize';
-import {Period} from 'src/interfaces/period.interface';
+import {Period} from '../../interfaces/period.interface';
 import {User} from '../user/model/user.model';
 import {combinedLogger} from '../../utils/logger.config';
 import {InputData} from '../input-data/model/input-data.model';
@@ -15,8 +15,6 @@ import {Op} from 'sequelize';
 import {resetDate} from "../../utils/resetDate";
 import {Sequelize} from "sequelize-typescript";
 import {Swap} from "../swap/model/swap.model";
-
-export * from 'src/interfaces/period.interface';
 
 @Injectable()
 export class QueueService implements OnModuleInit {
@@ -134,6 +132,7 @@ export class QueueService implements OnModuleInit {
                         const userQueueEntry = await this.queueRepository.findOne({
                             where: {userId: queueUsers[queueUsers.length - i - 1].id},
                         });
+                        userQueueEntry.swapNumber = queueUsers.length - i;
                         userQueueEntry.number = queueUsers.length - i;
                         await userQueueEntry.save();
                         //Делаем новых юзеров активными
@@ -232,7 +231,7 @@ export class QueueService implements OnModuleInit {
         }
     }
 
-    async getCurrentQueuePeriod(fullName: string = ''): Promise<Period[][]> {
+    async getCurrentQueuePeriod(fullName: string = ''): Promise<Period[]> {
         try {
             let firstName: string;
             let secondName: string;
@@ -304,9 +303,7 @@ export class QueueService implements OnModuleInit {
                 };
                 periods.push(currentPeriod);
             }
-            const periodsArray: Period[][] = [];
-            periodsArray.push(periods)
-            return periodsArray;
+            return periods;
         } catch (e) {
             console.log(e);
             return [];
@@ -327,7 +324,7 @@ export class QueueService implements OnModuleInit {
             if (queueUsers.length === 0) return []
             const inputData = await this.inputDataRepository.findOne();
             const periodsArray: Period[][] = [];
-            const firstPeriod = (await this.getCurrentQueuePeriod())[0];
+            const firstPeriod = (await this.getCurrentQueuePeriod());
             if (queueUsers.length < inputData.seats) {
                 periodsArray.push(firstPeriod)
                 return periodsArray

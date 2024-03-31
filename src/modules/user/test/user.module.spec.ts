@@ -12,14 +12,16 @@ import { Sequelize } from 'sequelize-typescript';
 import { usersTestArray } from './utils/usersTestArray';
 import { mapUserToCreateUserDto } from './utils/mapUserToCreateUserDto';
 import { MailService } from '../../mail/mail.service';
-import { MailKeyService } from '../../mail_key/mail_key.service';
+import {KeyService} from "../key.service";
+import {Token} from "../model/token.model";
+import {Queue} from "../../queue/model/queue.model";
+import {Swap} from "../../swap/model/swap.model";
 
 describe('User module testing', () => {
   const mockMailService = {
     sendRegistrationsEmail: async () => {},
     changePassword: async () => {},
   };
-  const mockMailKeyService = {};
 
   let userModule: TestingModule;
 
@@ -36,19 +38,17 @@ describe('User module testing', () => {
           autoLoadModels: true,
           omitNull: true,
           synchronize: true,
-          models: [User, Notification],
+          models: [User, Notification, Token, Queue, Swap],
         }),
         SequelizeModule.forFeature([User]),
         TokenModule,
         QueueModule,
       ],
-      providers: [UserService, AvatarService, MailKeyService, MailService],
+      providers: [UserService, AvatarService, MailService, KeyService],
       controllers: [UserController],
     })
       .overrideProvider(MailService)
       .useValue(mockMailService)
-      .overrideProvider(MailKeyService)
-      .useValue(mockMailKeyService)
       .compile();
   });
 
@@ -131,7 +131,7 @@ describe('User module testing', () => {
     }
     const onlyAdminArray = usersTestArray.slice(0, 2);
     const userController = userModule.get(UserController);
-    const requestResult = await userController.getUsers('[admin]', '');
+    const requestResult = await userController.getUsers('admin', '');
     const finalResult = requestResult.map((user) =>
       mapUserToCreateUserDto(user),
     );
@@ -164,7 +164,7 @@ describe('User module testing', () => {
       await userService.createUser(user);
     }
     const userController = userModule.get(UserController);
-    const requestResult = await userController.getUsers('[super_admin]', '');
+    const requestResult = await userController.getUsers('super_admin', '');
     const finalResult = requestResult.map((user) =>
       mapUserToCreateUserDto(user),
     );
