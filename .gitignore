@@ -2,8 +2,7 @@
 /dist
 /node_modules
 /.env.development
-.env.development
-.env.production
+/.env.production
 ../.env
 /config/config.json
 /models
