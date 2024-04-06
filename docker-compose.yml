@@ -1,25 +1,28 @@
 version: '3'
 services:
-  site_back_postgres:
-    container_name: parking_project
+  parking_backend:
+    image: parking_backend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - parking_database
+  parking_database:
     image: postgres:14
     environment:
-      POSTGRES_HOST: localhost
+      POSTGRES_HOST: 127.0.0.1
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: Qb*5x4dM
-      POSTGRES_DATABASE: parking_project
-
+      POSTGRES_PASSWORD: MyNameIsEminem
+      POSTGRES_DB: parking_project
     volumes:
       - postgres:/home/docker-volumes/Severstal/postgres
     ports:
       - "5432:5432"
-    networks:
-      - site_back
-    restart: unless-stopped 
+    restart: unless-stopped
+  parking_frontend:
+    image: parking_frontend
+    ports:
+      - "8080:80"
 
-networks:
-  site_back:
-    driver: bridge
 
 volumes: 
   postgres:
