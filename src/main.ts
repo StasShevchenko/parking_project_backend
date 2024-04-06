@@ -26,7 +26,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('swagger', app, document);
   const keys = Object.keys(os.networkInterfaces())
-  const localIp = os.networkInterfaces()[keys[0]][1].address
+  const localIp = os.networkInterfaces()?.[keys[0]][1]?.address
   const env = process.env.NODE_ENV
   if (env === "development") {
     await app.listen(3000, localIp);

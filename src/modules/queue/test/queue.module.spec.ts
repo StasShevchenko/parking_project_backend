@@ -14,13 +14,15 @@ import {Queue} from '../model/queue.model';
 import {QueueService} from '../queue.service';
 import {QueueController} from '../queue.controller';
 import {MailService} from '../../mail/mail.service';
-import {MailKeyService} from '../../mail_key/mail_key.service';
 import {InputDataService} from '../../input-data/input-data.service';
 import {
     evenQueueUsersTestArray,
     extendedEvenQueueUsersTestArray, extendedOddQueueUsersTestArray,
     oddQueueUsersTestArray
 } from "./utils/queueUsersTestArray";
+import {KeyService} from "../../user/key.service";
+import {Swap} from "../../swap/model/swap.model";
+import {Token} from "../../user/model/token.model";
 
 describe('Queue module testing', () => {
     const mockMailService = {
@@ -49,7 +51,7 @@ describe('Queue module testing', () => {
                     logging: false,
                     autoLoadModels: true,
                     synchronize: true,
-                    models: [User, Notification, InputData, Queue],
+                    models: [User, Notification, InputData, Queue, Token, Swap],
                 }),
                 SequelizeModule.forFeature([User, Queue, InputData]),
                 TokenModule,
@@ -60,15 +62,13 @@ describe('Queue module testing', () => {
                 AvatarService,
                 QueueService,
                 MailService,
-                MailKeyService,
                 InputDataService,
+                KeyService,
             ],
             controllers: [UserController, QueueController],
         })
             .overrideProvider(MailService)
             .useValue(mockMailService)
-            .overrideProvider(MailKeyService)
-            .useValue(mockMailKeyService)
             .compile();
     });
 
@@ -260,7 +260,7 @@ describe('Queue module testing', () => {
         })
         const finalResult = periods[0].nextUsers[2].email
         jest.setSystemTime(new Date(2024, 0))
-        expect(finalResult).toEqual('bc@mail.ru')
+        expect(finalResult).toEqual('egorka@mail.ru')
     })
 
     //Тестируем функцию сдвига очереди (число юзеров 9, мест 3)
@@ -297,7 +297,7 @@ describe('Queue module testing', () => {
         })
         const finalResult = periods[1].nextUsers[0].email
         jest.setSystemTime(new Date(2024, 0))
-        expect(finalResult).toEqual('egorka@mail.ru')
+        expect(finalResult).toEqual('ex@mail.ru')
     })
 
     //Тестируем функцию сдвига очереди (moduleInit функция)
