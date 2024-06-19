@@ -19,7 +19,6 @@ import {TokenModule} from '../token/token.module';
 import {User} from '../user/model/user.model';
 import {UserModule} from '../user/user.module';
 import {join} from 'path';
-import {use} from "passport";
 import {Token} from "../user/model/token.model";
 
 const ENV = process.env.NODE_ENV

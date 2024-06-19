@@ -188,7 +188,7 @@ export class QueueService implements OnModuleInit {
                 ],
             });
             const user = await this.userRepository.findOne({where: {id: userId}});
-            if(!user.queueUser) return
+            if (!user.queueUser) return
             const inputData = await this.inputDataRepository.findOne();
             const userIndex = queueUsers.findIndex((it) => it.id == user.id);
             user.queueUser = false;
@@ -243,7 +243,7 @@ export class QueueService implements OnModuleInit {
                 secondName = '';
             }
             const queueUsers = await this.userRepository.findAll({
-                include:[ {
+                include: [{
                     model: Queue,
                     include: [{
                         model: Swap,
@@ -509,7 +509,7 @@ export class QueueService implements OnModuleInit {
         }
     }
 
-    getUserStartDate(user: User): Date{
+    getUserStartDate(user: User): Date {
         let startDate
         if (user.queue?.swap) {
             if (user.queue.swap.receiver === user.id) {
@@ -517,13 +517,13 @@ export class QueueService implements OnModuleInit {
             } else if (user.queue.swap.sender === user.id) {
                 startDate = user.queue.swap.to
             }
-        } else{
+        } else {
             startDate = user.startActiveTime
         }
         return startDate
     }
 
-    getUserEndDate(user: User): Date{
+    getUserEndDate(user: User): Date {
         const startDate = this.getUserStartDate(user)
         const endDate = new Date(startDate)
         endDate.setMonth(endDate.getMonth() + 1)
